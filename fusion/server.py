@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from fusion.serial_ingest import accept_line, read_simulated
 from fusion.state import FusionState
@@ -19,7 +19,7 @@ UI_DIR = Path(__file__).resolve().parents[1] / "ui"
 PUSH_INTERVAL_S = 0.5
 
 
-def create_app(state=None, now_ms=None, ui_dir=None):
+def create_app(state=None, now_ms=None, ui_dir=None, demo=None):
     fusion = state if state is not None else FusionState()
     page_dir = Path(ui_dir) if ui_dir is not None else UI_DIR
     app = FastAPI(title="Team 10 fusion host", docs_url=None, redoc_url=None)
@@ -42,6 +42,36 @@ def create_app(state=None, now_ms=None, ui_dir=None):
                 await asyncio.sleep(PUSH_INTERVAL_S)
         except WebSocketDisconnect:
             return
+
+    @app.get("/demo")
+    def demo_status():
+        simulated = bool(fusion.simulated)
+        available = simulated and demo is not None and hasattr(demo, "replay")
+        return {
+            "available": available,
+            "simulated": simulated,
+            "mode": "simulation" if simulated else "live",
+            "sends_hardware_commands": False,
+        }
+
+    @app.post("/demo/replay")
+    def replay_demo():
+        if not fusion.simulated or demo is None or not hasattr(demo, "replay"):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "ok": False,
+                    "mode": "simulation" if fusion.simulated else "live",
+                    "sends_hardware_commands": False,
+                    "error": (
+                        "Replay is only available in simulation mode. "
+                        "It does not reset a live gateway session and it does not send hardware commands."
+                    ),
+                },
+            )
+        result = demo.replay()
+        result.setdefault("sends_hardware_commands", False)
+        return JSONResponse(status_code=200 if result.get("ok") else 409, content=result)
 
     return app
 
@@ -100,9 +130,14 @@ def main(argv=None):
     def clock():
         return int(time.time() * 1000)
 
+    player = None
     if args.demo:
+        from fusion.demo_player import DemoPlayer
+        from sim.demo import SCRIPT, keepalive_line
+
         state.simulated = True
-        threading.Thread(target=_play_demo, args=(state, stop, log, clock), daemon=True).start()
+        player = DemoPlayer(state, log, clock, SCRIPT, keepalive_line)
+        player.start()
     elif args.simulate:
         state.simulated = True
         if args.simulate == "-":
@@ -128,36 +163,17 @@ def main(argv=None):
             daemon=True,
         ).start()
 
-    app = create_app(state)
+    app = create_app(state, demo=player)
     sys.stderr.write(
         f"dashboard http://{args.host}:{args.listen}/  ws://{args.host}:{args.listen}/ws\n"
     )
     if state.simulated:
         sys.stderr.write("input is simulated. It is not a hardware recording.\n")
     uvicorn.run(app, host=args.host, port=args.listen, log_level="warning")
+    if player is not None:
+        player.stop()
     stop.set()
     return 0
-
-
-def _play_demo(state, stop, log, clock):
-    import time
-
-    from sim.demo import SCRIPT, keepalive_line
-
-    start = time.monotonic()
-    for at, line in SCRIPT:
-        if stop.is_set():
-            return
-        remaining = at - (time.monotonic() - start)
-        if remaining > 0 and stop.wait(remaining):
-            return
-        accept_line(line, state, log, clock())
-    seq = 10
-    while not stop.is_set():
-        if stop.wait(2.0):
-            return
-        accept_line(keepalive_line(seq), state, log, clock())
-        seq = (seq + 1) % 65536
 
 
 def _read_stdin(state, stop, log, clock):

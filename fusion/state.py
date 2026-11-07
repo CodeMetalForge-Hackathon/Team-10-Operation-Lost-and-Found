@@ -80,6 +80,14 @@ class FusionState:
                         "t_host": t_host,
                     }
 
+    def reset(self):
+        """Drop retained observations. Keep the simulated flag and stale window."""
+        with self._lock:
+            self._nodes.clear()
+            self._devices.clear()
+            self._ranges.clear()
+            self._packets.clear()
+
     def snapshot(self, now_ms):
         with self._lock:
             nodes = []

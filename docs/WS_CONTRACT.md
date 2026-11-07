@@ -94,6 +94,14 @@ Status: proposed on `feat/sim-ws-dashboard` so the dashboard can run. This is no
 - `packets_per_s` and `bytes_per_s` count accepted JSON on the host in the last 1000 ms. They are not mesh bandwidth.
 - Unknown `v` must be ignored by the page. This page only renders `v == 1`.
 
+## Simulation control
+
+These routes are not part of the `/ws` payload and they are not gateway messages.
+
+`GET /demo` reports whether this process can restart its own simulated script. `available` is true only when the process was started with `--demo`. `sends_hardware_commands` is false.
+
+`POST /demo/replay` resets retained observations and plays `sim/demo.py` again through `accept_line`. It returns 409 for a live gateway session, for `--simulate`, and if the previous player is still emitting. It does not open a serial port and it does not send HAIL, BLINK, RANGE, QUIET MODE, or BASELINE.
+
 ## Not in this contract
 
 `POST /cmd`, `POST /anchor`, and `POST /baseline` still have no body. This server returns 404 for them. Outbound serial text such as `CMD HAIL 0 255` is not sent.
