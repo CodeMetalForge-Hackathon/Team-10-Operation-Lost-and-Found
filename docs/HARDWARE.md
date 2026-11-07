@@ -65,12 +65,18 @@ One mic, one piezo, one buzzer and one LED per node use **6 of the 11 pins (D0�
 | Piezo disc (ADC) | **D0** | GPIO1 | The only pin Seeed's table clearly labels ADC. 1 MΩ to GND across the piezo, plus 2× 1N4148 clamps to 3V3 and GND |
 | Passive buzzer | **D4** | | LEDC PWM at about 4 kHz. A bare piezo buzzer can be driven directly. A *magnetic* buzzer (>20 mA) needs an NPN transistor + diode |
 | LED | **D5** | | 220 Ω series resistor |
-| I2S SCK / BCLK | **D8** | | The ESP32's internal pin routing lets any GPIO carry I2S |
-| I2S WS / LRCL | **D9** | | |
-| I2S SD / DOUT (mic → MCU) | **D10** | | |
-| Mic VDD / GND, L/R select | 3V3 / GND | | Tie the mic's L/R pin to GND (left channel) |
+| Mic **BCLK** | **D8** | | **Mic = Adafruit ICS-43434 (#6049)**, bought at Micro Center. The ESP32's internal pin routing lets any GPIO carry I2S |
+| Mic **LRCL** (word select) | **D9** | | |
+| Mic **DOUT** (mic → MCU) | **D10** | | |
+| Mic **3V** / **GND** | 3V3 / GND | | |
+| Mic **SEL** | GND | | Low = left channel (also the default, but tie it to GND explicitly) |
 | Battery | BAT+ / BAT− pads (back) | | 3.7 V LiPo, charged by the on-board charger |
 
+- **ICS-43434 notes:**
+  - The mic is **bottom-ported**: the sound hole is on the underside of the breakout. Mount it with the hole facing **up and out of the enclosure**, and don't seal it with glue or tape.
+  - Firmware: I2S standard (Philips) format, 32-bit slots, mono left channel; the sample sits in the upper bits of each 32-bit word.
+  - Start at 16 kHz (Adafruit's example rate). If the data comes back all zeros or garbage, try 32 kHz and downsample in software. The datasheet's exact sample-rate range is not yet verified.
+  - Response is about 50 Hz–15 kHz, which covers voice (300–3000 Hz) and tapping.
 - **Avoid D2 (GPIO25) and D3 (GPIO7).** They may be strapping or boot pins, and sources disagree.
 - **Spare pins:** D1, D6, D7 (D6/D7 = UART TX/RX for an mmWave radar on a hero node).
 - The board has a single 3V3 pin and a single GND pin, so use a mini breadboard rail or a soldered splice to share them.
