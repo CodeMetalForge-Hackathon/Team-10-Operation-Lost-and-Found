@@ -34,3 +34,5 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 - Worked, simulated only, 2026-11-07 evening: all five gateway JSON types reach fusion state, and the dashboard shows a node, a tap cue, a hashed `device_seen`, and a node going inactive. Not a hardware run. Not a location.
 - Worked, simulated only, 2026-11-07 15:57: the operations overview shows simulation vs live, one acoustic cue, the reporting node, stale evidence, and no position. Replay restarts `--demo` through ingest. Not a hardware run.
 - Not working yet: ESP32 firmware is not in this repo, there is no localization or heatmap, command buttons have no agreed body, and nothing sends CoT to TAK.
+
+- 2026-11-07 17:09: The secondary page is an evidence-review screen. The timeline uses host-receipt time, not node `t_ms`, because node clocks are not synchronized. WebSocket messages stay snapshots. Why: a viewer has to see which sensor reported a cue, how old that cue is, and that the input is simulated, without treating a fresh node as a fresh cue.

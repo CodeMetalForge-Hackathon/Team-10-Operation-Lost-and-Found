@@ -10,7 +10,8 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from fusion.serial_ingest import accept_line, read_simulated
 from fusion.state import FusionState
@@ -28,6 +29,13 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None):
     @app.get("/")
     def index():
         return FileResponse(page_dir / "index.html")
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        icon = page_dir / "vendor" / "icons" / "ear.svg"
+        if icon.is_file():
+            return FileResponse(icon, media_type="image/svg+xml")
+        return Response(status_code=204)
 
     @app.get("/state")
     def state_now():
@@ -72,6 +80,9 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None):
         result = demo.replay()
         result.setdefault("sends_hardware_commands", False)
         return JSONResponse(status_code=200 if result.get("ok") else 409, content=result)
+
+    if page_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=page_dir), name="ui-assets")
 
     return app
 
