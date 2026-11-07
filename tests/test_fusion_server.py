@@ -35,10 +35,14 @@ class DashboardSocketTest(unittest.TestCase):
         with TestClient(app) as client:
             page = client.get("/")
             self.assertEqual(page.status_code, 200)
-            self.assertIn("Where to dig", page.text)
+            self.assertIn("Operations overview", page.text)
+            self.assertNotIn("Where to dig", page.text)
             self.assertIn("/ws", page.text)
             self.assertIn("msg.v !== 1", page.text)
-            self.assertIn("not a confirmed location", page.text)
+            self.assertIn(
+                "Acoustic cues require verification. Positions are not available.",
+                page.text,
+            )
             self.assertNotIn("display mapping not agreed", page.text)
             with client.websocket_connect("/ws") as socket:
                 payload = socket.receive_json()

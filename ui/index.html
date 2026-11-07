@@ -3,308 +3,739 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Team 10 — operator dashboard</title>
+  <title>Operations overview — Operation Lost and Found</title>
   <style>
     :root {
-      --bg: #12140f;
-      --panel: #1c2018;
-      --ink: #e7e4d8;
-      --muted: #9a957f;
-      --line: #34382c;
-      --amber: #e0a106;
-      --green: #7dba6a;
-      --red: #d4654a;
+      --bg: #0B1220;
+      --panel: #111C2E;
+      --raised: #17263C;
+      --ink: #F1F5F9;
+      --muted: #A8B5C8;
+      --line: #2A3B55;
+      --accent: #38BDF8;
+      --ok: #34D399;
+      --review: #FBBF24;
+      --stale: #94A3B8;
+      --fail: #FB7185;
     }
     * { box-sizing: border-box; }
+    html, body { margin: 0; }
     body {
-      margin: 0;
       min-height: 100vh;
       background: var(--bg);
       color: var(--ink);
-      font: 15px/1.4 ui-sans-serif, system-ui, sans-serif;
+      font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     }
-    header, .strip, .controls, footer {
-      padding: 12px 16px;
-    }
+    button, summary { font: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     header {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
-      align-items: baseline;
+      gap: 24px;
+      align-items: flex-end;
+      padding: 20px 24px 16px;
       border-bottom: 1px solid var(--line);
     }
-    h1 { font-size: 18px; font-weight: 650; margin: 0; }
-    .sub { color: var(--muted); font-size: 13px; }
-    .banner {
-      margin: 12px 16px 0;
-      padding: 14px 16px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      font-size: 22px;
-      font-weight: 650;
-    }
-    .banner.wait { color: var(--amber); }
-    .banner .fine {
-      display: block;
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 450;
-    }
-    .layout {
+    .kicker { margin: 0; color: var(--muted); font-size: 15px; }
+    h1 { margin: 2px 0 0; font-size: 28px; line-height: 1.2; font-weight: 650; }
+    h2 { margin: 0 0 10px; font-size: 18px; font-weight: 650; }
+    .status {
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: repeat(4, minmax(132px, 1fr));
+      gap: 10px 18px;
+      margin: 0;
+      min-width: min(100%, 640px);
+    }
+    .status div { min-width: 0; }
+    .status dt { color: var(--muted); font-size: 14px; }
+    .status dd { margin: 1px 0 0; font-size: 16px; font-weight: 650; }
+    #conn[data-state="connected"] { color: var(--ok); }
+    #conn[data-state="disconnected"] { color: var(--fail); }
+    #conn[data-state="connecting"],
+    #conn[data-state="reconnecting"] { color: var(--review); }
+    #source[data-mode="simulation"] { color: var(--review); }
+    main { padding: 16px 24px 28px; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
-      padding: 12px 16px;
     }
-    canvas {
-      width: 100%;
-      height: 480px;
-      background: #0e100c;
-      border: 1px solid var(--line);
-      display: block;
-    }
-    aside, .strip, .controls {
+    .summary article, .panel, .timeline, .diagnostics {
       background: var(--panel);
       border: 1px solid var(--line);
+      border-radius: 8px;
     }
-    .strip, .controls { margin: 0 16px 12px; }
-    .strip { display: flex; flex-wrap: wrap; gap: 18px; }
-    .strip span { color: var(--muted); }
-    .strip strong { color: var(--ink); font-weight: 600; }
-    button {
-      appearance: none;
-      border: 1px solid var(--line);
-      background: #262b20;
-      color: var(--ink);
-      font: inherit;
+    .summary article { padding: 14px 16px; min-width: 0; }
+    .summary h2 { margin: 0; color: var(--muted); font-size: 15px; font-weight: 600; }
+    .num {
+      margin: 4px 0;
+      font-size: 28px;
+      line-height: 1.15;
       font-weight: 650;
-      padding: 12px 14px;
-      margin: 0 8px 8px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .hint { margin: 0; color: var(--muted); font-size: 15px; }
+    .limit {
+      margin: 12px 0 0;
+      padding: 12px 16px;
+      background: var(--raised);
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .panel, .timeline, .diagnostics { padding: 16px; min-width: 0; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .toolbar h2 { margin: 0 auto 0 0; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--raised);
+      color: var(--ink);
+      padding: 8px 12px;
       cursor: pointer;
     }
-    button:disabled { opacity: 0.45; cursor: not-allowed; }
-    aside { padding: 12px; }
-    aside h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 8px; }
-    #log {
-      white-space: pre-wrap;
-      color: var(--muted);
-      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
-      min-height: 8em;
+    button[aria-pressed="true"] {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
     }
-    footer { color: var(--muted); font-size: 12px; }
-    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--red); margin-right: 6px; }
-    .dot.on { background: var(--green); }
-    @media (max-width: 800px) {
-      .layout { grid-template-columns: 1fr; }
-      canvas { height: 320px; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .stack, .cards { display: grid; gap: 8px; }
+    .cards { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+    .row, .card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      width: 100%;
+      text-align: left;
+    }
+    .card-title, .row-title { font-weight: 650; }
+    .card-meta, .row-meta, .mark { font-size: 15px; }
+    .mark.ok { color: var(--ok); }
+    .mark.review { color: var(--review); }
+    .mark.stale { color: var(--stale); }
+    .mark.fail { color: var(--fail); }
+    .section-gap { margin-top: 18px; }
+    #detail-facts, .diag-grid {
+      display: grid;
+      grid-template-columns: 11rem minmax(0, 1fr);
+      gap: 6px 12px;
+    }
+    #detail-facts { margin: 12px 0; }
+    #detail-facts dt, .diag-grid dt { color: var(--muted); }
+    #detail-facts dd, .diag-grid dd { margin: 0; overflow-wrap: anywhere; }
+    #detail-kicker { margin: 0; color: var(--muted); font-size: 15px; }
+    #detail-name { margin: 2px 0 0; font-size: 22px; line-height: 1.25; }
+    #detail-observed, #detail-limit, #action-note { margin: 8px 0 0; }
+    #detail-limit { color: var(--muted); }
+    pre, .mono { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    pre {
+      margin: 8px 0 0;
+      padding: 12px;
+      overflow: auto;
+      max-width: 100%;
+      background: var(--bg);
+      color: var(--muted);
+      border-radius: 6px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .timeline { margin-top: 12px; }
+    .timeline ol { list-style: none; margin: 0; padding: 0; }
+    .timeline li { padding: 8px 0; border-top: 1px solid var(--line); }
+    .diagnostics { margin-top: 12px; }
+    .diagnostics summary {
+      cursor: pointer;
+      font-weight: 650;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+    .diag-grid { margin-top: 12px; }
+    .empty { margin: 0; color: var(--muted); }
+    @media (max-width: 980px) {
+      header { display: grid; grid-template-columns: 1fr; }
+      .status { min-width: 0; grid-template-columns: 1fr 1fr; }
+      .workspace, .summary { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 420px) {
+      header, main { padding-left: 16px; padding-right: 16px; }
+      .status, .summary, #detail-facts, .diag-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
     }
   </style>
 </head>
 <body>
   <header>
-    <div>
-      <h1>Where to dig</h1>
-      <div class="sub">Secondary dashboard. TAK is the primary operator output. No dig coordinate is shown.</div>
+    <div class="identity">
+      <p class="kicker">Operation Lost and Found</p>
+      <h1>Operations overview</h1>
     </div>
-    <div class="sub"><span id="conn-dot" class="dot"></span><span id="conn">fusion host not connected</span></div>
+    <dl class="status">
+      <div><dt>Data source</dt><dd id="source" data-mode="unknown">Unknown</dd></div>
+      <div><dt>Connection</dt><dd id="conn" data-state="connecting" aria-live="polite">Connecting</dd></div>
+      <div><dt>Localization</dt><dd id="loc">Unknown</dd></div>
+      <div><dt>TAK</dt><dd id="tak">Not implemented</dd></div>
+    </dl>
   </header>
-
-  <div id="banner" class="banner wait">Waiting for fusion host<span id="disclaimer" class="fine">not a confirmed location</span></div>
-
-  <div class="layout">
-    <canvas id="floor" width="900" height="600" aria-label="Unlocalized node roster"></canvas>
-    <aside>
-      <h2>Nodes and evidence</h2>
-      <div id="log">No state yet. This page does not invent node positions.</div>
-    </aside>
-  </div>
-
-  <div class="strip" aria-label="Status">
-    <div>Nodes alive <strong id="nodes">—</strong></div>
-    <div>Packets/s <strong id="pps">—</strong></div>
-    <div>Bytes/s <strong id="bps">—</strong></div>
-    <div>Localization <strong id="mode">—</strong></div>
-  </div>
-
-  <div class="controls">
-    <button type="button" data-cmd="HAIL" disabled>HAIL</button>
-    <button type="button" data-cmd="BLINK" disabled>BLINK IDs</button>
-    <button type="button" data-cmd="RANGE" disabled>RANGE</button>
-    <button type="button" data-cmd="QUIET" disabled title="Named in the UI spec. No command byte agreed yet.">QUIET MODE</button>
-    <div class="sub" id="cmd-note">Commands stay disabled. <code>POST /cmd</code> has no agreed body. QUIET MODE has no agreed command byte.</div>
-  </div>
-
-  <footer>
-    Gateway JSON stays in <code>docs/ARCHITECTURE.md</code>. This page renders proposed <code>/ws</code> version 1 from <code>docs/WS_CONTRACT.md</code>.
-    A roster slot is not a location. A device hash is not a person.
-  </footer>
-
+  <main>
+    <section class="summary" aria-label="Summary">
+      <article>
+        <h2>Possible acoustic cues</h2>
+        <p class="num" id="cue-count">—</p>
+        <p class="hint">Nodes with elevated search priority. A device observation is not included. This is not a survivor count.</p>
+      </article>
+      <article>
+        <h2>Reporting sensors</h2>
+        <p class="num" id="reporting">—</p>
+        <p class="hint">Reporting means a line arrived inside the stale window. The denominator is nodes observed by this host, not nodes physically deployed.</p>
+      </article>
+      <article>
+        <h2>Latest observation</h2>
+        <p class="num" id="latest-age">—</p>
+        <p class="hint">Age of the newest accepted line. Unknown until a node reports.</p>
+      </article>
+    </section>
+    <p class="limit" id="limit">Acoustic cues require verification. Positions are not available.</p>
+    <div class="workspace">
+      <section class="panel" aria-label="Evidence review">
+        <div class="toolbar">
+          <h2>Evidence review</h2>
+          <div class="filters" role="group" aria-label="Filter evidence">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="cues" aria-pressed="false">Acoustic cues</button>
+            <button type="button" data-filter="devices" aria-pressed="false">Device evidence</button>
+            <button type="button" data-filter="stale" aria-pressed="false">Stale</button>
+          </div>
+          <button type="button" id="replay" hidden>Replay demo</button>
+        </div>
+        <p class="hint" id="action-note">Checking whether this process can restart the simulation.</p>
+        <div class="stack" id="queue">
+          <p class="empty">Waiting for a gateway line. No sensors have reported to this host.</p>
+        </div>
+        <div class="section-gap">
+          <h2>Sensor roster</h2>
+          <p class="hint">Map unavailable. Positions are not measured, so this is a roster, not a plot.</p>
+          <div class="cards" id="roster"></div>
+        </div>
+      </section>
+      <aside class="panel" id="detail" aria-label="Selected evidence">
+        <h2>Selected evidence</h2>
+        <p class="empty" id="detail-empty">Select a sensor card or an evidence row. The page will not jump to the newest event.</p>
+        <div id="detail-body" hidden>
+          <p id="detail-kicker"></p>
+          <h3 id="detail-name"></h3>
+          <dl id="detail-facts"></dl>
+          <p id="detail-observed"></p>
+          <p id="detail-limit"></p>
+          <details id="detail-tech">
+            <summary>Technical details</summary>
+            <pre id="detail-raw"></pre>
+          </details>
+        </div>
+      </aside>
+    </div>
+    <section class="timeline" aria-label="Recent activity">
+      <h2>Recent activity</h2>
+      <p class="hint">Retained in the latest snapshot. Not a complete packet log.</p>
+      <ol id="timeline"></ol>
+    </section>
+    <details class="diagnostics" id="diagnostics">
+      <summary>Diagnostics</summary>
+      <dl class="diag-grid">
+        <dt>Socket</dt><dd class="mono" id="diag-socket">Unknown</dd>
+        <dt>Packets/s</dt><dd id="diag-pps">Unknown</dd>
+        <dt>Bytes/s</dt><dd id="diag-bps">Unknown</dd>
+        <dt>Accepted packets</dt><dd id="diag-packets">Unknown</dd>
+        <dt>Stale window</dt><dd id="diag-stale">Unknown</dd>
+        <dt>Localization mode</dt><dd id="diag-mode">Unknown</dd>
+        <dt>Host banner</dt><dd id="diag-banner">Unknown</dd>
+        <dt>Ignored messages</dt><dd id="diag-ignored">None</dd>
+      </dl>
+      <p class="hint section-gap">A connected socket is not a TAK connection. This build has no CoT sender.</p>
+      <h2 class="section-gap">Neighbor reports</h2>
+      <p class="hint">A reported neighbor link is signal strength, not distance.</p>
+      <div id="diag-links"><p class="empty">Not reported</p></div>
+      <h2 class="section-gap">Timing reports</h2>
+      <p class="hint">A raw delay is not a calibrated distance.</p>
+      <div id="diag-ranges"><p class="empty">Not reported</p></div>
+      <h2 class="section-gap">Unavailable actions</h2>
+      <p>HAIL, BLINK IDs, RANGE, QUIET MODE, and BASELINE are not available. This host does not implement <code>POST /cmd</code>, <code>POST /anchor</code>, or <code>POST /baseline</code>. QUIET MODE has no agreed command byte. This page does not send a hardware command and does not invent a success response.</p>
+      <h2 class="section-gap">Latest socket message</h2>
+      <p class="hint">Raw payload. A null position in this object is unmeasured. It is not zero and not the command post.</p>
+      <pre id="diag-raw">No message yet</pre>
+    </details>
+  </main>
   <script>
-    const canvas = document.getElementById("floor");
-    const ctx = canvas.getContext("2d");
+    const ACOUSTIC = { LOUD: true, TAP_PATTERN: true, VOICE_LIKE: true };
+    let latest = null;
+    let socketState = "connecting";
+    let selectedKey = null;
+    let filter = "all";
+    let ignoredVersion = 0;
+    let socket = null;
+    let retryTimer = null;
 
-    function drawGrid() {
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = "#2a2e24";
-      ctx.lineWidth = 1;
-      for (let x = 40; x < w; x += 40) {
-        ctx.beginPath();
-        ctx.moveTo(x, 24);
-        ctx.lineTo(x, h - 24);
-        ctx.stroke();
-      }
-      for (let y = 24; y < h; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(24, y);
-        ctx.lineTo(w - 24, y);
-        ctx.stroke();
-      }
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text != null) node.textContent = text;
+      return node;
     }
-
-    function drawWaiting() {
-      drawGrid();
-      ctx.fillStyle = "#9a957f";
-      ctx.font = "14px ui-sans-serif, system-ui, sans-serif";
-      ctx.fillText("metre grid — no fusion state", 32, canvas.height - 36);
+    function shown(value, suffix) {
+      if (value === null || value === undefined || value === "") return "Not reported";
+      return suffix ? String(value) + suffix : String(value);
     }
-
-    function drawRoster(msg) {
-      drawGrid();
-      const nodes = msg.nodes || [];
-      ctx.fillStyle = "#9a957f";
-      ctx.font = "14px ui-sans-serif, system-ui, sans-serif";
-      const label = msg.simulated
-        ? "SIMULATED roster — spacing is not metres, not a location"
-        : "unlocalized roster — spacing is not metres, not a location";
-      ctx.fillText(label, 32, 40);
-      ctx.fillText(msg.localization_mode || "UNLOCALIZED", 32, canvas.height - 36);
-      if (!nodes.length) {
-        return;
+    function formatAge(ms) {
+      if (!Number.isFinite(ms) || ms < 0) return "Unknown";
+      if (ms < 1000) return "under 1 s";
+      const seconds = Math.floor(ms / 1000);
+      if (seconds < 60) return seconds + " s";
+      const minutes = Math.floor(seconds / 60);
+      return minutes + " min " + (seconds % 60) + " s";
+    }
+    function ageOf(tHost, msg) {
+      if (!msg || !Number.isFinite(tHost) || !Number.isFinite(msg.t_host)) return "Unknown";
+      const label = formatAge(msg.t_host - tHost);
+      return socketState === "connected" ? label : label + " · cached";
+    }
+    function socketUrl() {
+      if (location.protocol === "file:" || !location.host) return null;
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      return proto + "//" + location.host + "/ws";
+    }
+    function setSocket(state) {
+      socketState = state;
+      const labels = { connecting: "Connecting", connected: "Connected", reconnecting: "Reconnecting", disconnected: "Disconnected" };
+      const node = document.getElementById("conn");
+      const next = labels[state] || "Unknown";
+      if (node.textContent !== next) node.textContent = next;
+      node.dataset.state = state;
+    }
+    function reportingLabel(node) {
+      if (socketState !== "connected") return "Not live";
+      if (!node || !node.status) return "Unknown";
+      if (node.status === "active") return "Reporting";
+      if (node.status === "inactive") return "Stale";
+      return String(node.status);
+    }
+    function cueLabel(node) {
+      if (!node || !node.search_priority) return "Unknown";
+      if (node.search_priority === "elevated") return "Review";
+      if (node.search_priority === "quiet") return "No acoustic cue";
+      return String(node.search_priority);
+    }
+    function positionText(position) {
+      if (position === null || position === undefined) return "Not reported";
+      return "Reported " + JSON.stringify(position) + ". Source is not labeled. Do not treat this as a measured dig point.";
+    }
+    function markClass(label) {
+      if (label === "Reporting") return "mark ok";
+      if (label === "Review") return "mark review";
+      if (label === "Not live") return "mark fail";
+      return "mark stale";
+    }
+    function nodeById(msg, id) {
+      return (msg.nodes || []).find((node) => node.id === id) || null;
+    }
+    function cueKey(node, evidence) {
+      return "cue:" + node.id + ":" + (evidence.kind || "unknown") + ":" + evidence.t_ms + ":" + evidence.t_host;
+    }
+    function deviceKey(device) {
+      return "device:" + (device.hash || "unknown") + ":" + device.heard_by;
+    }
+    function select(key) {
+      selectedKey = key;
+      if (latest) render(latest);
+      const selected = document.querySelector("[data-key=\"" + CSS.escape(key) + "\"]");
+      if (selected) selected.focus();
+    }
+    function findSelection(msg) {
+      if (!selectedKey || !msg) return null;
+      if (selectedKey.indexOf("node:") === 0) {
+        const node = nodeById(msg, Number(selectedKey.slice(5)));
+        return node ? { type: "node", node: node } : null;
       }
-      const y = 280;
-      const gap = Math.min(140, (canvas.width - 80) / nodes.length);
-      nodes.forEach((node, index) => {
-        const x = 70 + index * gap;
-        ctx.beginPath();
-        ctx.arc(x, y, 16, 0, Math.PI * 2);
-        ctx.fillStyle = node.status === "active" ? "#7dba6a" : "#5c5748";
-        ctx.fill();
-        if (node.search_priority === "elevated") {
-          ctx.beginPath();
-          ctx.arc(x, y, 24, 0, Math.PI * 2);
-          ctx.strokeStyle = "#e0a106";
-          ctx.lineWidth = 3;
-          ctx.stroke();
+      if (selectedKey.indexOf("cue:") === 0) {
+        for (const node of msg.nodes || []) {
+          for (const evidence of node.evidence || []) {
+            if (cueKey(node, evidence) === selectedKey) return { type: "cue", node: node, evidence: evidence };
+          }
         }
-        ctx.fillStyle = "#e7e4d8";
-        ctx.font = "13px ui-sans-serif, system-ui, sans-serif";
-        ctx.fillText("N" + node.id, x - 10, y + 40);
-        ctx.fillStyle = "#9a957f";
-        ctx.fillText(node.status, x - 22, y + 58);
+      }
+      if (selectedKey.indexOf("device:") === 0) {
+        const device = (msg.devices || []).find((item) => deviceKey(item) === selectedKey);
+        if (device) return { type: "device", device: device, node: nodeById(msg, device.heard_by) };
+      }
+      return null;
+    }
+    function replaceList(container, children, emptyText) {
+      const active = document.activeElement;
+      const activeKey = active && active.dataset ? active.dataset.key : null;
+      const focusedInside = Boolean(active && container.contains(active));
+      container.replaceChildren.apply(container, children);
+      if (!children.length) container.append(el("p", "empty", emptyText));
+      if (focusedInside && activeKey) {
+        const next = container.querySelector("[data-key=\"" + CSS.escape(activeKey) + "\"]");
+        if (next) next.focus();
+      }
+    }
+    function queueButton(key, title, meta) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "row";
+      button.dataset.key = key;
+      button.setAttribute("aria-pressed", String(selectedKey === key));
+      button.append(el("span", "row-title", title), el("span", "row-meta", meta));
+      button.addEventListener("click", function () { select(key); });
+      return button;
+    }
+    function showEvidence(node) {
+      if (filter === "devices") return false;
+      if (filter === "stale") return node.status === "inactive";
+      return true;
+    }
+    function paintQueue(msg) {
+      const rows = [];
+      (msg.nodes || []).forEach(function (node) {
+        if (!showEvidence(node)) return;
+        (node.evidence || []).forEach(function (evidence) {
+          const acoustic = Boolean(ACOUSTIC[evidence.kind]);
+          if (filter === "cues" && !acoustic) return;
+          const score = evidence.conf === null || evidence.conf === undefined ? "score not reported" : "score " + evidence.conf + ", scale unknown";
+          rows.push(queueButton(
+            cueKey(node, evidence),
+            (evidence.kind || "Event") + " · Node " + node.id,
+            (acoustic ? "Review" : "Stored, does not raise priority") + " · count " + shown(evidence.count) + " · " + score + " · " + ageOf(evidence.t_host, msg)
+          ));
+        });
       });
-    }
-
-    function formatEvidence(node) {
-      if (!node.evidence || !node.evidence.length) {
-        return "  no acoustic evidence";
+      if (filter !== "cues") {
+        (msg.devices || []).forEach(function (device) {
+          const heard = nodeById(msg, device.heard_by);
+          if (filter === "stale" && (!heard || heard.status !== "inactive")) return;
+          rows.push(queueButton(
+            deviceKey(device),
+            "Device evidence · heard by Node " + shown(device.heard_by),
+            shown(device.kind) + " · " + shown(device.hash) + " · radio evidence, not a person · " + ageOf(device.t_host, msg)
+          ));
+        });
       }
-      return node.evidence.map((item) => {
-        return "  " + item.kind + " x" + item.count + "  peak " + item.peak_db + " dB  conf " + item.conf;
-      }).join("\n");
+      const waiting = !(msg.nodes || []).length && !(msg.devices || []).length;
+      replaceList(document.getElementById("queue"), rows, waiting ? "Waiting for a gateway line. No sensors have reported to this host." : "Nothing matches this filter.");
     }
-
-    function formatState(msg) {
-      const lines = [];
-      (msg.nodes || []).forEach((node) => {
-        lines.push("N" + node.id + "  " + node.status + "  " + node.search_priority + "  hops " + node.hops);
-        lines.push(formatEvidence(node));
+    function paintRoster(msg) {
+      const cards = [];
+      (msg.nodes || []).forEach(function (node) {
+        if (filter === "cues" && node.search_priority !== "elevated") return;
+        if (filter === "devices") return;
+        if (filter === "stale" && node.status !== "inactive") return;
+        const key = "node:" + node.id;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "card";
+        button.dataset.key = key;
+        button.setAttribute("aria-pressed", String(selectedKey === key));
+        const report = reportingLabel(node);
+        const cue = cueLabel(node);
+        button.append(el("span", "card-title", "Node " + node.id), el("span", markClass(report), report), el("span", markClass(cue), cue), el("span", "card-meta", "Last seen " + ageOf(node.last_t_host, msg)));
+        button.addEventListener("click", function () { select(key); });
+        cards.push(button);
       });
-      if (msg.devices && msg.devices.length) {
-        lines.push("devices (hashed, not a person, not a location)");
-        msg.devices.forEach((dev) => {
-          lines.push("  " + dev.hash + "  " + dev.kind + "  " + dev.rssi_max + " dBm  x" + dev.count + "  heard by N" + dev.heard_by);
-        });
-      }
-      if (msg.links && msg.links.length) {
-        lines.push("reported neighbors (not distances)");
-        msg.links.forEach((link) => {
-          lines.push("  N" + link.a + " → N" + link.b + "  " + link.rssi + " dBm");
-        });
-      }
-      if (msg.ranges && msg.ranges.length) {
-        lines.push("range reports (delay only, not a calibrated distance)");
-        msg.ranges.forEach((item) => {
-          lines.push("  N" + item.src + " heard chirper N" + item.chirper + "  delay " + item.delay_us + " us");
-        });
-      }
-      lines.push(msg.banner && msg.banner.disclaimer ? msg.banner.disclaimer : "");
-      return lines.join("\n");
+      replaceList(document.getElementById("roster"), cards, (msg.nodes || []).length ? "No sensors match this filter." : "No sensors observed yet.");
     }
-
-    function render(msg) {
-      const banner = document.getElementById("banner");
-      if (!msg || msg.v !== 1) {
-        banner.textContent = "Unrecognized state version";
-        document.getElementById("log").textContent = "This page only renders /ws version 1.";
+    function fact(list, name, value) {
+      list.append(el("dt", "", name), el("dd", "", value));
+    }
+    function paintEmptyDetail() {
+      document.getElementById("detail-empty").hidden = false;
+      document.getElementById("detail-body").hidden = true;
+    }
+    function freshness(node) {
+      if (socketState !== "connected") return "Not live. Cached from the last socket message.";
+      if (node && node.status === "inactive") return "Stale. Historical evidence is retained.";
+      if (node && node.status === "active") return "Fresh. A line arrived inside the stale window.";
+      return "Unknown";
+    }
+    function clean(value) {
+      if (Array.isArray(value)) return value.map(clean);
+      if (!value || typeof value !== "object") return value === null ? "Not reported" : value;
+      const copy = {};
+      Object.keys(value).forEach(function (key) {
+        copy[key] = value[key] === null || value[key] === undefined ? "Not reported" : clean(value[key]);
+      });
+      return copy;
+    }
+    function technicalNode(node, msg) {
+      const ranges = (msg.ranges || []).filter(function (item) { return item.src === node.id || item.chirper === node.id; });
+      return {
+        id: node.id,
+        status: node.status || "Unknown",
+        position: node.position === null || node.position === undefined ? "Not reported" : node.position,
+        seq: shown(node.seq),
+        hops: shown(node.hops),
+        rssi_last_dbm: shown(node.rssi_last),
+        battery_mv: shown(node.batt_mv),
+        floor_db: shown(node.floor_db),
+        neighbors_not_distances: node.nbrs && node.nbrs.length ? node.nbrs : "Not reported",
+        latest_feat: node.latest_feat ? clean(node.latest_feat) : "Not reported",
+        evidence: (node.evidence || []).map(clean),
+        timing_reports_not_metres: ranges.length ? ranges.map(clean) : "Not reported"
+      };
+    }
+    function observedText(node) {
+      const evidence = node.evidence || [];
+      if (!evidence.length) return "No acoustic evidence retained for this node.";
+      return evidence.map(function (item) {
+        return (item.kind || "Event") + " × " + shown(item.count) + ", peak " + shown(item.peak_db, " dB") + ", score " + shown(item.conf);
+      }).join(". ") + ".";
+    }
+    function paintDetail(msg) {
+      const selected = findSelection(msg);
+      if (!selected) {
+        selectedKey = null;
+        paintEmptyDetail();
         return;
       }
-      banner.classList.toggle("wait", !msg.banner || msg.banner.possible_acoustic === 0);
-      banner.textContent = msg.banner.text;
-      const fine = document.createElement("span");
-      fine.className = "fine";
-      fine.textContent = msg.banner.disclaimer || "not a confirmed location";
-      banner.appendChild(fine);
-      document.getElementById("nodes").textContent = msg.counts.nodes_active + " / " + msg.counts.nodes_seen;
-      document.getElementById("pps").textContent = String(msg.counts.packets_per_s);
-      document.getElementById("bps").textContent = String(msg.counts.bytes_per_s);
-      document.getElementById("mode").textContent = msg.localization_mode + (msg.simulated ? " · SIMULATED" : "");
-      document.getElementById("log").textContent = formatState(msg);
-      drawRoster(msg);
+      document.getElementById("detail-empty").hidden = true;
+      document.getElementById("detail-body").hidden = false;
+      const facts = document.getElementById("detail-facts");
+      facts.replaceChildren();
+      if (selected.type === "device") {
+        const device = selected.device;
+        document.getElementById("detail-kicker").textContent = "Device evidence";
+        document.getElementById("detail-name").textContent = shown(device.kind);
+        fact(facts, "Hash", shown(device.hash));
+        fact(facts, "Heard by", "Node " + shown(device.heard_by));
+        fact(facts, "When", ageOf(device.t_host, msg));
+        fact(facts, "Position", "Not reported");
+        fact(facts, "Freshness", freshness(selected.node));
+        document.getElementById("detail-observed").textContent = "Radio evidence of a hashed advertisement. RSSI " + shown(device.rssi_max, " dBm") + ", advertisement count " + shown(device.count) + ".";
+        document.getElementById("detail-limit").textContent = "This is not a person, a name, a survivor count, a location, or a claim of anonymity.";
+        document.getElementById("detail-raw").textContent = JSON.stringify(clean(device), null, 2);
+        return;
+      }
+      const node = selected.node;
+      document.getElementById("detail-kicker").textContent = selected.type === "cue" ? "Acoustic cue" : "Sensor";
+      document.getElementById("detail-name").textContent = selected.type === "cue" ? (selected.evidence.kind || "Event") + " on Node " + node.id : "Node " + node.id;
+      fact(facts, "Reporting", reportingLabel(node));
+      fact(facts, "Last seen", ageOf(node.last_t_host, msg));
+      fact(facts, "Acoustic cue", cueLabel(node));
+      fact(facts, "Position", positionText(node.position));
+      fact(facts, "Freshness", freshness(node));
+      if (selected.type === "cue") {
+        const evidence = selected.evidence;
+        fact(facts, "Observed", (evidence.kind || "Event") + ", count " + shown(evidence.count) + ", peak " + shown(evidence.peak_db, " dB"));
+        fact(facts, "When", ageOf(evidence.t_host, msg));
+        fact(facts, "Detector score", evidence.conf === null || evidence.conf === undefined ? "Not reported" : String(evidence.conf) + " (unsigned integer, scale unknown, not a probability)");
+        document.getElementById("detail-observed").textContent = "Node " + node.id + " reported this detector event. It is not a person and not a dig location.";
+        document.getElementById("detail-limit").textContent = "A score such as 80 is not an 80 percent probability of a person. Stale evidence is retained; inactive does not mean cleared or safe.";
+        document.getElementById("detail-raw").textContent = JSON.stringify({ node: technicalNode(node, msg), evidence: clean(evidence) }, null, 2);
+        return;
+      }
+      document.getElementById("detail-observed").textContent = observedText(node);
+      document.getElementById("detail-limit").textContent = node.status === "inactive"
+        ? "Stale means this node stopped reporting. It does not mean the evidence was cleared or that the area is safe."
+        : "This card is evidence from one node. It is not a location.";
+      document.getElementById("detail-raw").textContent = JSON.stringify(technicalNode(node, msg), null, 2);
     }
-
-    drawWaiting();
-
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const host = location.host || "127.0.0.1:8000";
-    let socket;
-
-    function setConnected(on, detail) {
-      document.getElementById("conn").textContent = detail;
-      document.getElementById("conn-dot").classList.toggle("on", on);
+    function paintTimeline(msg) {
+      const items = [];
+      (msg.nodes || []).forEach(function (node) {
+        (node.evidence || []).forEach(function (evidence) {
+          items.push({ t: evidence.t_host || 0, text: "Node " + node.id + " · " + (evidence.kind || "event") + " retained · " + ageOf(evidence.t_host, msg) });
+        });
+      });
+      (msg.devices || []).forEach(function (device) {
+        items.push({ t: device.t_host || 0, text: "Node " + shown(device.heard_by) + " · device evidence " + shown(device.kind) + " · " + ageOf(device.t_host, msg) });
+      });
+      (msg.ranges || []).forEach(function (range) {
+        items.push({ t: range.t_host || 0, text: "Node " + shown(range.src) + " · timing report, delay " + shown(range.delay_us, " µs") + ", not a distance · " + ageOf(range.t_host, msg) });
+      });
+      items.sort(function (a, b) { return b.t - a.t; });
+      const list = document.getElementById("timeline");
+      list.replaceChildren();
+      if (!items.length) {
+        list.append(el("li", "", "No retained activity yet."));
+        return;
+      }
+      items.slice(0, 8).forEach(function (item) { list.append(el("li", "", item.text)); });
     }
-
+    function paintDiagnostics(msg) {
+      const counts = msg.counts || {};
+      document.getElementById("diag-socket").textContent = socketUrl() || "Unknown";
+      document.getElementById("diag-pps").textContent = Number.isFinite(counts.packets_per_s) ? String(counts.packets_per_s) : "Unknown";
+      document.getElementById("diag-bps").textContent = Number.isFinite(counts.bytes_per_s) ? String(counts.bytes_per_s) : "Unknown";
+      document.getElementById("diag-packets").textContent = Number.isFinite(counts.packets) ? String(counts.packets) : "Unknown";
+      document.getElementById("diag-stale").textContent = Number.isFinite(msg.stale_after_ms) ? msg.stale_after_ms + " ms" : "Unknown";
+      document.getElementById("diag-mode").textContent = msg.localization_mode || "Unknown";
+      document.getElementById("diag-banner").textContent = msg.banner && msg.banner.text ? msg.banner.text : "Unknown";
+      document.getElementById("diag-ignored").textContent = ignoredVersion ? String(ignoredVersion) : "None";
+      document.getElementById("diag-raw").textContent = JSON.stringify(msg, null, 2);
+      const links = document.getElementById("diag-links");
+      links.replaceChildren();
+      if (!(msg.links || []).length) links.append(el("p", "empty", "Not reported"));
+      else (msg.links || []).forEach(function (link) {
+        links.append(el("p", "", "Node " + shown(link.a) + " reported neighbor " + shown(link.b) + " at " + shown(link.rssi, " dBm. Not a distance.")));
+      });
+      const ranges = document.getElementById("diag-ranges");
+      ranges.replaceChildren();
+      if (!(msg.ranges || []).length) ranges.append(el("p", "empty", "Not reported"));
+      else (msg.ranges || []).forEach(function (range) {
+        ranges.append(el("p", "", "Node " + shown(range.src) + " heard chirper " + shown(range.chirper) + ", delay " + shown(range.delay_us, " µs. Not a calibrated distance.")));
+      });
+    }
+    function paintStatus(msg) {
+      const source = document.getElementById("source");
+      if (msg.simulated === true) {
+        source.textContent = "SIMULATION";
+        source.dataset.mode = "simulation";
+      } else if (msg.simulated === false) {
+        source.textContent = "LIVE";
+        source.dataset.mode = "live";
+      } else {
+        source.textContent = "Unknown";
+        source.dataset.mode = "unknown";
+      }
+      const loc = document.getElementById("loc");
+      if (!msg.localization_mode) loc.textContent = "Unknown";
+      else if (msg.localization_mode === "UNLOCALIZED") loc.textContent = "Unavailable";
+      else loc.textContent = String(msg.localization_mode);
+      document.getElementById("tak").textContent = "Not implemented";
+      document.getElementById("cue-count").textContent = msg.banner && Number.isFinite(msg.banner.possible_acoustic) ? String(msg.banner.possible_acoustic) : "Unknown";
+      const counts = msg.counts || {};
+      document.getElementById("reporting").textContent = Number.isFinite(counts.nodes_active) && Number.isFinite(counts.nodes_seen)
+        ? counts.nodes_active + " of " + counts.nodes_seen
+        : "Unknown";
+      const times = (msg.nodes || []).map(function (node) { return node.last_t_host; }).filter(function (value) { return Number.isFinite(value); });
+      document.getElementById("latest-age").textContent = times.length ? ageOf(Math.max.apply(null, times), msg) : "Unknown";
+    }
+    function render(msg) {
+      latest = msg;
+      paintStatus(msg);
+      paintQueue(msg);
+      paintRoster(msg);
+      paintDetail(msg);
+      paintTimeline(msg);
+      paintDiagnostics(msg);
+    }
+    async function refreshReplay() {
+      const button = document.getElementById("replay");
+      try {
+        const response = await fetch("/demo");
+        if (!response.ok) throw new Error("unavailable");
+        const body = await response.json();
+        button.hidden = !body.available;
+        const note = document.getElementById("action-note");
+        if (body.available && note.textContent.indexOf("Checking whether") === 0) {
+          note.textContent = "Replay restarts the simulated script through ingest. It does not send a hardware command.";
+        }
+        if (!body.available && note.textContent.indexOf("Checking whether") === 0) {
+          note.textContent = "Replay is not available on this process. Restart the server to play a script again. This page will not reset a live session.";
+        }
+      } catch (err) {
+        button.hidden = true;
+      }
+    }
+    async function replayDemo() {
+      const button = document.getElementById("replay");
+      const note = document.getElementById("action-note");
+      button.disabled = true;
+      note.textContent = "Restarting the simulated script through ingest.";
+      try {
+        const response = await fetch("/demo/replay", { method: "POST" });
+        const body = await response.json();
+        if (!response.ok || !body.ok) {
+          note.textContent = body.error || "Replay failed. State was not reset.";
+          return;
+        }
+        selectedKey = null;
+        latest = null;
+        paintEmptyDetail();
+        document.getElementById("cue-count").textContent = "—";
+        document.getElementById("reporting").textContent = "—";
+        document.getElementById("latest-age").textContent = "Restarting";
+        document.getElementById("queue").replaceChildren(el("p", "empty", "Demo restarted. Waiting for the scripted baseline."));
+        document.getElementById("roster").replaceChildren();
+        document.getElementById("timeline").replaceChildren(el("li", "", "Waiting for the restarted script."));
+        note.textContent = "Demo restarted through the simulator. Waiting for the scripted baseline. No hardware command was sent.";
+      } catch (err) {
+        note.textContent = "Replay failed. The browser could not reach the server. No hardware command was sent.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+    document.getElementById("replay").addEventListener("click", replayDemo);
+    document.querySelectorAll("[data-filter]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        filter = button.dataset.filter;
+        document.querySelectorAll("[data-filter]").forEach(function (item) {
+          item.setAttribute("aria-pressed", String(item === button));
+        });
+        if (latest) render(latest);
+      });
+    });
     function connect() {
-      const url = proto + "://" + host + "/ws";
+      const url = socketUrl();
+      if (!url) {
+        setSocket("disconnected");
+        document.getElementById("action-note").textContent = "Open this page from the fusion host. A file URL has no server.";
+        return;
+      }
+      if (socket && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) return;
       try {
         socket = new WebSocket(url);
       } catch (err) {
-        setConnected(false, "cannot open " + url);
+        setSocket("disconnected");
         return;
       }
-      socket.addEventListener("open", () => setConnected(true, "connected to " + url));
-      socket.addEventListener("message", (event) => {
+      socket.addEventListener("open", function () {
+        setSocket("connected");
+        refreshReplay();
+      });
+      socket.addEventListener("message", function (event) {
         let msg;
-        try {
-          msg = JSON.parse(event.data);
-        } catch (err) {
-          document.getElementById("banner").textContent = "Unrecognized state version";
+        try { msg = JSON.parse(event.data); } catch (err) { return; }
+        if (!msg || msg.v !== 1) {
+          ignoredVersion += 1;
+          const ignored = document.getElementById("diag-ignored");
+          if (ignored) ignored.textContent = String(ignoredVersion);
           return;
         }
         render(msg);
       });
-      socket.addEventListener("close", () => {
-        setConnected(false, "fusion host not connected");
-        document.getElementById("banner").textContent = "Waiting for fusion host";
-        window.setTimeout(connect, 3000);
+      socket.addEventListener("close", function () {
+        setSocket("disconnected");
+        if (latest) render(latest);
+        if (retryTimer) window.clearTimeout(retryTimer);
+        retryTimer = window.setTimeout(function () {
+          setSocket("reconnecting");
+          connect();
+        }, 1500);
       });
-      socket.addEventListener("error", () => setConnected(false, "socket error"));
+      socket.addEventListener("error", function () { setSocket("disconnected"); });
     }
-
+    document.getElementById("diag-socket").textContent = socketUrl() || "Unknown";
+    refreshReplay();
     if (location.protocol === "file:") {
-      setConnected(false, "open through the fusion host, not as a file");
+      setSocket("disconnected");
+      document.getElementById("action-note").textContent = "Open this page from the fusion host. A file URL has no server.";
     } else {
       connect();
     }

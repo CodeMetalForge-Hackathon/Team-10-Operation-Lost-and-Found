@@ -16,10 +16,10 @@ fusion/serial_ingest.py     one parser, five published types
 fusion/state.py             nodes, evidence, device hashes
         │  no positions
         ▼
-fusion/server.py            GET /  and  GET /ws  at 2 Hz
+fusion/server.py            GET /, GET /ws, and simulation replay
         │
         ▼
-ui/index.html               roster, not a floor-plan fix
+ui/index.html               operations overview, not a floor-plan fix
 ```
 
 TAK is still the planned primary output. The page is the secondary dashboard. Nothing in this repo sends Cursor-on-Target yet.
@@ -30,11 +30,12 @@ TAK is still the planned primary output. The page is the secondary dashboard. No
 |---|---|
 | Gateway JSON contract, including `device_seen` | Written by William in `docs/ARCHITECTURE.md`. This branch does not change it. |
 | Serial reader (`python -m fusion.serial_ingest`) | Draft PR #8. Accepts the five JSON types from a port or a file. |
-| Static page shell | Draft PR #7. This branch renders proposed `/ws` version 1 on that page. |
+| Static page shell | Draft PR #7, replaced on this branch by the operations overview. |
 | Simulated gateway script | `python -m sim.demo`. Scripted lines, not a physics model, not a recording. |
 | Fusion state and WebSocket host | This branch. No localization math. |
 | Node positions, heatmap, source count | Not implemented. `localization_mode` is `UNLOCALIZED`. |
-| `POST /cmd`, `POST /anchor`, `POST /baseline` | Named in the architecture doc. Bodies are not agreed. Not implemented. Buttons stay disabled. |
+| `POST /cmd`, `POST /anchor`, `POST /baseline` | Named in the architecture doc. Bodies are not agreed. Not implemented. They are explained in Diagnostics, not shown as buttons. |
+| Simulation replay | `POST /demo/replay` on a `--demo` process only. See `docs/DEMO_GUIDE.md`. |
 | ESP32 firmware | Not in this repo. William owns it. |
 | `tak.py` / WinTAK | Not implemented. See below. |
 | Drone, LED-ID, Hailo | Not in this iteration. The AI accelerator is not required. |
@@ -76,6 +77,8 @@ python -m fusion.server --demo
 
 Open http://127.0.0.1:8000
 
+The running weekend demo may already be on another port. Identify it before starting a second one. Commands, replay, and the occupied-port case are in [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md).
+
 What you should see, in order:
 
 1. Node 3 appears on the roster. The spacing is not a location.
@@ -107,7 +110,7 @@ python -m fusion.server --gateway /dev/serial/by-id/usb-PASTE-THE-SYMLINK-HERE
 
 `ui/index.html` is still one static page. No React.
 
-It speaks only proposed `/ws` version 1. Nodes are drawn in a row so a missing position cannot be mistaken for a dig point. Command buttons stay disabled.
+It speaks only proposed `/ws` version 1. Sensors are listed, not plotted, so a missing position cannot be mistaken for a dig point. Command buttons are not shown. Replay demo appears only for a `--demo` process.
 
 ## Interfaces
 
