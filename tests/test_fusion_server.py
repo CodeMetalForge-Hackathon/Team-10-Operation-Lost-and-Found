@@ -34,11 +34,12 @@ class DashboardSocketTest(unittest.TestCase):
 
         with TestClient(app) as client:
             page = client.get("/")
+            script = client.get("/assets/review.js")
             self.assertEqual(page.status_code, 200)
             self.assertIn("Operations overview", page.text)
             self.assertNotIn("Where to dig", page.text)
-            self.assertIn("/ws", page.text)
-            self.assertIn("msg.v !== 1", page.text)
+            self.assertIn("/ws", script.text)
+            self.assertIn("msg.v !== 1", script.text)
             self.assertIn(
                 "Acoustic cues require verification. Positions are not available.",
                 page.text,

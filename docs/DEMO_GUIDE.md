@@ -6,123 +6,70 @@ The page title is Operations overview. A connected browser is not a TAK connecti
 
 ## Open the page that is already running
 
-If someone already started the demo on port 8765:
+The evidence-review page verified on 2026-11-07 is:
 
 ```bash
-open http://127.0.0.1:8765/
+open http://127.0.0.1:8775/
 ```
 
-Identify that process without stopping it:
+Port 8765 can still be an older checkout. Identify the process before assuming which page you opened:
 
 ```bash
-lsof -nP -iTCP:8765 -sTCP:LISTEN
-```
-
-The command column should be `python -m fusion.server`. The cwd of that PID is the checkout it is serving. On macOS:
-
-```bash
+lsof -nP -iTCP:8775 -sTCP:LISTEN
 lsof -a -p PID -d cwd
 ```
 
 Replace `PID` with the number from `lsof`. Do not run `kill` unless you mean to stop that exact process.
 
-## Environment
+## Start
 
-`python3` on this Mac is 3.9. Use 3.11.
-
-```bash
-cd ~/Projects/codemetal
-python3.11 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r requirements.txt
-```
-
-A git worktree does not bring `.venv` with it. From a worktree, either create a venv there or call the main checkout's interpreter with that worktree as the working directory:
+This worktree has no `.venv`. The command below was run from the evidence-review checkout with the main checkout's interpreter. `--listen 8775` was free. Do not start a second process on a port that is already listening.
 
 ```bash
-cd ~/Projects/codemetal-worktrees/operator-ui
+cd ~/Projects/codemetal-worktrees/evidence-review
 /Users/offamacbook/Projects/codemetal/.venv/bin/python -m fusion.server --demo --host 127.0.0.1 --listen 8775
 ```
 
-Change the path if your checkout is somewhere else. Do not point a Pi browser at `127.0.0.1` on the laptop. The page builds the socket URL from the page origin.
+`scripts/run-demo.sh` was not used. It looks for `.venv` in the current checkout, and this worktree does not have one.
 
-## Start
+What the served page showed:
 
-Default port is 8000. This weekend's running demo has used 8765. Pick one and do not start a second process on it.
-
-```bash
-cd ~/Projects/codemetal
-. .venv/bin/activate
-python -m fusion.server --demo --host 127.0.0.1 --listen 8765
-```
-
-Or, if the port is free:
-
-```bash
-cd ~/Projects/codemetal
-./scripts/run-demo.sh 8765
-```
-
-`scripts/run-demo.sh` exits if the port is taken. It does not kill the process that owns it.
-
-What you should see, in order:
-
-1. Data source `SIMULATION`, connection `Connected`, localization `Unavailable`, TAK `Not implemented`.
-2. Node 3 reports a `TAP_PATTERN`. The summary shows 1 possible acoustic cue. That is not a survivor count.
-3. Node 4 reports hashed device evidence. It does not increment the cue count.
-4. After about 10 seconds node 3 is stale. Its tap stays on the card. Stale does not mean cleared.
-5. Node 2 can appear because a timing report names it as `src`. It is an observed id, not a deployed-node count.
-
-The spacing is not a map. Positions stay unreported.
+1. Source `SIMULATION`, browser `Connected`, sensors `1 reporting · 2 stale` after node 3 aged out, TAK `Not implemented`.
+2. The queue selected `Tap pattern` on Node 3. Evidence age and sensor staleness were separate. The raw event `TAP_PATTERN` stayed in the detail panel.
+3. Node 4's newer line did not make the Node 3 cue look fresh.
+4. The timeline plotted host-receipt time by sensor. A circle was the tap. Triangles were radio evidence. Node 2 had a row and no mark.
 
 ## Stop
 
-Stop only the fusion server PID. This does not kill other Python processes.
+Stop only the fusion server PID on the port you started. This does not kill other Python processes.
 
 ```bash
-lsof -nP -iTCP:8765 -sTCP:LISTEN
+lsof -nP -iTCP:8775 -sTCP:LISTEN
 kill PID
 ```
 
-`kill PID` sends TERM to that one process. If it does not exit, `kill -9 PID` is the last resort for that same PID. Do not use `killall python` or `pkill -f python`.
+`kill PID` sends TERM. If it does not exit, `kill -9 PID` is the last resort for that same PID. Do not use `killall python` or `pkill -f python`.
 
 ## Replay
 
-On a `--demo` process, the page shows Replay demo. It `POST`s `/demo/replay`, which clears retained state and plays `sim/demo.py` again through the same ingest parser. It does not send a hardware command.
-
-From another terminal, the same call:
+On a `--demo` process, Replay demo `POST`s `/demo/replay`. The same call from another terminal, verified against the 8775 process:
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8765/demo/replay
+curl -sS -X POST http://127.0.0.1:8775/demo/replay
 ```
 
-A live `--gateway` process, and a `--simulate` file process, return 409. Do not expect Replay demo on those. Restart the process instead:
+It clears retained demo observations and plays `sim/demo.py` again through ingest. It does not send a hardware command. The page keeps an explicit selection instead of jumping to the new cue. A snapshot that has not cleared yet is still the previous demo run.
+
+## Tests
 
 ```bash
-# stop the PID first, as above, then:
-cd ~/Projects/codemetal
-. .venv/bin/activate
-python -m fusion.server --simulate tests/fixtures/sample_gateway.txt --host 127.0.0.1 --listen 8765
+cd ~/Projects/codemetal-worktrees/evidence-review
+/Users/offamacbook/Projects/codemetal/.venv/bin/python -m unittest discover -s tests
 ```
 
-That file is loaded at once. It is not the paced demo script.
+That run included `tests/review_policy_check.cjs` via `node`. 29 tests passed. The suite does not open a serial port.
 
-## Tests and the raw fixture
-
-```bash
-cd ~/Projects/codemetal
-. .venv/bin/activate
-python -m unittest discover -s tests
-```
-
-Or:
-
-```bash
-cd ~/Projects/codemetal
-./scripts/run-tests.sh
-```
-
-The fixture is `tests/fixtures/sample_gateway.txt`. The suite reads it. It does not open a serial port.
+The spacing is not a map. Positions stay unreported.
 
 ## Branch and commit
 
@@ -159,15 +106,11 @@ HAIL, BLINK IDs, RANGE, QUIET MODE, and BASELINE are explained in Diagnostics. T
 | Localization | Not implemented. `localization_mode` is `UNLOCALIZED`. The page says Unavailable. |
 | Raspberry Pi | Not deployed from this guide. Do not flash or repartition a card from the laptop. |
 
-Serial, when a board is actually on the cable:
-
-```bash
-python -m fusion.server --gateway /dev/serial/by-id/usb-PASTE-THE-SYMLINK-HERE --host 127.0.0.1 --listen 8765
-```
+Serial `--gateway` was not run from this guide. Do not invent a device name. `--simulate` was not re-run in this pass. Replay returns 409 for a live gateway session and for `--simulate`; that refusal is covered by `tests/test_demo_replay.py`, not by a second server started here.
 
 ## Troubleshooting
 
-Occupied port: `lsof -nP -iTCP:8765 -sTCP:LISTEN`. Use another port, or stop that one PID if it is the fusion server you intend to replace. Do not start a second server on 8765.
+Occupied port: `lsof -nP -iTCP:8775 -sTCP:LISTEN`. Use another port, or stop that one PID if it is the fusion server you intend to replace. Do not start a second server on a port that is already listening. Port 8765 was still the older checkout when this page was verified.
 
 Wrong checkout: the process cwd is the code being served. `lsof -a -p PID -d cwd`, then `git -C THAT_DIRECTORY rev-parse HEAD`.
 
