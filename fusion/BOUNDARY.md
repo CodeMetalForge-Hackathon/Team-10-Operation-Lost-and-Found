@@ -20,14 +20,14 @@ Extra fields are passed through. They are not a new schema. `uptime_s` is in the
 
 ## Sink
 
-Fusion does not exist in this repo yet. The boundary is one method:
+Fusion now has a host on this branch: `fusion/state.py` plus `fusion/server.py`. The boundary is still one method. The server passes `FusionState` into `read_lines` / `run_port`. It does not scrape stdout and it does not parse serial a second time.
 
 ```python
 class ObservationSink:
     def accept(self, observation: dict) -> None:
-        """One validated gateway object plus t_host. Not /ws state."""
+        """One validated gateway object plus t_host. Not the /ws payload."""
 ```
 
-`python -m fusion.serial_ingest` uses a stdout sink so a person can see the line. That stdout stream is a debug view, not the fusion API. When `fusion/server.py` exists, it should pass its own sink into `run_port` or `read_lines`. It should not scrape stdout, and it should not grow a second serial parser.
+`python -m fusion.serial_ingest` still prints that object to stdout for debugging. `python -m fusion.server` is the dashboard path.
 
-`/ws` is still unspecified. This reader does not open a socket and does not decide how a gateway line becomes dashboard state.
+`/ws` version 1 is proposed in `docs/WS_CONTRACT.md`. It is not in `docs/ARCHITECTURE.md`. `POST /cmd`, `POST /anchor`, and `POST /baseline` are still not implemented.

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team 10 — operator dashboard</title>
+  <style>
+    :root {
+      --bg: #12140f;
+      --panel: #1c2018;
+      --ink: #e7e4d8;
+      --muted: #9a957f;
+      --line: #34382c;
+      --amber: #e0a106;
+      --green: #7dba6a;
+      --red: #d4654a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.4 ui-sans-serif, system-ui, sans-serif;
+    }
+    header, .strip, .controls, footer {
+      padding: 12px 16px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line);
+    }
+    h1 { font-size: 18px; font-weight: 650; margin: 0; }
+    .sub { color: var(--muted); font-size: 13px; }
+    .banner {
+      margin: 12px 16px 0;
+      padding: 14px 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      font-size: 22px;
+      font-weight: 650;
+    }
+    .banner.wait { color: var(--amber); }
+    .banner .fine {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 450;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+    canvas {
+      width: 100%;
+      height: 480px;
+      background: #0e100c;
+      border: 1px solid var(--line);
+      display: block;
+    }
+    aside, .strip, .controls {
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+    .strip, .controls { margin: 0 16px 12px; }
+    .strip { display: flex; flex-wrap: wrap; gap: 18px; }
+    .strip span { color: var(--muted); }
+    .strip strong { color: var(--ink); font-weight: 600; }
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #262b20;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 650;
+      padding: 12px 14px;
+      margin: 0 8px 8px 0;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    aside { padding: 12px; }
+    aside h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 8px; }
+    #log {
+      white-space: pre-wrap;
+      color: var(--muted);
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+      min-height: 8em;
+    }
+    footer { color: var(--muted); font-size: 12px; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--red); margin-right: 6px; }
+    .dot.on { background: var(--green); }
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      canvas { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Where to dig</h1>
+      <div class="sub">Secondary dashboard. TAK is the primary operator output. No dig coordinate is shown.</div>
+    </div>
+    <div class="sub"><span id="conn-dot" class="dot"></span><span id="conn">fusion host not connected</span></div>
+  </header>
+
+  <div id="banner" class="banner wait">Waiting for fusion host<span id="disclaimer" class="fine">not a confirmed location</span></div>
+
+  <div class="layout">
+    <canvas id="floor" width="900" height="600" aria-label="Unlocalized node roster"></canvas>
+    <aside>
+      <h2>Nodes and evidence</h2>
+      <div id="log">No state yet. This page does not invent node positions.</div>
+    </aside>
+  </div>
+
+  <div class="strip" aria-label="Status">
+    <div>Nodes alive <strong id="nodes">—</strong></div>
+    <div>Packets/s <strong id="pps">—</strong></div>
+    <div>Bytes/s <strong id="bps">—</strong></div>
+    <div>Localization <strong id="mode">—</strong></div>
+  </div>
+
+  <div class="controls">
+    <button type="button" data-cmd="HAIL" disabled>HAIL</button>
+    <button type="button" data-cmd="BLINK" disabled>BLINK IDs</button>
+    <button type="button" data-cmd="RANGE" disabled>RANGE</button>
+    <button type="button" data-cmd="QUIET" disabled title="Named in the UI spec. No command byte agreed yet.">QUIET MODE</button>
+    <div class="sub" id="cmd-note">Commands stay disabled. <code>POST /cmd</code> has no agreed body. QUIET MODE has no agreed command byte.</div>
+  </div>
+
+  <footer>
+    Gateway JSON stays in <code>docs/ARCHITECTURE.md</code>. This page renders proposed <code>/ws</code> version 1 from <code>docs/WS_CONTRACT.md</code>.
+    A roster slot is not a location. A device hash is not a person.
+  </footer>
+
+  <script>
+    const canvas = document.getElementById("floor");
+    const ctx = canvas.getContext("2d");
+
+    function drawGrid() {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = "#2a2e24";
+      ctx.lineWidth = 1;
+      for (let x = 40; x < w; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 24);
+        ctx.lineTo(x, h - 24);
+        ctx.stroke();
+      }
+      for (let y = 24; y < h; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(24, y);
+        ctx.lineTo(w - 24, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawWaiting() {
+      drawGrid();
+      ctx.fillStyle = "#9a957f";
+      ctx.font = "14px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillText("metre grid — no fusion state", 32, canvas.height - 36);
+    }
+
+    function drawRoster(msg) {
+      drawGrid();
+      const nodes = msg.nodes || [];
+      ctx.fillStyle = "#9a957f";
+      ctx.font = "14px ui-sans-serif, system-ui, sans-serif";
+      const label = msg.simulated
+        ? "SIMULATED roster — spacing is not metres, not a location"
+        : "unlocalized roster — spacing is not metres, not a location";
+      ctx.fillText(label, 32, 40);
+      ctx.fillText(msg.localization_mode || "UNLOCALIZED", 32, canvas.height - 36);
+      if (!nodes.length) {
+        return;
+      }
+      const y = 280;
+      const gap = Math.min(140, (canvas.width - 80) / nodes.length);
+      nodes.forEach((node, index) => {
+        const x = 70 + index * gap;
+        ctx.beginPath();
+        ctx.arc(x, y, 16, 0, Math.PI * 2);
+        ctx.fillStyle = node.status === "active" ? "#7dba6a" : "#5c5748";
+        ctx.fill();
+        if (node.search_priority === "elevated") {
+          ctx.beginPath();
+          ctx.arc(x, y, 24, 0, Math.PI * 2);
+          ctx.strokeStyle = "#e0a106";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#e7e4d8";
+        ctx.font = "13px ui-sans-serif, system-ui, sans-serif";
+        ctx.fillText("N" + node.id, x - 10, y + 40);
+        ctx.fillStyle = "#9a957f";
+        ctx.fillText(node.status, x - 22, y + 58);
+      });
+    }
+
+    function formatEvidence(node) {
+      if (!node.evidence || !node.evidence.length) {
+        return "  no acoustic evidence";
+      }
+      return node.evidence.map((item) => {
+        return "  " + item.kind + " x" + item.count + "  peak " + item.peak_db + " dB  conf " + item.conf;
+      }).join("\n");
+    }
+
+    function formatState(msg) {
+      const lines = [];
+      (msg.nodes || []).forEach((node) => {
+        lines.push("N" + node.id + "  " + node.status + "  " + node.search_priority + "  hops " + node.hops);
+        lines.push(formatEvidence(node));
+      });
+      if (msg.devices && msg.devices.length) {
+        lines.push("devices (hashed, not a person, not a location)");
+        msg.devices.forEach((dev) => {
+          lines.push("  " + dev.hash + "  " + dev.kind + "  " + dev.rssi_max + " dBm  x" + dev.count + "  heard by N" + dev.heard_by);
+        });
+      }
+      if (msg.links && msg.links.length) {
+        lines.push("reported neighbors (not distances)");
+        msg.links.forEach((link) => {
+          lines.push("  N" + link.a + " → N" + link.b + "  " + link.rssi + " dBm");
+        });
+      }
+      if (msg.ranges && msg.ranges.length) {
+        lines.push("range reports (delay only, not a calibrated distance)");
+        msg.ranges.forEach((item) => {
+          lines.push("  N" + item.src + " heard chirper N" + item.chirper + "  delay " + item.delay_us + " us");
+        });
+      }
+      lines.push(msg.banner && msg.banner.disclaimer ? msg.banner.disclaimer : "");
+      return lines.join("\n");
+    }
+
+    function render(msg) {
+      const banner = document.getElementById("banner");
+      if (!msg || msg.v !== 1) {
+        banner.textContent = "Unrecognized state version";
+        document.getElementById("log").textContent = "This page only renders /ws version 1.";
+        return;
+      }
+      banner.classList.toggle("wait", !msg.banner || msg.banner.possible_acoustic === 0);
+      banner.textContent = msg.banner.text;
+      const fine = document.createElement("span");
+      fine.className = "fine";
+      fine.textContent = msg.banner.disclaimer || "not a confirmed location";
+      banner.appendChild(fine);
+      document.getElementById("nodes").textContent = msg.counts.nodes_active + " / " + msg.counts.nodes_seen;
+      document.getElementById("pps").textContent = String(msg.counts.packets_per_s);
+      document.getElementById("bps").textContent = String(msg.counts.bytes_per_s);
+      document.getElementById("mode").textContent = msg.localization_mode + (msg.simulated ? " · SIMULATED" : "");
+      document.getElementById("log").textContent = formatState(msg);
+      drawRoster(msg);
+    }
+
+    drawWaiting();
+
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    const host = location.host || "127.0.0.1:8000";
+    let socket;
+
+    function setConnected(on, detail) {
+      document.getElementById("conn").textContent = detail;
+      document.getElementById("conn-dot").classList.toggle("on", on);
+    }
+
+    function connect() {
+      const url = proto + "://" + host + "/ws";
+      try {
+        socket = new WebSocket(url);
+      } catch (err) {
+        setConnected(false, "cannot open " + url);
+        return;
+      }
+      socket.addEventListener("open", () => setConnected(true, "connected to " + url));
+      socket.addEventListener("message", (event) => {
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+        } catch (err) {
+          document.getElementById("banner").textContent = "Unrecognized state version";
+          return;
+        }
+        render(msg);
+      });
+      socket.addEventListener("close", () => {
+        setConnected(false, "fusion host not connected");
+        document.getElementById("banner").textContent = "Waiting for fusion host";
+        window.setTimeout(connect, 3000);
+      });
+      socket.addEventListener("error", () => setConnected(false, "socket error"));
+    }
+
+    if (location.protocol === "file:") {
+      setConnected(false, "open through the fusion host, not as a file");
+    } else {
+      connect();
+    }
+  </script>
+</body>
+</html>

@@ -10,13 +10,22 @@ Nothing here starts on boot. There is no systemd unit.
 
 ## What can run today
 
-The only runnable piece is the serial reader:
+Two entry points:
 
 ```bash
-python -m fusion.serial_ingest
+python -m fusion.serial_ingest --simulate tests/fixtures/sample_gateway.txt
+python -m fusion.server --demo
 ```
 
-There is no `fusion/server.py`, no TAK process, and no dashboard server. The static dashboard is on draft PR #7 (`feat/dashboard-foundation`). It is not served by this reader. Opening `ui/index.html` as a file will not show serial data.
+The first prints validated gateway lines to stdout. The second serves the dashboard at http://127.0.0.1:8000 and pushes proposed `/ws` version 1. `--demo` is simulated. It is not a hardware recording.
+
+On the Pi, bind the dashboard so the laptop can open it:
+
+```bash
+python -m fusion.server --demo --host 0.0.0.0 --listen 8000
+```
+
+There is still no TAK process and no systemd unit. The AI accelerator is not used.
 
 ## Packages
 
@@ -27,7 +36,7 @@ sudo apt update
 sudo apt install -y python3 python3-venv python3-pip
 ```
 
-`pyserial` is installed in the virtualenv, not from apt, so the Pi and a laptop use the same reader.
+`pyserial`, FastAPI, and uvicorn are installed in the virtualenv, not from apt, so the Pi and a laptop use the same host. Nothing here needs the Hailo runtime.
 
 From the Team-10 checkout:
 
@@ -35,7 +44,7 @@ From the Team-10 checkout:
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m unittest tests.test_serial_ingest
+python -m unittest discover -s tests
 ```
 
 ## SSH
@@ -100,6 +109,10 @@ That file is the five gateway examples from the architecture doc, including `dev
 
 ## Dashboard
 
-This process does not feed the dashboard. The planned path is still: reader sink, then fusion state, then `/ws` at about 2 Hz, then `ui/`. The `/ws` payload is not specified. `POST /cmd`, `POST /anchor`, and `POST /baseline` are named and have no agreed body. This reader does not send HAIL, BLINK, RANGE, QUIET MODE, or BASELINE.
+`python -m fusion.server` serves `ui/index.html` and pushes state on `/ws` at about 2 Hz. The payload is proposed in `docs/WS_CONTRACT.md`. It is not yet in `docs/ARCHITECTURE.md`.
 
-PR #7 was written before `device_seen` and the layer toggle. Leave that PR as it is until the `/ws` shape is agreed. Do not parse gateway JSON in the browser.
+Opening `ui/index.html` as a file still shows nothing from the gateway. Use the server.
+
+`POST /cmd`, `POST /anchor`, and `POST /baseline` are still unnamed bodies. This server does not send HAIL, BLINK, RANGE, QUIET MODE, or BASELINE. The buttons stay disabled.
+
+PR #7 is the page shell. This branch renders version 1 on that page. It does not parse gateway JSON in the browser.
