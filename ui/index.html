@@ -44,9 +44,16 @@
       font-weight: 650;
     }
     .banner.wait { color: var(--amber); }
+    .banner .fine {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 450;
+    }
     .layout {
       display: grid;
-      grid-template-columns: 1fr 240px;
+      grid-template-columns: 1fr 320px;
       gap: 12px;
       padding: 12px 16px;
     }
@@ -98,17 +105,17 @@
   <header>
     <div>
       <h1>Where to dig</h1>
-      <div class="sub">Secondary dashboard. TAK is the primary operator output.</div>
+      <div class="sub">Secondary dashboard. TAK is the primary operator output. No dig coordinate is shown.</div>
     </div>
     <div class="sub"><span id="conn-dot" class="dot"></span><span id="conn">fusion host not connected</span></div>
   </header>
 
-  <div id="banner" class="banner wait">Waiting for fusion host</div>
+  <div id="banner" class="banner wait">Waiting for fusion host<span id="disclaimer" class="fine">not a confirmed location</span></div>
 
   <div class="layout">
-    <canvas id="floor" width="900" height="600" aria-label="Floor plan"></canvas>
+    <canvas id="floor" width="900" height="600" aria-label="Unlocalized node roster"></canvas>
     <aside>
-      <h2>Last socket message</h2>
+      <h2>Nodes and evidence</h2>
       <div id="log">No state yet. This page does not invent node positions.</div>
     </aside>
   </div>
@@ -125,19 +132,19 @@
     <button type="button" data-cmd="BLINK" disabled>BLINK IDs</button>
     <button type="button" data-cmd="RANGE" disabled>RANGE</button>
     <button type="button" data-cmd="QUIET" disabled title="Named in the UI spec. No command byte agreed yet.">QUIET MODE</button>
-    <div class="sub" id="cmd-note">Commands stay disabled until <code>fusion/server.py</code> is up. QUIET MODE has no agreed command byte.</div>
+    <div class="sub" id="cmd-note">Commands stay disabled. <code>POST /cmd</code> has no agreed body. QUIET MODE has no agreed command byte.</div>
   </div>
 
   <footer>
-    Contract: <code>docs/ARCHITECTURE.md</code>. Gateway JSON is not redefined here.
-    Expected later: <code>GET /</code> serves this file, <code>GET /ws</code> pushes state, <code>POST /cmd</code> sends HAIL, BLINK, RANGE, TXPOWER.
+    Gateway JSON stays in <code>docs/ARCHITECTURE.md</code>. This page renders proposed <code>/ws</code> version 1 from <code>docs/WS_CONTRACT.md</code>.
+    A roster slot is not a location. A device hash is not a person.
   </footer>
 
   <script>
     const canvas = document.getElementById("floor");
     const ctx = canvas.getContext("2d");
 
-    function drawWaiting() {
+    function drawGrid() {
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
@@ -155,9 +162,107 @@
         ctx.lineTo(w - 24, y);
         ctx.stroke();
       }
+    }
+
+    function drawWaiting() {
+      drawGrid();
       ctx.fillStyle = "#9a957f";
       ctx.font = "14px ui-sans-serif, system-ui, sans-serif";
-      ctx.fillText("metre grid — no fusion state", 32, h - 36);
+      ctx.fillText("metre grid — no fusion state", 32, canvas.height - 36);
+    }
+
+    function drawRoster(msg) {
+      drawGrid();
+      const nodes = msg.nodes || [];
+      ctx.fillStyle = "#9a957f";
+      ctx.font = "14px ui-sans-serif, system-ui, sans-serif";
+      const label = msg.simulated
+        ? "SIMULATED roster — spacing is not metres, not a location"
+        : "unlocalized roster — spacing is not metres, not a location";
+      ctx.fillText(label, 32, 40);
+      ctx.fillText(msg.localization_mode || "UNLOCALIZED", 32, canvas.height - 36);
+      if (!nodes.length) {
+        return;
+      }
+      const y = 280;
+      const gap = Math.min(140, (canvas.width - 80) / nodes.length);
+      nodes.forEach((node, index) => {
+        const x = 70 + index * gap;
+        ctx.beginPath();
+        ctx.arc(x, y, 16, 0, Math.PI * 2);
+        ctx.fillStyle = node.status === "active" ? "#7dba6a" : "#5c5748";
+        ctx.fill();
+        if (node.search_priority === "elevated") {
+          ctx.beginPath();
+          ctx.arc(x, y, 24, 0, Math.PI * 2);
+          ctx.strokeStyle = "#e0a106";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#e7e4d8";
+        ctx.font = "13px ui-sans-serif, system-ui, sans-serif";
+        ctx.fillText("N" + node.id, x - 10, y + 40);
+        ctx.fillStyle = "#9a957f";
+        ctx.fillText(node.status, x - 22, y + 58);
+      });
+    }
+
+    function formatEvidence(node) {
+      if (!node.evidence || !node.evidence.length) {
+        return "  no acoustic evidence";
+      }
+      return node.evidence.map((item) => {
+        return "  " + item.kind + " x" + item.count + "  peak " + item.peak_db + " dB  conf " + item.conf;
+      }).join("\n");
+    }
+
+    function formatState(msg) {
+      const lines = [];
+      (msg.nodes || []).forEach((node) => {
+        lines.push("N" + node.id + "  " + node.status + "  " + node.search_priority + "  hops " + node.hops);
+        lines.push(formatEvidence(node));
+      });
+      if (msg.devices && msg.devices.length) {
+        lines.push("devices (hashed, not a person, not a location)");
+        msg.devices.forEach((dev) => {
+          lines.push("  " + dev.hash + "  " + dev.kind + "  " + dev.rssi_max + " dBm  x" + dev.count + "  heard by N" + dev.heard_by);
+        });
+      }
+      if (msg.links && msg.links.length) {
+        lines.push("reported neighbors (not distances)");
+        msg.links.forEach((link) => {
+          lines.push("  N" + link.a + " → N" + link.b + "  " + link.rssi + " dBm");
+        });
+      }
+      if (msg.ranges && msg.ranges.length) {
+        lines.push("range reports (delay only, not a calibrated distance)");
+        msg.ranges.forEach((item) => {
+          lines.push("  N" + item.src + " heard chirper N" + item.chirper + "  delay " + item.delay_us + " us");
+        });
+      }
+      lines.push(msg.banner && msg.banner.disclaimer ? msg.banner.disclaimer : "");
+      return lines.join("\n");
+    }
+
+    function render(msg) {
+      const banner = document.getElementById("banner");
+      if (!msg || msg.v !== 1) {
+        banner.textContent = "Unrecognized state version";
+        document.getElementById("log").textContent = "This page only renders /ws version 1.";
+        return;
+      }
+      banner.classList.toggle("wait", !msg.banner || msg.banner.possible_acoustic === 0);
+      banner.textContent = msg.banner.text;
+      const fine = document.createElement("span");
+      fine.className = "fine";
+      fine.textContent = msg.banner.disclaimer || "not a confirmed location";
+      banner.appendChild(fine);
+      document.getElementById("nodes").textContent = msg.counts.nodes_active + " / " + msg.counts.nodes_seen;
+      document.getElementById("pps").textContent = String(msg.counts.packets_per_s);
+      document.getElementById("bps").textContent = String(msg.counts.bytes_per_s);
+      document.getElementById("mode").textContent = msg.localization_mode + (msg.simulated ? " · SIMULATED" : "");
+      document.getElementById("log").textContent = formatState(msg);
+      drawRoster(msg);
     }
 
     drawWaiting();
@@ -181,8 +286,14 @@
       }
       socket.addEventListener("open", () => setConnected(true, "connected to " + url));
       socket.addEventListener("message", (event) => {
-        document.getElementById("log").textContent = String(event.data).slice(0, 4000);
-        document.getElementById("banner").textContent = "State received — display mapping not agreed yet";
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+        } catch (err) {
+          document.getElementById("banner").textContent = "Unrecognized state version";
+          return;
+        }
+        render(msg);
       });
       socket.addEventListener("close", () => {
         setConnected(false, "fusion host not connected");
