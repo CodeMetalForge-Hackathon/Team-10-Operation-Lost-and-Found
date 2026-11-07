@@ -13,6 +13,11 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 - 2026-11-07 ~13:30: **The drone is simulated by carrying the Pi 5 payload by hand** and dropping nodes manually at logged points. Why: the Cetus X payload is about 15–30 g and the Pi 5 payload weighs well over 100 g. The architecture doesn't change: the drone is just another mesh node with a camera. A real Cetus X single-node drop is an optional video clip.
 - 2026-11-07 ~13:30: The HT-203U thermal camera is low priority. Integrate it only if it works as a UVC webcam.
 
+- 2026-11-07 ~14:00: **Add passive phone/device detection** (BLE advertisements + Wi-Fi probe requests) as a firmware feature: new `DEVICE_SEEN` message type 7 and a second heatmap layer (RF), fused with acoustic. Why: it detects victims who are unconscious or can't tap (phones, watches and iPhone powered-off Find My beacons transmit with no network), uses the existing ESP32 radio at $0 extra, and adds a strong "novel combination" for ideation.
+- 2026-11-07 ~14:00: Device detection is **receive-only, with hashed IDs and no cellular transmission**. Why: privacy and legality (a fake cell tower needs licensed spectrum; it is mentioned only as a production path).
+- 2026-11-07 ~14:00: Priority order is now DEVICE_SEEN before acoustic ranging. Why: device detection is a new detection channel with high demo value; node localization already has fallbacks (anchors and signal strength).
+- Known risk: the demo room is full of other teams' phones. Mitigations: BASELINE exclusion, stationarity, strong-signal-at-one-node scoring. Demo the hidden phone under boxes on the floor (strong at one node).
+
 ## What existed before this weekend
 - Open-source: Arduino-ESP32 core, ESP-NOW, NumPy/SciPy/scikit-learn, FastAPI, pytak, TAK/WinTAK.
 - Pretrained models (if used): YAMNet (Google AudioSet).

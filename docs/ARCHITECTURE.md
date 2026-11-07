@@ -36,6 +36,21 @@
   - Passive piezo driven by `ledc` at about 4 kHz.
   - Used for the HAIL prompt and for ranging chirps.
 - **LED:** blinks its ID code (Manchester-style, about 5 Hz) on the `BLINK_ID` command, so the overhead camera can identify it.
+- **Phone/device detection (passive RF; receive only, never transmit):**
+  - **BLE scan** (the BLE library in core 3.x, or NimBLE-Arduino):
+    - Passive scan **2 s out of every 10 s** (adjustable with `SET_SCAN`), so ESP-NOW keeps most of the shared radio time.
+    - Classify each advertisement by its data:
+      - Apple manufacturer ID `0x004C` gives `BLE_APPLE`.
+      - Apple payload type `0x12` (the offline Find My beacon, broadcast even when the iPhone is powered off) gives `BLE_FINDMY`.
+      - Google Fast Pair / Find Hub service UUIDs (e.g. `0xFE2C`) give `BLE_GOOGLE`.
+      - Anything else is `BLE_OTHER`.
+      - Verify these IDs with a real phone.
+  - **Wi-Fi probe requests:**
+    - Use promiscuous mode with filter `WIFI_PROMIS_FILTER_MASK_MGMT` and keep frames of subtype `0x40` (probe request).
+    - This only works on channel 1, the same channel as ESP-NOW. Phones scan every channel, so we catch a subset.
+  - **Privacy:** never send raw MAC addresses. Send `hash32 = FNV-1a(MAC ‖ deployment_salt)`.
+  - **Aggregation:** keep a table over each 10 s window: hash → `{kind, rssi_max, count}`. Ignore our own nodes' MACs. Send the strongest 20 as one `DEVICE_SEEN` packet.
+  - **Risk to clear first:** confirm BLE scanning and ESP-NOW can run together on the **C5**, and that the BLE library builds for the C5 under core 3.3. If the C5 can't, scan on the S3s only.
 
 ## 2. Message format (CONTRACT: change only with team agreement)
 
@@ -60,9 +75,11 @@ Common header, 8 bytes:
 | 4 | CHIRP | `t_us u32` (the sender buzzes as it transmits) | on command |
 | 5 | RANGE | `chirper u8, delay_us u32, snr_db i8` | after hearing a chirp |
 | 6 | CMD | `cmd u8, arg i16, target u8 (255 = all)` | flooded downlink from gateway |
+| 7 | DEVICE_SEEN | `t_ms u32, n u8, devs[n]{hash u32, kind u8, rssi_max i8, count u8}` (7 B/device, n ≤ 20) | every 10 s if any were seen |
 
 - EVENT `kind`: 1 = LOUD, 2 = TAP_PATTERN, 3 = VOICE_LIKE, 4 = RADAR_PRESENCE, 5 = GAS.
-- CMD `cmd`: 1 = HAIL, 2 = BLINK_ID, 3 = START_RANGING (nodes chirp in ID order, 500 ms apart), 4 = SET_TX_POWER, 5 = SET_RATE, 6 = PING.
+- CMD `cmd`: 1 = HAIL, 2 = BLINK_ID, 3 = START_RANGING (nodes chirp in ID order, 500 ms apart), 4 = SET_TX_POWER, 5 = SET_RATE, 6 = PING, 7 = SET_SCAN (arg = BLE scan seconds per 10 s window; 0 = off), 8 = SET_SALT (arg = deployment salt).
+- DEVICE_SEEN `kind`: 1 = BLE_OTHER, 2 = BLE_APPLE, 3 = BLE_FINDMY, 4 = BLE_GOOGLE, 5 = WIFI_PROBE.
 
 ### Gateway → host (one JSON object per line over USB serial, 921600 baud)
 ```json
@@ -70,6 +87,7 @@ Common header, 8 bytes:
 {"type":"feat","src":3,"seq":121,"hops":1,"rssi_last":-58,"t_ms":51234,"rms_db":-40,"low_db":-50,"voice_db":-42,"high_db":-55,"peak_db":-30}
 {"type":"event","src":3,"seq":122,"hops":2,"rssi_last":-70,"t_ms":51800,"kind":"TAP_PATTERN","peak_db":-20,"voice_db":-35,"count":3,"conf":80}
 {"type":"range","src":2,"chirper":3,"delay_us":10450,"snr_db":18}
+{"type":"device_seen","src":4,"seq":88,"hops":1,"rssi_last":-61,"t_ms":60000,"devs":[["9f3a01c2","BLE_APPLE",-52,14],["07bb4e10","WIFI_PROBE",-70,2]]}
 ```
 - The host adds `t_host`, its own arrival timestamp.
 - Host → gateway commands go back over the same serial port as text, e.g. `CMD HAIL 0 255\n`.
@@ -93,10 +111,21 @@ Common header, 8 bytes:
   - Likelihood `exp(−SSR/2σ²)` gives the **heatmap**. Accumulate it with decay over time.
   - **Count:** DBSCAN on the peak locations of the last N minutes, split by event kind, reported as "N distinct sources (confidence)".
   - **Stretch:** time-difference-of-arrival (TDoA) using the onset timestamps, once ranging has proven the nodes' timing.
+- **RF device layer (`localize_devices.py`), the second heatmap layer:**
+  - For each device hash, take the strongest signal at every node over the last 60 s.
+  - **Position estimate:** a likelihood grid using the same signal-strength-to-distance model as node ranging, with a large σ because signals pass through rubble. As a fallback, use a weighted average of node positions with weight `10^(rssi/20)`.
+  - **Candidate-survivor score.** Without filtering, every passer-by's phone would light up the map, so a device must be:
+    1. **not in the baseline.** The UI's BASELINE button records every hash seen at the command post before the drop (the responders' own phones) and excludes them.
+    2. **stationary.** The set of nodes that hear it, and their signal strengths, stay stable for ≥ 2 min. Responders walking past show up at changing nodes.
+    3. **strong at one or two nodes**, e.g. `rssi_max > −65 dBm` at its nearest node.
+  - **Address rotation:** phones change their BLE address about every 15 min. When a hash disappears and a new one appears within about 30 s, at the same nodes, with similar signal strength and the same kind, treat them as the same device.
+  - **Fused "survivor likelihood"** = `1 − (1−P_acoustic)(1−P_rf)`, shown as its own layer. The acoustic and RF layers are independent evidence.
+  - **Counts are reported separately**, e.g. "2 acoustic sources · 1 stationary device".
 - **server.py:** FastAPI app.
   - `/ws` pushes state at 2 Hz.
   - POST `/cmd` sends HAIL, BLINK, RANGE, TXPOWER.
   - POST `/anchor` handles manual drag-to-place.
+  - POST `/baseline` marks currently seen devices as friendly or background.
   - Static UI is in `ui/`.
 - **tak.py:** CoT over UDP multicast `239.2.3.1:6969` (the TAK multicast channel for sharing positions), using `pytak` or raw XML.
   - **Local frame to latitude/longitude:**
@@ -107,14 +136,15 @@ Common header, 8 bytes:
     - each node → sensor/equipment point (e.g. `a-f-G-E-S`), with the node ID and battery in the remarks;
     - each live source estimate → point (e.g. `a-u-G`), with the label "Possible survivor: TAP x3, conf 0.8, ±1.5 m";
     - a confirmed source → CASEVAC / medevac marker type;
+    - a candidate-survivor device → point (e.g. `a-u-G`), with the label "Device signal: BLE_FINDMY, −52 dBm near N3, stationary 4 min, ±3 m";
     - heatmap hotspots → circle or polygon drawing shapes, coloured by likelihood;
     - set `stale` short (about 30 s) so dead information ages out.
 
 ## 4. UI (`ui/`, a single static page)
 - Canvas showing a floor-plan or drone-mosaic background image, with a metre grid.
 - Nodes drawn as dots with their IDs. Mesh links drawn coloured by signal strength. Hop count shown.
-- Heatmap overlay. Source markers with their count.
-- **Big buttons:** HAIL, BLINK IDs, RANGE, QUIET MODE.
+- Heatmap overlay with **layer toggle: Acoustic / RF devices / Fused**. Source markers (🔊) and device markers (📱) with their counts.
+- **Big buttons:** HAIL, BLINK IDs, RANGE, QUIET MODE, BASELINE (mark responder phones).
 - **Status strip:** nodes alive, packets per second, bytes per second, localization mode (ANCHORED / RELATIVE).
 - The panel's "red light / green light" advice: a single big banner, `0 / 1 / 2 possible survivors`.
 
@@ -138,6 +168,6 @@ docs/                 these docs
 ```
 
 ## Bandwidth budget (deployability talking point)
-- Per node: BEACON about 30 B every 2 s, plus FEAT 16 B at 1 Hz, plus occasional events. That's about **35 B/s per node**.
-- Raw 16 kHz 16-bit audio (the reference paper's approach) is 32,000 B/s, about **900× more**.
-- Flooding multiplies traffic by the node count. 50 nodes × 35 B/s × 50 is about 90 kB/s, well within what ESP-NOW can carry. Larger fields use TTL limits and cluster heads.
+- Per node: BEACON about 30 B every 2 s, plus FEAT 16 B at 1 Hz, plus DEVICE_SEEN (about 13 + 7n B every 10 s, so about 8 B/s with 10 devices), plus occasional events. That's about **45 B/s per node**.
+- Raw 16 kHz 16-bit audio (the reference paper's approach) is 32,000 B/s, about **700× more**.
+- Flooding multiplies traffic by the node count. 50 nodes × 45 B/s × 50 is about 110 kB/s, well within what ESP-NOW can carry. Larger fields use TTL limits and cluster heads.

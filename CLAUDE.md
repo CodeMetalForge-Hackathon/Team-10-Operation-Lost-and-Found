@@ -21,12 +21,14 @@ Shared context for every teammate's Claude Code session. Read this first, then t
 - We trade precision for portability and cost: the goal is metre-level "dig here" guidance, not centimetre accuracy.
 
 ## Architecture in 30 seconds
-- **Node** (ESP32-S3 or ESP32-C5, plus microphone, buzzer and LED, about $15): runs on-board signal processing (noise floor, band energies, tap-pattern detection) and sends **small feature packets, never a raw audio stream**.
+- **Node** (ESP32-S3 or ESP32-C5, plus microphone, piezo contact disc, buzzer and LED, about $15):
+  - runs on-board signal processing (noise floor, band energies, tap-pattern detection) and sends **small feature packets, never a raw audio stream**;
+  - **also passively scans for phones and wearables** (BLE advertisements and Wi-Fi probe requests, receive only, hashed IDs) and reports them as `DEVICE_SEEN`.
 - **Mesh:** ESP-NOW broadcast with flooding (rebroadcast with a hop limit, de-duplicated). No router, no infrastructure.
 - **Gateway:** an ESP32 on USB serial to the fusion host. It prints JSON lines.
 - **Fusion host** (develop on William's Windows laptop, deploy to the Pi 5 later; Python):
   - node localization, combining anchors, acoustic ranging and signal-strength ranging;
-  - acoustic source heatmap;
+  - acoustic source heatmap, plus an RF device layer and a fused layer;
   - source clustering and count;
   - a web dashboard;
   - **Cursor-on-Target (CoT) output to WinTAK**.

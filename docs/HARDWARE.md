@@ -22,6 +22,7 @@
 | *Fallback:* Grove sound sensor or MAX9814 analog microphone | Loudness only (still fine for energy-based localization) | Grove 40-in-1 kit | have |
 | Passive piezo buzzer | HAIL prompt + ranging chirp | Grove kit / library / Micro Center | $0.50 |
 | Bright LED (+ resistor) | Optical ID for the drone camera | Library | $0.10 |
+| *(built in)* ESP32 radio, BLE scan + Wi-Fi promiscuous mode | **Passive phone/wearable detection** (`DEVICE_SEEN`) | have | **$0** |
 | Power: USB power bank (demo) or 300–500 mAh LiPo (production) | 1–2 h runtime | Library "batteries" / Micro Center | $3–10 |
 | Piezo disc (bare, 27 mm) | **Contact/seismic tap sensor** pressed to the ground ("hears" through rubble) | Micro Center | $0.30 |
 | *Optional hero node:* mmWave radar (LD2410 or whatever the library has) | Stationary-person (breathing) detection | Library "Radar & Motion" | $3–5 |
