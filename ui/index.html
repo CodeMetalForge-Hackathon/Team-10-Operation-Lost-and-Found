@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team 10 — operator dashboard</title>
+  <style>
+    :root {
+      --bg: #12140f;
+      --panel: #1c2018;
+      --ink: #e7e4d8;
+      --muted: #9a957f;
+      --line: #34382c;
+      --amber: #e0a106;
+      --green: #7dba6a;
+      --red: #d4654a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.4 ui-sans-serif, system-ui, sans-serif;
+    }
+    header, .strip, .controls, footer {
+      padding: 12px 16px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line);
+    }
+    h1 { font-size: 18px; font-weight: 650; margin: 0; }
+    .sub { color: var(--muted); font-size: 13px; }
+    .banner {
+      margin: 12px 16px 0;
+      padding: 14px 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      font-size: 22px;
+      font-weight: 650;
+    }
+    .banner.wait { color: var(--amber); }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+    canvas {
+      width: 100%;
+      height: 480px;
+      background: #0e100c;
+      border: 1px solid var(--line);
+      display: block;
+    }
+    aside, .strip, .controls {
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+    .strip, .controls { margin: 0 16px 12px; }
+    .strip { display: flex; flex-wrap: wrap; gap: 18px; }
+    .strip span { color: var(--muted); }
+    .strip strong { color: var(--ink); font-weight: 600; }
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #262b20;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 650;
+      padding: 12px 14px;
+      margin: 0 8px 8px 0;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    aside { padding: 12px; }
+    aside h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 8px; }
+    #log {
+      white-space: pre-wrap;
+      color: var(--muted);
+      font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+      min-height: 8em;
+    }
+    footer { color: var(--muted); font-size: 12px; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--red); margin-right: 6px; }
+    .dot.on { background: var(--green); }
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      canvas { height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Where to dig</h1>
+      <div class="sub">Secondary dashboard. TAK is the primary operator output.</div>
+    </div>
+    <div class="sub"><span id="conn-dot" class="dot"></span><span id="conn">fusion host not connected</span></div>
+  </header>
+
+  <div id="banner" class="banner wait">Waiting for fusion host</div>
+
+  <div class="layout">
+    <canvas id="floor" width="900" height="600" aria-label="Floor plan"></canvas>
+    <aside>
+      <h2>Last socket message</h2>
+      <div id="log">No state yet. This page does not invent node positions.</div>
+    </aside>
+  </div>
+
+  <div class="strip" aria-label="Status">
+    <div>Nodes alive <strong id="nodes">—</strong></div>
+    <div>Packets/s <strong id="pps">—</strong></div>
+    <div>Bytes/s <strong id="bps">—</strong></div>
+    <div>Localization <strong id="mode">—</strong></div>
+  </div>
+
+  <div class="controls">
+    <button type="button" data-cmd="HAIL" disabled>HAIL</button>
+    <button type="button" data-cmd="BLINK" disabled>BLINK IDs</button>
+    <button type="button" data-cmd="RANGE" disabled>RANGE</button>
+    <button type="button" data-cmd="QUIET" disabled title="Named in the UI spec. No command byte agreed yet.">QUIET MODE</button>
+    <div class="sub" id="cmd-note">Commands stay disabled until <code>fusion/server.py</code> is up. QUIET MODE has no agreed command byte.</div>
+  </div>
+
+  <footer>
+    Contract: <code>docs/ARCHITECTURE.md</code>. Gateway JSON is not redefined here.
+    Expected later: <code>GET /</code> serves this file, <code>GET /ws</code> pushes state, <code>POST /cmd</code> sends HAIL, BLINK, RANGE, TXPOWER.
+  </footer>
+
+  <script>
+    const canvas = document.getElementById("floor");
+    const ctx = canvas.getContext("2d");
+
+    function drawWaiting() {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = "#2a2e24";
+      ctx.lineWidth = 1;
+      for (let x = 40; x < w; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 24);
+        ctx.lineTo(x, h - 24);
+        ctx.stroke();
+      }
+      for (let y = 24; y < h; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(24, y);
+        ctx.lineTo(w - 24, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#9a957f";
+      ctx.font = "14px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillText("metre grid — no fusion state", 32, h - 36);
+    }
+
+    drawWaiting();
+
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    const host = location.host || "127.0.0.1:8000";
+    let socket;
+
+    function setConnected(on, detail) {
+      document.getElementById("conn").textContent = detail;
+      document.getElementById("conn-dot").classList.toggle("on", on);
+    }
+
+    function connect() {
+      const url = proto + "://" + host + "/ws";
+      try {
+        socket = new WebSocket(url);
+      } catch (err) {
+        setConnected(false, "cannot open " + url);
+        return;
+      }
+      socket.addEventListener("open", () => setConnected(true, "connected to " + url));
+      socket.addEventListener("message", (event) => {
+        document.getElementById("log").textContent = String(event.data).slice(0, 4000);
+        document.getElementById("banner").textContent = "State received — display mapping not agreed yet";
+      });
+      socket.addEventListener("close", () => {
+        setConnected(false, "fusion host not connected");
+        document.getElementById("banner").textContent = "Waiting for fusion host";
+        window.setTimeout(connect, 3000);
+      });
+      socket.addEventListener("error", () => setConnected(false, "socket error"));
+    }
+
+    if (location.protocol === "file:") {
+      setConnected(false, "open through the fusion host, not as a file");
+    } else {
+      connect();
+    }
+  </script>
+</body>
+</html>
