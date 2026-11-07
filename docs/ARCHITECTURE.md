@@ -26,14 +26,14 @@
   - Starting TTL is 4.
   - The transmit power is adjustable by command, so we can force multi-hop on a small floor.
 - **Audio:**
-  - I2S MEMS microphone at 16 kHz. Fallback: an analog microphone on the ADC.
+  - Grove Sound Sensor (analog) on the ADC at 16 kHz (ADC continuous driver). Fallback: Grove Loudness Sensor (loudness level only). Taps are also caught by a Grove Vibration SW-420 contact switch (digital interrupt, timestamps only).
   - Every 50 ms frame, compute RMS in dB and three band energies: low 60–300 Hz, voice 300–3000 Hz, high 3000–8000 Hz. Use cheap IIR band-pass filters or a 256-point FFT.
   - Track the noise floor as an exponential moving average of quiet frames.
   - **Onset detection:** the frame is more than `floor + 12 dB` and rising fast. Record a microsecond timestamp for each onset.
   - **Tap pattern:** 2–5 onsets with 150–700 ms spacing inside a 3 s window gives a `TAP_PATTERN` event.
   - **Voice-like:** voice-band energy stays above the floor for more than 400 ms and dominates the other bands.
 - **Buzzer:**
-  - Passive piezo driven by `ledc` at about 4 kHz.
+  - Grove Buzzer driven by `ledc` at its resonance (about 2.3 kHz).
   - Used for the HAIL prompt and for ranging chirps.
 - **LED:** blinks its ID code (Manchester-style, about 5 Hz) on the `BLINK_ID` command, so the overhead camera can identify it.
 - **Phone/device detection (passive RF; receive only, never transmit):**

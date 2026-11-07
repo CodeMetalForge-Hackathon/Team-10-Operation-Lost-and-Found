@@ -24,6 +24,10 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 - 2026-11-07 ~16:45: **The gateway sends each CMD 3× with the same sequence number** (nodes de-duplicate). Why: ESP-NOW broadcast has no acknowledgement or retry. Delivery went from occasional misses to 9/10 on a weak link.
 - Gotchas: on `XIAO_ESP32S3_Plus`, the option `CDCOnBoot=cdc` means *Disabled*, so `tools/flash.py` uses the board defaults for the S3. WinTAK and Bambu Studio poll COM ports and break flashing.
 
+- 2026-11-07 (evening): **Sensors switch to Grove modules: Grove Sound Sensor (analog, D0) replaces the Adafruit ICS-43434 I2S mic; Grove Vibration SW-420 (digital, D1) replaces the piezo disc; Grove Buzzer (D4) is the chirp/HAIL source.** Why: we couldn't get the Adafruit mic, and the Grove kit has enough modules on hand. Costs: lower audio quality, and taps give timing only, no amplitude. The message format is unchanged. If the sound sensor turns out to output loudness only, band energies and chirp ranging degrade and node positions lean on anchors.
+- 2026-11-07 (evening): All Grove modules are powered from **3V3, not 5V**. Why: the XIAO's 5V pin only carries USB power, so it is dead on battery.
+- 2026-11-07 (evening): Grove Speaker → command post/hero node HAIL only; Grove Vibration Motor → "fake survivor" knock prop; Grove Mini PIR not used (can't see into voids).
+
 ## What worked / didn't / unfinished
 - ✅ C5↔C5 ESP-NOW, C5→S3 gateway JSON, multi-hop forwarding (hops=1 observed), gateway→node commands.
 

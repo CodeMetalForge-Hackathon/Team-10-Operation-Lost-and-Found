@@ -400,6 +400,11 @@ void flushDevices() {
 // ---------- setup / loop ----------
 void setup() {
   Serial.begin(921600);
+#if ARDUINO_USB_CDC_ON_BOOT && !ARDUINO_USB_MODE_TINYUSB
+  // USB-Serial/JTAG: if a host is attached but nobody reads the port, prints would block and stall
+  // the mesh (observed: relays ~15 s late). Never block on Serial.
+  Serial.setTxTimeoutMs(0);
+#endif
   delay(1500);
   if (LED_PIN >= 0) pinMode(LED_PIN, OUTPUT);
   randomSeed(esp_random());
