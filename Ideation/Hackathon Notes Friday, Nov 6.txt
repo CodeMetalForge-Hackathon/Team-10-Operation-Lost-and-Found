@@ -1,0 +1,100 @@
+Hackathon Notes: Friday, Nov 6
+Speakers
+Brandon O'Neil, Navy SEAL
+West Coast SEAL teams
+Master's at MIT (undersea robotics and navigation), then PhD track at MIT
+Returned to the West Coast and worked in Navy special warfare command acquisition
+Works on AI and intelligence for the Navy
+Nic Lopez, Colonel, Green Beret
+Works in venture capital and banking, covering acquisition strategy and private equity (e.g., undersea cables)
+Gregory Kowlzowski, 10th Special Forces
+Currently at the Natick Soldier Center [?], focused on research and technology
+Has planned and executed operations in Africa, Europe, the Middle East, and South/Central America
+Focus: what special operations looks like in 2040; knowledgeable on operational matters
+Fireside Chat: The Colonel
+Background
+Air Force Academy, combat rescue officer
+Motivated by rescue failures in the first Gulf War (downed pilots)
+Rescue missions in Denali and over water; spent time in Alaska (lost hunters, skiers, boats)
+Rescue is a team sport; it is very rare for a single operator to do anything alone
+Mentioned a 60 Minutes piece on an American rescue operation
+Mentioned open-source photos showing a plane that had to be destroyed on the ground, a hard problem in GPS-denied environments
+Mindset
+Bottom-up development: everyone in the room can contribute
+Human lives are the most important thing; we must preserve them
+Don't fixate on the finished product. Focus on the quality of the idea and its impact
+Remove the who, where, and when to get at the core engineering problem without constraints
+How to think about finding people
+The gap: tracking something, whether a trace, a video image, a signal, something the person carries, or an absence of something that should be there
+Think like a hunter or fisherman: stalking a deer or choosing where to fish
+What is the right signal or trace to look for?
+How do you get a sensor in the right place?
+Can it be repeatable and survivable?
+Build in a primary, alternate, and emergency plan
+Alternative solutions also help you notice the trace nobody thought to look for
+Existing tech and its limits
+Emergency locator beacons: legacy VHF beacons are line-of-sight and require proximity; some are gaining over-the-horizon capability
+Low-RF tags are increasingly used
+Other signal sources: cell phones, acoustics, other people's information, AdTech, and patterns of life
+Mentioned hacking into the enemy's phones as another way to obtain signals
+Iridium tracking devices already exist
+Beacon struggles: making them truly secure, with low probability of intercept and detection
+Signals must be truly unique, and radios don't need to be big; small form factors work
+Strong encryption is needed
+Locating someone over water can be even harder than over land
+The enemy has sensors listening for different signals
+Operator constraints
+Operators already carry a huge loadout, and weight is critical, especially over multi-day carries
+A cellphone weighs a lot at that scale; also consider wear and tear
+A new piece of gear is not a great idea. Integrate into something that already exists, or a device that fits the existing loadout
+Special operations command has the manpower; operators need to be able to fight
+Hot topics
+Smaller robotic aircraft, drone swarms, and drones that can lift a person
+Not yet well integrated into search and rescue, and not used across the full spectrum of signals (the waveform spectrum)
+Tactics, techniques, and procedures are underdeveloped. How could autonomy be leveraged?
+Dual-use technology, military-focused VC, and new startups
+"There is nothing the government has made that can't be done better"
+Closing themes
+Agility and integration are prioritized in new technologies
+Persistent problems: power, lack of connectivity, bad weather, signal issues around mountain ranges, lat/long accuracy, low satellite connectivity
+There is still a need for both humans and drones
+Panel Q&A
+How do you build trust in tech?
+Human-machine teaming example: undersea diving operations. If you show up with a fancy widget, they won't like it
+Overcome this through iterative demonstration, using the solution in the environment it's meant for
+Ground-truth it against technology the organization already uses
+An AI solution should be integrated as a test case alongside how a wargame is normally run
+Outcomes and measurements must be measurable: what does the tool actually do for time saved, mission success, etc.?
+The military is huge, so ask whether the investment is worth it at that scale
+Founder credibility: the best startups (1) are in love with the problem and know it intimately, and (2) know the people they're solving it for
+Know a specific segment or type of warfighter
+What technology do you wish existed (or didn't)?
+Tired of carrying things. The answer isn't necessarily miniaturization or optimization, but augmenting humans with added capability
+No batteries or cables on people!
+Countering fiber-optic drones (detection, data aggregation, delivering a defense)
+A good communications architecture for maritime operational drones
+Alternative positioning, navigation, and timing (PNT)
+Systems must be easy to operate and run on simple power
+Radio and satellite comms use a lot of battery, and higher command wants near-constant connectivity. Comms, C2, and navigation are all power-heavy
+How should we think about this problem?
+Think about the whole problem, but don't try to solve all of it
+Build something an operator would embrace in the worst conditions, with all senses degraded, tired, and needing something to happen fast
+Which tools (sensor fusion, faster data digestion) would help a team run a mission?
+Ask what the problem is and who owns it. Seek out veterans and talk with them a lot
+Dual use: first responders, Forest Service, etc.
+Related problem: maritime domain awareness
+Focus on one aspect you can handle: soldiers, Marines, or sailors in a denied environment who need assistance
+Help the lost individual, or help the people looking for them?
+Operators act predictably based on training (e.g., ground operators try to stay on top of a ridgeline)
+In mountain search and rescue, humans act unpredictably
+Are we designing support for a rational actor or a trained person?
+Example: will someone hear a drone overhead and run (thinking it's an enemy) or signal it (thinking it's friendly)?
+Full map, or red light / green light?
+Entirely scenario-dependent. In a comfortable room with time, give me all the data. Undersea, give me something closer to red/green
+Most important: state your assumptions clearly and say exactly which scenario you're solving for
+Precision vs. ease of transport?
+Sacrifice precision for portability. The Navy SEAL said yes
+How will the product adapt to changing situations (different electromagnetic conditions and environments)?
+Where is AI applied effectively?
+Deployed at comms centers for real-time decision support, and for running wargames of scenarios five years out
+Enhancements and tools for unmanned systems, AI-assisted creative design of large unmanned systems, and cybersecurity
