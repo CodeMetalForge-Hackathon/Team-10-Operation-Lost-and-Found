@@ -1,11 +1,18 @@
 # Hardware
 
-## Board allocation (we have 2× ESP32-S3-Plus and 4× ESP32-C5)
+## Board allocation (we have 2× Seeed XIAO ESP32-S3 Plus and 5× Seeed XIAO ESP32-C5)
 | Board | Role | Why |
 |---|---|---|
-| ESP32-S3-Plus #1 | **Gateway** (USB to the fusion host) | More reliable USB serial and PSRAM; stays at the command post |
-| ESP32-S3-Plus #2 | **Drone bridge** (USB to the Pi 5) | Same reasons |
-| ESP32-C5 ×4 | **Field nodes** 1–4 | RISC-V, 2.4 GHz and 5 GHz Wi-Fi, I2S, ESP-NOW. Run on 2.4 GHz channel 1 to talk to the S3s |
+| XIAO ESP32-S3 Plus #1 | **Gateway** (USB to the fusion host) | Mature support, reliable USB serial; stays at the command post |
+| XIAO ESP32-S3 Plus #2 | **Drone bridge** (USB to the Pi 5) | Same reasons |
+| XIAO ESP32-C5 ×5 | **Field nodes** 1–5, each with an **external I2S MEMS mic** | 8 MB PSRAM (enable under Tools → PSRAM), built-in LiPo charging and battery-voltage sensing, 11 GPIO, U.FL antenna. Run on 2.4 GHz channel 1 to talk to the S3s |
+
+- **Pin budget per C5 node (6 of 11 GPIO):**
+  - I2S mic (SCK, WS, SD);
+  - passive buzzer (LEDC PWM);
+  - LED;
+  - piezo disc on an ADC pin.
+- **An antenna must be attached to every board** (U.FL connector).
 
 - **Four field nodes is the minimum** for 2-D localization with redundancy. **Ask the hackathon library for more plain ESP32s** (listed under "Additional Compute") so we can reach 6–8 field nodes.
 - The gateway can also carry a microphone and act as an extra sensing node sitting at the command post.
@@ -50,15 +57,23 @@
 - An ESP32-C5 with ESP-NOW receive always on draws about 80–100 mA. A 400 mAh LiPo gives about **4 h**, which meets the 1–2 h requirement with margin.
 - With duty cycling (radio wakes for 100 ms each second, microphone stays always-on with a low-power wake-on-loud-sound comparator), average draw is about 20 mA, giving about **20 h**. That covers the multi-day rescue reality.
 
-## Wiring (fill in once boards are in hand)
-| Signal | C5 pin | S3 pin |
-|---|---|---|
-| I2S BCLK / SCK | TBD | TBD |
-| I2S WS / LRCL | TBD | TBD |
-| I2S SD / DOUT | TBD | TBD |
-| Buzzer (LEDC PWM) | TBD | TBD |
-| LED | TBD | TBD |
-| Piezo disc (ADC, 1 MΩ to GND) | TBD | TBD |
+## Wiring: XIAO ESP32-C5 field node (provisional; **check against Seeed's official pinout before soldering**)
+One mic, one piezo, one buzzer and one LED per node use **6 of the 11 pins (D0–D10)**. The S3 gateway and drone bridge need no sensor wiring.
+
+| Signal | XIAO pin | GPIO | Notes |
+|---|---|---|---|
+| Piezo disc (ADC) | **D0** | GPIO1 | The only pin Seeed's table clearly labels ADC. 1 MΩ to GND across the piezo, plus 2× 1N4148 clamps to 3V3 and GND |
+| Passive buzzer | **D4** | | LEDC PWM at about 4 kHz. A bare piezo buzzer can be driven directly. A *magnetic* buzzer (>20 mA) needs an NPN transistor + diode |
+| LED | **D5** | | 220 Ω series resistor |
+| I2S SCK / BCLK | **D8** | | The ESP32's internal pin routing lets any GPIO carry I2S |
+| I2S WS / LRCL | **D9** | | |
+| I2S SD / DOUT (mic → MCU) | **D10** | | |
+| Mic VDD / GND, L/R select | 3V3 / GND | | Tie the mic's L/R pin to GND (left channel) |
+| Battery | BAT+ / BAT− pads (back) | | 3.7 V LiPo, charged by the on-board charger |
+
+- **Avoid D2 (GPIO25) and D3 (GPIO7).** They may be strapping or boot pins, and sources disagree.
+- **Spare pins:** D1, D6, D7 (D6/D7 = UART TX/RX for an mmWave radar on a hero node).
+- The board has a single 3V3 pin and a single GND pin, so use a mini breadboard rail or a soldered splice to share them.
 
 ## Micro Center (Cambridge) shopping list, only if the library lacks it (check closing time)
 - 4–6× ESP32 dev boards (Inland / Adafruit / SparkFun)
