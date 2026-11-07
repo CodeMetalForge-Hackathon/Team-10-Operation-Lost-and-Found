@@ -123,14 +123,19 @@ void updateNeighbor(const RxItem &it, const PktHeader &h) {
 
 // ---------- sending ----------
 static uint16_t txSeq = 0;
-void sendPacket(uint8_t type, const void *payload, size_t plen) {
+// repeats > 1: resend the identical packet (same seq) so receivers de-dup it. Used for CMDs,
+// because ESP-NOW broadcast has no ACK/retry and a lost command is worse than a duplicate.
+void sendPacket(uint8_t type, const void *payload, size_t plen, int repeats = 1) {
   uint8_t buf[PKT_MAX_LEN];
   PktHeader h{PKT_MAGIC, type, (uint8_t)NODE_ID, START_TTL, 0, txSeq++, 0};
   if (sizeof(h) + plen > PKT_MAX_LEN) return;
   memcpy(buf, &h, sizeof(h));
   memcpy(buf + sizeof(h), payload, plen);
   alreadySeen(h.src, h.seq);  // never re-forward our own packet
-  esp_now_send(BCAST, buf, sizeof(h) + plen);
+  for (int i = 0; i < repeats; i++) {
+    if (i) delay(15 + random(0, 15));
+    esp_now_send(BCAST, buf, sizeof(h) + plen);
+  }
 }
 
 // Rebroadcasts are delayed by random jitter so neighbors don't collide.
@@ -303,7 +308,7 @@ void readSerialCommands() {
       else if (n == "SCAN") c.cmd = CMD_SET_SCAN;
       else if (n == "SALT") c.cmd = CMD_SET_SALT;
       if (c.cmd) {
-        sendPacket(PKT_CMD, &c, sizeof(c));
+        sendPacket(PKT_CMD, &c, sizeof(c), 3);
         Serial.printf("# sent CMD %s arg=%d target=%d\n", name, arg, target);
       } else {
         Serial.printf("# unknown command %s\n", name);

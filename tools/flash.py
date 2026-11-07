@@ -17,7 +17,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLI = os.path.expandvars(r"%LOCALAPPDATA%\Programs\Arduino IDE\resources\app\lib\backend\resources\arduino-cli.exe")
 FQBN = {
     "c5": "esp32:esp32:XIAO_ESP32C5:CDCOnBoot=cdc",
-    "s3": "esp32:esp32:XIAO_ESP32S3_Plus:CDCOnBoot=cdc",
+    # NOTE: on XIAO_ESP32S3_Plus, CDCOnBoot=default means *Enabled* (cdc = Disabled!), so use board defaults.
+    "s3": "esp32:esp32:XIAO_ESP32S3_Plus",
 }
 ROLES = {"node": 1, "gateway": 2, "drone": 3}
 

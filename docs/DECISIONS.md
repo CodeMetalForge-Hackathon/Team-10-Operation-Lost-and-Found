@@ -20,10 +20,15 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 
 - 2026-11-07: **Mic = Adafruit ICS-43434 I2S MEMS breakout (#6049), the same model on all 5 C5 nodes.** Why: available at Micro Center today, digital I2S with fixed gain (no automatic gain control), works with ESP32. One mic and one piezo per node.
 
+- 2026-11-07 ~16:30: **Measured signal strength on the demo floor** (`data/rssi_calibration.csv`): −40 dBm at 1 m, −46 at 2 m, −44 at 4 m, −44 at 8 m; a wooden desk made no difference. The fitted path-loss exponent is about 0.3, so **signal strength can't measure distance at room scale.** It's a weak term in the solver (σ ≥ 6 dB) and serves only as a neighbor graph. Node positions come from anchors (camera, manual) and acoustic ranging. The mesh range is ample (about −44 dBm at 8 m), so demonstrating multi-hop relaying requires the lowest transmit power.
+- 2026-11-07 ~16:45: **The gateway sends each CMD 3× with the same sequence number** (nodes de-duplicate). Why: ESP-NOW broadcast has no acknowledgement or retry. Delivery went from occasional misses to 9/10 on a weak link.
+- Gotchas: on `XIAO_ESP32S3_Plus`, the option `CDCOnBoot=cdc` means *Disabled*, so `tools/flash.py` uses the board defaults for the S3. WinTAK and Bambu Studio poll COM ports and break flashing.
+
+## What worked / didn't / unfinished
+- ✅ C5↔C5 ESP-NOW, C5→S3 gateway JSON, multi-hop forwarding (hops=1 observed), gateway→node commands.
+
 ## What existed before this weekend
 - Open-source: Arduino-ESP32 core, ESP-NOW, NumPy/SciPy/scikit-learn, FastAPI, pytak, TAK/WinTAK.
 - Pretrained models (if used): YAMNet (Google AudioSet).
 - Everything else in this repo was built during the event.
 
-## What worked / didn't / unfinished
-(keep this updated; it answers judge question #3)
