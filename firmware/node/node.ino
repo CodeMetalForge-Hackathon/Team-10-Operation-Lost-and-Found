@@ -18,14 +18,17 @@
 #include <esp_wifi.h>
 #include "protocol.h"
 
-// ======================= EDIT PER BOARD =======================
+// Role constants (do not edit)
 #define ROLE_NODE 1
 #define ROLE_GATEWAY 2
 #define ROLE_DRONE_BRIDGE 3
 
-#define ROLE ROLE_NODE
-#define NODE_ID 1
-// ===============================================================
+// ======================= EDIT PER BOARD (only these two lines) =======================
+#define ROLE ROLE_NODE   // ROLE_NODE | ROLE_GATEWAY | ROLE_DRONE_BRIDGE
+#define NODE_ID 2        // nodes 1..5, gateway 0, drone 200
+// =====================================================================================
+
+static_assert(ROLE_NODE != ROLE_GATEWAY && ROLE_GATEWAY != ROLE_DRONE_BRIDGE, "role constants were edited");
 
 #define ENABLE_BLE_SCAN 0     // STEP 2: set to 1 on field nodes
 #define ESPNOW_CHANNEL 1
