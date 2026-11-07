@@ -37,6 +37,7 @@
 | *Optional hero node:* gas sensor (MQ-2 / Grove) | Hazard; heater draws ~150 mA, so 1 node only | Grove kit | have |
 | *Command post / hero node:* Grove Speaker | Louder or spoken HAIL ("if you can hear this, knock three times"); too power-hungry for every node | Grove kit | have |
 | *Demo prop:* Grove Vibration Motor | **Fake survivor**: pulsed in a knock pattern inside a box under the rubble, so the tap demo is repeatable | Grove kit | have |
+| *Stretch, not fitted:* Grove 3-Axis Accelerometer ±1.5 g (MMA7660FC, I2C) | Orientation ("landed mic-up?") and "node moved" detection. Too coarse (6-bit, ≤ 120 samples/s) to help with taps. Only if the core demo is solid: one node, I2C on D8 (SDA, white) / D9 (SCL, yellow) | Grove kit | have |
 | *Not used:* Grove Mini PIR | Sees only warm bodies moving in line of sight, so it can't see into voids. At most, one node shows "person approaching" | Grove kit | have |
 | Grove-to-jumper cables (or a Grove shield for XIAO) | The XIAO has no Grove sockets | Grove kit | have |
 | Enclosure: weighted-bottom "weeble" (cup + coins/clay) | Self-righting: microphone and antenna face up | Improvised | ~$0 |
@@ -94,8 +95,8 @@ Grove cable colours: **black = GND, red = VCC, white = NC (unused on these modul
 - **Shared power:** the board has a single 3V3 pin and a single GND pin, so make a 3V3 bus and a GND bus with a mini breadboard rail or a soldered splice (one wire in, four out).
 - **Analog noise:** the radio's transmit bursts can couple into the sound sensor's signal. Keep the yellow wire short, route it away from the antenna, and expect a small spike on each ESP-NOW transmit. The firmware can blank samples during its own transmissions.
 - **Avoid D2 (GPIO25) and D3 (GPIO7).** They may be strapping or boot pins, and sources disagree.
-- **Spare pins:** D6/D7 (UART TX/RX for an mmWave radar on a hero node) and D8–D10 (freed by dropping the I2S mic).
-- **Mounting:** the sound sensor's microphone must face up and out of the enclosure, unobstructed. The SW-420 should be screwed or glued firmly to the floor of the case so taps reach it through the ground.
+- **Spare pins:** D6/D7 (UART TX/RX for an mmWave radar on a hero node) and D8–D10 (freed by dropping the I2S mic; D8/D9 reserved for an optional I2C accelerometer).
+- **Mounting:** the sound sensor's microphone must face up and out of the enclosure, unobstructed. The SW-420 should be screwed or glued firmly (not foam-taped) to the floor of the case so taps reach it through the ground.
 
 ## Micro Center (Cambridge) shopping list, only if the library lacks it (check closing time)
 - 4–6× ESP32 dev boards (Inland / Adafruit / SparkFun)

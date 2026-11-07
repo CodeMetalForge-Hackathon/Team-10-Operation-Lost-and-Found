@@ -77,7 +77,10 @@ Common header, 8 bytes:
 | 6 | CMD | `cmd u8, arg i16, target u8 (255 = all)` | flooded downlink from gateway |
 | 7 | DEVICE_SEEN | `t_ms u32, n u8, devs[n]{hash u32, kind u8, rssi_max i8, count u8}` (7 B/device, n ≤ 20) | every 10 s if any were seen |
 
-- EVENT `kind`: 1 = LOUD, 2 = TAP_PATTERN, 3 = VOICE_LIKE, 4 = RADAR_PRESENCE, 5 = GAS.
+- EVENT `kind`: 1 = LOUD, 2 = TAP_PATTERN, 3 = VOICE_LIKE, 4 = RADAR_PRESENCE, 5 = GAS, 6 = VIBRATION, 7 = MOVED.
+  - Kinds 6 and 7 are **reserved for an optional accelerometer (not fitted for the demo); nothing sends them yet.**
+  - **VIBRATION** (accelerometer): `peak_db` = peak acceleration in dB re 1 mg (`20·log10(mg)`, int8), `voice_db` = 0, `count` = jolts in the window, `conf` = 0–100 (higher when the SW-420 or the mic saw an onset at the same time).
+  - **MOVED** (accelerometer): `peak_db` = 0, `voice_db` = 0, `count` = orientation code (0 = mic up, 1 = upside down, 2 = on its side, 255 = unknown), `conf` = tilt change in degrees (capped at 255). Sent once at boot and on each disturbance.
 - CMD `cmd`: 1 = HAIL, 2 = BLINK_ID, 3 = START_RANGING (nodes chirp in ID order, 500 ms apart), 4 = SET_TX_POWER, 5 = SET_RATE, 6 = PING, 7 = SET_SCAN (arg = BLE scan seconds per 10 s window; 0 = off), 8 = SET_SALT (arg = deployment salt).
 - DEVICE_SEEN `kind`: 1 = BLE_OTHER, 2 = BLE_APPLE, 3 = BLE_FINDMY, 4 = BLE_GOOGLE, 5 = WIFI_PROBE.
 

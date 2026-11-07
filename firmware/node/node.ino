@@ -179,6 +179,8 @@ const char *kindName(uint8_t k) {
     case EV_VOICE_LIKE: return "VOICE_LIKE";
     case EV_RADAR_PRESENCE: return "RADAR_PRESENCE";
     case EV_GAS: return "GAS";
+    case EV_VIBRATION: return "VIBRATION";
+    case EV_MOVED: return "MOVED";
     default: return "UNKNOWN";
   }
 }
@@ -257,6 +259,12 @@ static bool ledOn = false;
 static uint32_t nextBeaconMs = 0;
 static int scanSeconds = 2;
 static uint32_t salt = 0x5EED;
+static int8_t txPowerQdbm = -1;  // last applied tx power (0.25 dBm units), -1 = default
+
+// Gateway-held mesh settings, re-broadcast periodically so rebooted / late nodes converge.
+// -1 = never set (nodes keep their defaults).
+#define CONFIG_REBROADCAST_MS 15000
+static int16_t cfgTxPower = -1, cfgScan = -1, cfgSalt = -1;
 
 void setLed(bool on) {
   if (LED_PIN < 0) return;
@@ -273,13 +281,21 @@ void handleCmd(const CmdPayload &c) {
       Serial.println("# HAIL received (buzzer not wired yet)");
       blinkToggles = 10;
       break;
-    case CMD_SET_TX_POWER: {
+    case CMD_SET_TX_POWER: {  // idempotent: also arrives every 15 s via config re-broadcast
       int8_t p = constrain(c.arg, 8, 84);
-      esp_wifi_set_max_tx_power(p);
-      Serial.printf("# tx power set to %.2f dBm\n", p * 0.25f);
+      if (p != txPowerQdbm) {
+        esp_wifi_set_max_tx_power(p);
+        txPowerQdbm = p;
+        Serial.printf("# tx power set to %.2f dBm\n", p * 0.25f);
+      }
       break;
     }
-    case CMD_SET_SCAN: scanSeconds = constrain(c.arg, 0, 9); break;
+    case CMD_SET_SCAN: {
+      int s = constrain(c.arg, 0, 9);
+      if (s != scanSeconds) Serial.printf("# BLE scan seconds per window: %d\n", s);
+      scanSeconds = s;
+      break;
+    }
     case CMD_SET_SALT: salt = (uint32_t)(uint16_t)c.arg; break;
     default: break;
   }
@@ -310,6 +326,11 @@ void readSerialCommands() {
       if (c.cmd) {
         sendPacket(PKT_CMD, &c, sizeof(c), 3);
         Serial.printf("# sent CMD %s arg=%d target=%d\n", name, arg, target);
+        if (target == 255) {  // remember mesh-wide settings for periodic re-broadcast
+          if (c.cmd == CMD_SET_TX_POWER) cfgTxPower = arg;
+          else if (c.cmd == CMD_SET_SCAN) cfgScan = arg;
+          else if (c.cmd == CMD_SET_SALT) cfgSalt = arg;
+        }
       } else {
         Serial.printf("# unknown command %s\n", name);
       }
@@ -336,7 +357,8 @@ void sendBeacon() {
 // ---------- BLE device scan (STEP 2) ----------
 #if ENABLE_BLE_SCAN
 struct DevAgg { uint32_t hash; uint8_t kind; int8_t rssiMax; uint8_t count; };
-static DevAgg devTable[40];
+#define DEV_TABLE 96
+static DevAgg devTable[DEV_TABLE];
 static int devCount = 0;
 static uint32_t devWindowStart = 0, nextScanMs = 0;
 
@@ -355,7 +377,16 @@ void addDevice(uint32_t hash, uint8_t kind, int rssi) {
       return;
     }
   }
-  if (devCount < 40) devTable[devCount++] = {hash, kind, (int8_t)rssi, 1};
+  if (devCount < DEV_TABLE) {
+    devTable[devCount++] = {hash, kind, (int8_t)rssi, 1};
+    return;
+  }
+  // Table full (crowded venue): evict the weakest entry if this device is stronger,
+  // so nearby devices (the ones that matter) are never dropped for distant ones.
+  int weakest = 0;
+  for (int i = 1; i < devCount; i++)
+    if (devTable[i].rssiMax < devTable[weakest].rssiMax) weakest = i;
+  if (rssi > devTable[weakest].rssiMax) devTable[weakest] = {hash, kind, (int8_t)rssi, 1};
 }
 
 void runBleScan() {
@@ -364,6 +395,7 @@ void runBleScan() {
   BLEScanResults *res = scan->start(scanSeconds, false);  // blocking; rxQueue buffers ESP-NOW meanwhile
   for (int i = 0; res && i < res->getCount(); i++) {
     BLEAdvertisedDevice d = res->getDevice(i);
+    if (d.getRSSI() < -80) continue;  // too weak to be near this node; keeps the table for nearby devices
     uint8_t kind = DEV_BLE_OTHER;
     if (d.haveManufacturerData()) {
       auto md = d.getManufacturerData();
@@ -382,7 +414,8 @@ void flushDevices() {
   DeviceSeenPayload p{};
   p.t_ms = millis();
   // pick the strongest MAX_DEVICES
-  bool taken[40] = {false};
+  static bool taken[DEV_TABLE];
+  memset(taken, 0, sizeof(taken));
   while (p.n < MAX_DEVICES) {
     int best = -1;
     for (int i = 0; i < devCount; i++)
@@ -468,6 +501,19 @@ void loop() {
   }
 
   if (IS_PRINTER) readSerialCommands();
+
+  // Gateway: re-broadcast mesh-wide settings so rebooted / newly dropped nodes pick them up.
+  static uint32_t nextConfigMs = CONFIG_REBROADCAST_MS;
+  if (ROLE == ROLE_GATEWAY && (int32_t)(now - nextConfigMs) >= 0) {
+    nextConfigMs = now + CONFIG_REBROADCAST_MS;
+    const int16_t vals[3] = {cfgTxPower, cfgScan, cfgSalt};
+    const uint8_t ids[3] = {CMD_SET_TX_POWER, CMD_SET_SCAN, CMD_SET_SALT};
+    for (int i = 0; i < 3; i++) {
+      if (vals[i] < 0) continue;
+      CmdPayload c{ids[i], vals[i], 255};
+      sendPacket(PKT_CMD, &c, sizeof(c), 2);
+    }
+  }
 
   if (blinkToggles > 0 && (int32_t)(now - nextBlinkMs) >= 0) {
     setLed(!ledOn);

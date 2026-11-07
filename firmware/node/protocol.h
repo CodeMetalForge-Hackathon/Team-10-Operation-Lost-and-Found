@@ -32,6 +32,8 @@ enum EventKind : uint8_t {
   EV_VOICE_LIKE = 3,
   EV_RADAR_PRESENCE = 4,
   EV_GAS = 5,
+  EV_VIBRATION = 6,  // RESERVED (optional accelerometer, not fitted): peak_db = dB re 1 mg, count = jolts, conf
+  EV_MOVED = 7,      // RESERVED (optional accelerometer, not fitted): count = orientation (0 up, 1 upside down, 2 side, 255 unknown), conf = tilt deg
 };
 
 enum DevKind : uint8_t {
