@@ -1,0 +1,286 @@
+{"type": "gw", "id": 0, "t_ms": 306574, "rx_dropped": 0, "t_host": 1794088158.746}
+{"type": "beacon", "src": 2, "seq": 91, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 186, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088158.947}
+{"type": "beacon", "src": 1, "seq": 17, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 37, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088159.964}
+{"type": "beacon", "src": 2, "seq": 92, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 188, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088160.798}
+{"type": "beacon", "src": 1, "seq": 18, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 39, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088161.82}
+{"type": "beacon", "src": 2, "seq": 93, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 190, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088162.861}
+{"type": "beacon", "src": 1, "seq": 19, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 41, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088163.682}
+{"type": "gw", "id": 0, "t_ms": 311574, "rx_dropped": 0, "t_host": 1794088163.682}
+{"type": "beacon", "src": 2, "seq": 94, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 192, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088164.695}
+{"type": "beacon", "src": 1, "seq": 20, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 42, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088165.518}
+{"type": "beacon", "src": 2, "seq": 95, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 193, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088166.539}
+{"type": "beacon", "src": 1, "seq": 21, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 44, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088167.348}
+{"type": "beacon", "src": 2, "seq": 96, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 196, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088168.584}
+{"type": "gw", "id": 0, "t_ms": 316574, "rx_dropped": 0, "t_host": 1794088168.585}
+{"type": "beacon", "src": 1, "seq": 22, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 46, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088169.191}
+{"type": "beacon", "src": 2, "seq": 97, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 198, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088170.819}
+{"type": "beacon", "src": 1, "seq": 23, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 48, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088171.237}
+{"type": "beacon", "src": 2, "seq": 98, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 200, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088172.651}
+{"type": "beacon", "src": 1, "seq": 24, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 50, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088173.468}
+{"type": "gw", "id": 0, "t_ms": 321574, "rx_dropped": 0, "t_host": 1794088173.67}
+{"type": "beacon", "src": 2, "seq": 99, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 202, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088174.88}
+{"type": "beacon", "src": 1, "seq": 25, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 52, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088175.499}
+{"type": "beacon", "src": 2, "seq": 100, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 204, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088176.919}
+{"type": "beacon", "src": 1, "seq": 26, "hops": 0, "rssi_last": -35, "batt_mv": 0, "uptime_s": 54, "floor_db": 0, "nbrs": [[2, -43]], "t_host": 1794088177.325}
+{"type": "gw", "id": 0, "t_ms": 326574, "rx_dropped": 0, "t_host": 1794088178.744}
+{"type": "beacon", "src": 2, "seq": 101, "hops": 0, "rssi_last": -35, "batt_mv": 0, "uptime_s": 206, "floor_db": 0, "nbrs": [[1, -44]], "t_host": 1794088178.744}
+{"type": "beacon", "src": 1, "seq": 27, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 56, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088179.35}
+{"type": "beacon", "src": 2, "seq": 102, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 208, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088180.969}
+{"type": "beacon", "src": 1, "seq": 28, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 58, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088181.388}
+{"type": "beacon", "src": 2, "seq": 103, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 210, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088183.038}
+{"type": "beacon", "src": 1, "seq": 29, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 60, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088183.241}
+{"type": "gw", "id": 0, "t_ms": 331574, "rx_dropped": 0, "t_host": 1794088183.648}
+{"type": "beacon", "src": 2, "seq": 104, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 212, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088185.069}
+{"type": "beacon", "src": 1, "seq": 30, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 62, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088185.274}
+{"type": "beacon", "src": 2, "seq": 105, "hops": 0, "rssi_last": -50, "batt_mv": 0, "uptime_s": 214, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088186.926}
+{"type": "beacon", "src": 1, "seq": 31, "hops": 0, "rssi_last": -35, "batt_mv": 0, "uptime_s": 64, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088187.538}
+{"type": "gw", "id": 0, "t_ms": 336574, "rx_dropped": 0, "t_host": 1794088188.768}
+{"type": "beacon", "src": 2, "seq": 106, "hops": 0, "rssi_last": -50, "batt_mv": 0, "uptime_s": 216, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088188.768}
+{"type": "beacon", "src": 1, "seq": 32, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 67, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088189.58}
+{"type": "beacon", "src": 2, "seq": 107, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 218, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088190.826}
+{"type": "beacon", "src": 1, "seq": 33, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 69, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088191.634}
+{"type": "beacon", "src": 2, "seq": 108, "hops": 0, "rssi_last": -46, "batt_mv": 0, "uptime_s": 220, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088192.645}
+{"type": "gw", "id": 0, "t_ms": 341574, "rx_dropped": 0, "t_host": 1794088193.659}
+{"type": "beacon", "src": 1, "seq": 34, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 71, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088193.861}
+{"type": "beacon", "src": 2, "seq": 109, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 222, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088194.903}
+{"type": "beacon", "src": 1, "seq": 35, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 73, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088195.915}
+{"type": "beacon", "src": 2, "seq": 110, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 224, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088196.925}
+{"type": "beacon", "src": 1, "seq": 36, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 75, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088197.94}
+{"type": "gw", "id": 0, "t_ms": 346574, "rx_dropped": 0, "t_host": 1794088198.754}
+{"type": "beacon", "src": 2, "seq": 111, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 226, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088198.956}
+{"type": "beacon", "src": 1, "seq": 37, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 77, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088199.968}
+{"type": "beacon", "src": 2, "seq": 112, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 228, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088200.793}
+{"type": "beacon", "src": 1, "seq": 38, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 79, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088202.006}
+{"type": "beacon", "src": 2, "seq": 113, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 230, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088202.818}
+{"type": "gw", "id": 0, "t_ms": 351574, "rx_dropped": 0, "t_host": 1794088203.627}
+{"type": "beacon", "src": 1, "seq": 39, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 81, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088203.832}
+{"type": "beacon", "src": 2, "seq": 114, "hops": 0, "rssi_last": -45, "batt_mv": 0, "uptime_s": 232, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088204.862}
+{"type": "beacon", "src": 1, "seq": 40, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 83, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088205.677}
+{"type": "beacon", "src": 2, "seq": 115, "hops": 0, "rssi_last": -46, "batt_mv": 0, "uptime_s": 234, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088206.69}
+{"type": "beacon", "src": 1, "seq": 41, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 85, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088207.502}
+{"type": "beacon", "src": 2, "seq": 116, "hops": 0, "rssi_last": -48, "batt_mv": 0, "uptime_s": 236, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088208.715}
+{"type": "gw", "id": 0, "t_ms": 356574, "rx_dropped": 0, "t_host": 1794088208.715}
+{"type": "beacon", "src": 1, "seq": 42, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 86, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088209.524}
+{"type": "beacon", "src": 2, "seq": 117, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 238, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088210.744}
+{"type": "beacon", "src": 1, "seq": 43, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 89, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088211.556}
+{"type": "beacon", "src": 2, "seq": 118, "hops": 0, "rssi_last": -45, "batt_mv": 0, "uptime_s": 240, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088212.773}
+{"type": "beacon", "src": 1, "seq": 44, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 90, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088213.379}
+{"type": "gw", "id": 0, "t_ms": 361574, "rx_dropped": 0, "t_host": 1794088213.787}
+{"type": "beacon", "src": 2, "seq": 119, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 242, "floor_db": 0, "nbrs": [[1, -44]], "t_host": 1794088214.798}
+{"type": "beacon", "src": 1, "seq": 45, "hops": 0, "rssi_last": -35, "batt_mv": 0, "uptime_s": 92, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088215.403}
+{"type": "beacon", "src": 2, "seq": 120, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 244, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088216.633}
+{"type": "beacon", "src": 1, "seq": 46, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 94, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088217.24}
+{"type": "host_cmd", "text": "CMD BLINK 0 255", "t_host": 1794088218.083}
+{"type": "log", "text": "# sent CMD BLINK arg=0 target=255", "t_host": 1794088218.287}
+{"type": "beacon", "src": 2, "seq": 121, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 246, "floor_db": 0, "nbrs": [[1, -42], [0, -38]], "t_host": 1794088218.49}
+{"type": "gw", "id": 0, "t_ms": 366574, "rx_dropped": 0, "t_host": 1794088218.691}
+{"type": "beacon", "src": 1, "seq": 47, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 96, "floor_db": 0, "nbrs": [[2, -40], [0, -37]], "t_host": 1794088219.296}
+{"type": "beacon", "src": 2, "seq": 122, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 247, "floor_db": 0, "nbrs": [[1, -42], [0, -38]], "t_host": 1794088220.51}
+{"type": "beacon", "src": 1, "seq": 48, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 98, "floor_db": 0, "nbrs": [[2, -42], [0, -37]], "t_host": 1794088221.117}
+{"type": "beacon", "src": 2, "seq": 123, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 249, "floor_db": 0, "nbrs": [[1, -43], [0, -38]], "t_host": 1794088222.334}
+{"type": "beacon", "src": 1, "seq": 49, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 100, "floor_db": 0, "nbrs": [[2, -42], [0, -37]], "t_host": 1794088222.941}
+{"type": "gw", "id": 0, "t_ms": 371574, "rx_dropped": 0, "t_host": 1794088223.752}
+{"type": "beacon", "src": 2, "seq": 124, "hops": 0, "rssi_last": -38, "batt_mv": 0, "uptime_s": 251, "floor_db": 0, "nbrs": [[1, -44], [0, -38]], "t_host": 1794088224.358}
+{"type": "beacon", "src": 1, "seq": 50, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 102, "floor_db": 0, "nbrs": [[2, -42], [0, -37]], "t_host": 1794088224.964}
+{"type": "beacon", "src": 2, "seq": 125, "hops": 0, "rssi_last": -52, "batt_mv": 0, "uptime_s": 253, "floor_db": 0, "nbrs": [[1, -44], [0, -38]], "t_host": 1794088226.38}
+{"type": "beacon", "src": 1, "seq": 51, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 104, "floor_db": 0, "nbrs": [[2, -42], [0, -37]], "t_host": 1794088226.985}
+{"type": "beacon", "src": 2, "seq": 126, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 255, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088228.234}
+{"type": "gw", "id": 0, "t_ms": 376574, "rx_dropped": 0, "t_host": 1794088228.639}
+{"type": "beacon", "src": 1, "seq": 52, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 106, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088228.841}
+{"type": "beacon", "src": 2, "seq": 127, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 257, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088230.26}
+{"type": "beacon", "src": 1, "seq": 53, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 108, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088230.665}
+{"type": "beacon", "src": 2, "seq": 128, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 259, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088232.32}
+{"type": "beacon", "src": 1, "seq": 54, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 110, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088232.728}
+{"type": "gw", "id": 0, "t_ms": 381574, "rx_dropped": 0, "t_host": 1794088233.757}
+{"type": "beacon", "src": 2, "seq": 129, "hops": 0, "rssi_last": -50, "batt_mv": 0, "uptime_s": 261, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088234.165}
+{"type": "beacon", "src": 1, "seq": 55, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 111, "floor_db": 0, "nbrs": [[2, -39]], "t_host": 1794088234.569}
+{"type": "beacon", "src": 2, "seq": 130, "hops": 0, "rssi_last": -53, "batt_mv": 0, "uptime_s": 263, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088236.415}
+{"type": "beacon", "src": 1, "seq": 56, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 114, "floor_db": 0, "nbrs": [[2, -39]], "t_host": 1794088236.616}
+{"type": "beacon", "src": 2, "seq": 131, "hops": 0, "rssi_last": -47, "batt_mv": 0, "uptime_s": 265, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088238.433}
+{"type": "beacon", "src": 1, "seq": 57, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 116, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088238.635}
+{"type": "gw", "id": 0, "t_ms": 386574, "rx_dropped": 0, "t_host": 1794088238.636}
+{"type": "beacon", "src": 2, "seq": 132, "hops": 0, "rssi_last": -45, "batt_mv": 0, "uptime_s": 267, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088240.454}
+{"type": "beacon", "src": 1, "seq": 58, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 118, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088240.86}
+{"type": "beacon", "src": 2, "seq": 133, "hops": 0, "rssi_last": -47, "batt_mv": 0, "uptime_s": 269, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088242.477}
+{"type": "beacon", "src": 1, "seq": 59, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 120, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088242.88}
+{"type": "gw", "id": 0, "t_ms": 391574, "rx_dropped": 0, "t_host": 1794088243.7}
+{"type": "beacon", "src": 2, "seq": 134, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 271, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088244.319}
+{"type": "beacon", "src": 1, "seq": 60, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 122, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088244.927}
+{"type": "beacon", "src": 2, "seq": 135, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 273, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088246.154}
+{"type": "beacon", "src": 1, "seq": 61, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 124, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088246.961}
+{"type": "host_cmd", "text": "CMD TXPOWER 8 255", "t_host": 1794088247.984}
+{"type": "log", "text": "# sent CMD TXPOWER arg=8 target=255", "t_host": 1794088248.185}
+{"type": "beacon", "src": 2, "seq": 136, "hops": 1, "rssi_last": -57, "batt_mv": 0, "uptime_s": 275, "floor_db": 0, "nbrs": [[1, -48], [0, -43]], "t_host": 1794088248.185}
+{"type": "gw", "id": 0, "t_ms": 396574, "rx_dropped": 0, "t_host": 1794088248.6}
+{"type": "beacon", "src": 1, "seq": 62, "hops": 0, "rssi_last": -59, "batt_mv": 0, "uptime_s": 126, "floor_db": 0, "nbrs": [[2, -50], [0, -38]], "t_host": 1794088248.803}
+{"type": "beacon", "src": 2, "seq": 137, "hops": 0, "rssi_last": -61, "batt_mv": 0, "uptime_s": 277, "floor_db": 0, "nbrs": [[1, -55], [0, -43]], "t_host": 1794088250.071}
+{"type": "beacon", "src": 1, "seq": 63, "hops": 0, "rssi_last": -59, "batt_mv": 0, "uptime_s": 128, "floor_db": 0, "nbrs": [[2, -53], [0, -38]], "t_host": 1794088250.679}
+{"type": "beacon", "src": 2, "seq": 138, "hops": 1, "rssi_last": -60, "batt_mv": 0, "uptime_s": 279, "floor_db": 0, "nbrs": [[1, -57], [0, -43]], "t_host": 1794088252.094}
+{"type": "beacon", "src": 1, "seq": 64, "hops": 0, "rssi_last": -60, "batt_mv": 0, "uptime_s": 129, "floor_db": 0, "nbrs": [[2, -55], [0, -38]], "t_host": 1794088252.501}
+{"type": "gw", "id": 0, "t_ms": 401574, "rx_dropped": 0, "t_host": 1794088253.719}
+{"type": "beacon", "src": 2, "seq": 139, "hops": 0, "rssi_last": -66, "batt_mv": 0, "uptime_s": 281, "floor_db": 0, "nbrs": [[1, -58], [0, -43]], "t_host": 1794088254.123}
+{"type": "beacon", "src": 1, "seq": 65, "hops": 0, "rssi_last": -60, "batt_mv": 0, "uptime_s": 131, "floor_db": 0, "nbrs": [[2, -55], [0, -38]], "t_host": 1794088254.327}
+{"type": "beacon", "src": 2, "seq": 140, "hops": 1, "rssi_last": -61, "batt_mv": 0, "uptime_s": 283, "floor_db": 0, "nbrs": [[1, -59], [0, -43]], "t_host": 1794088255.962}
+{"type": "beacon", "src": 1, "seq": 66, "hops": 0, "rssi_last": -64, "batt_mv": 0, "uptime_s": 133, "floor_db": 0, "nbrs": [[2, -56], [0, -38]], "t_host": 1794088256.572}
+{"type": "beacon", "src": 2, "seq": 141, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 285, "floor_db": 0, "nbrs": [[1, -58], [0, -43]], "t_host": 1794088257.987}
+{"type": "beacon", "src": 1, "seq": 67, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 135, "floor_db": 0, "nbrs": [[2, -55]], "t_host": 1794088258.392}
+{"type": "gw", "id": 0, "t_ms": 406574, "rx_dropped": 0, "t_host": 1794088258.608}
+{"type": "beacon", "src": 2, "seq": 142, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 287, "floor_db": 0, "nbrs": [[1, -58]], "t_host": 1794088259.836}
+{"type": "beacon", "src": 1, "seq": 68, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 137, "floor_db": 0, "nbrs": [[2, -54]], "t_host": 1794088260.241}
+{"type": "beacon", "src": 2, "seq": 143, "hops": 0, "rssi_last": -66, "batt_mv": 0, "uptime_s": 289, "floor_db": 0, "nbrs": [[1, -59]], "t_host": 1794088261.862}
+{"type": "beacon", "src": 1, "seq": 69, "hops": 0, "rssi_last": -60, "batt_mv": 0, "uptime_s": 139, "floor_db": 0, "nbrs": [[2, -55]], "t_host": 1794088262.267}
+{"type": "gw", "id": 0, "t_ms": 411574, "rx_dropped": 0, "t_host": 1794088263.695}
+{"type": "beacon", "src": 2, "seq": 144, "hops": 0, "rssi_last": -58, "batt_mv": 0, "uptime_s": 291, "floor_db": 0, "nbrs": [[1, -58]], "t_host": 1794088263.899}
+{"type": "beacon", "src": 1, "seq": 70, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 141, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088264.102}
+{"type": "beacon", "src": 2, "seq": 145, "hops": 0, "rssi_last": -68, "batt_mv": 0, "uptime_s": 293, "floor_db": 0, "nbrs": [[1, -59]], "t_host": 1794088265.924}
+{"type": "beacon", "src": 1, "seq": 71, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 143, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088266.33}
+{"type": "beacon", "src": 2, "seq": 146, "hops": 1, "rssi_last": -60, "batt_mv": 0, "uptime_s": 295, "floor_db": 0, "nbrs": [[1, -61]], "t_host": 1794088268.184}
+{"type": "beacon", "src": 1, "seq": 72, "hops": 0, "rssi_last": -60, "batt_mv": 0, "uptime_s": 145, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088268.385}
+{"type": "gw", "id": 0, "t_ms": 416574, "rx_dropped": 0, "t_host": 1794088268.79}
+{"type": "beacon", "src": 2, "seq": 147, "hops": 0, "rssi_last": -61, "batt_mv": 0, "uptime_s": 297, "floor_db": 0, "nbrs": [[1, -60]], "t_host": 1794088270.209}
+{"type": "beacon", "src": 1, "seq": 73, "hops": 0, "rssi_last": -57, "batt_mv": 0, "uptime_s": 148, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088270.615}
+{"type": "gw", "id": 0, "t_ms": 421574, "rx_dropped": 0, "t_host": 1794088273.7}
+{"type": "beacon", "src": 2, "seq": 150, "hops": 0, "rssi_last": -59, "batt_mv": 0, "uptime_s": 303, "floor_db": 0, "nbrs": [[1, -62]], "t_host": 1794088276.159}
+{"type": "beacon", "src": 2, "seq": 151, "hops": 0, "rssi_last": -60, "batt_mv": 0, "uptime_s": 305, "floor_db": 0, "nbrs": [[1, -62]], "t_host": 1794088278.197}
+{"type": "gw", "id": 0, "t_ms": 426574, "rx_dropped": 0, "t_host": 1794088278.602}
+{"type": "beacon", "src": 2, "seq": 152, "hops": 0, "rssi_last": -59, "batt_mv": 0, "uptime_s": 307, "floor_db": 0, "nbrs": [[1, -62]], "t_host": 1794088280.04}
+{"type": "beacon", "src": 2, "seq": 153, "hops": 0, "rssi_last": -64, "batt_mv": 0, "uptime_s": 309, "floor_db": 0, "nbrs": [], "t_host": 1794088282.27}
+{"type": "gw", "id": 0, "t_ms": 431574, "rx_dropped": 0, "t_host": 1794088283.719}
+{"type": "beacon", "src": 2, "seq": 154, "hops": 0, "rssi_last": -64, "batt_mv": 0, "uptime_s": 311, "floor_db": 0, "nbrs": [], "t_host": 1794088284.128}
+{"type": "beacon", "src": 2, "seq": 156, "hops": 0, "rssi_last": -60, "batt_mv": 0, "uptime_s": 315, "floor_db": 0, "nbrs": [], "t_host": 1794088288.417}
+{"type": "gw", "id": 0, "t_ms": 436574, "rx_dropped": 0, "t_host": 1794088288.62}
+{"type": "beacon", "src": 2, "seq": 157, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 317, "floor_db": 0, "nbrs": [], "t_host": 1794088290.445}
+{"type": "beacon", "src": 1, "seq": 0, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 3, "floor_db": 0, "nbrs": [[2, -54]], "t_host": 1794088291.462}
+{"type": "beacon", "src": 2, "seq": 158, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 319, "floor_db": 0, "nbrs": [[1, -51]], "t_host": 1794088292.286}
+{"type": "beacon", "src": 1, "seq": 1, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 5, "floor_db": 0, "nbrs": [[2, -55]], "t_host": 1794088293.301}
+{"type": "gw", "id": 0, "t_ms": 441574, "rx_dropped": 0, "t_host": 1794088293.709}
+{"type": "beacon", "src": 2, "seq": 159, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 321, "floor_db": 0, "nbrs": [[1, -46]], "t_host": 1794088294.332}
+{"type": "beacon", "src": 1, "seq": 2, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 7, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088295.562}
+{"type": "beacon", "src": 2, "seq": 160, "hops": 0, "rssi_last": -54, "batt_mv": 0, "uptime_s": 323, "floor_db": 0, "nbrs": [[1, -44]], "t_host": 1794088296.4}
+{"type": "beacon", "src": 1, "seq": 3, "hops": 0, "rssi_last": -47, "batt_mv": 0, "uptime_s": 9, "floor_db": 0, "nbrs": [[2, -58]], "t_host": 1794088297.614}
+{"type": "beacon", "src": 2, "seq": 161, "hops": 0, "rssi_last": -58, "batt_mv": 0, "uptime_s": 325, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088298.226}
+{"type": "gw", "id": 0, "t_ms": 446574, "rx_dropped": 0, "t_host": 1794088298.632}
+{"type": "beacon", "src": 1, "seq": 4, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 11, "floor_db": 0, "nbrs": [[2, -58]], "t_host": 1794088299.442}
+{"type": "beacon", "src": 2, "seq": 162, "hops": 0, "rssi_last": -61, "batt_mv": 0, "uptime_s": 327, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088300.25}
+{"type": "beacon", "src": 1, "seq": 5, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 13, "floor_db": 0, "nbrs": [[2, -58]], "t_host": 1794088301.276}
+{"type": "beacon", "src": 2, "seq": 163, "hops": 0, "rssi_last": -58, "batt_mv": 0, "uptime_s": 329, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088302.291}
+{"type": "beacon", "src": 1, "seq": 6, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 15, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088303.298}
+{"type": "gw", "id": 0, "t_ms": 451574, "rx_dropped": 0, "t_host": 1794088303.703}
+{"type": "beacon", "src": 2, "seq": 164, "hops": 0, "rssi_last": -59, "batt_mv": 0, "uptime_s": 331, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088304.311}
+{"type": "beacon", "src": 1, "seq": 7, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 17, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088305.326}
+{"type": "beacon", "src": 2, "seq": 165, "hops": 0, "rssi_last": -61, "batt_mv": 0, "uptime_s": 333, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088306.543}
+{"type": "beacon", "src": 1, "seq": 8, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 19, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088307.155}
+{"type": "beacon", "src": 2, "seq": 166, "hops": 0, "rssi_last": -58, "batt_mv": 0, "uptime_s": 336, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088308.596}
+{"type": "gw", "id": 0, "t_ms": 456574, "rx_dropped": 0, "t_host": 1794088308.596}
+{"type": "beacon", "src": 1, "seq": 9, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 21, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088309.205}
+{"type": "beacon", "src": 2, "seq": 167, "hops": 0, "rssi_last": -61, "batt_mv": 0, "uptime_s": 338, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088310.639}
+{"type": "beacon", "src": 1, "seq": 10, "hops": 0, "rssi_last": -38, "batt_mv": 0, "uptime_s": 23, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088311.448}
+{"type": "beacon", "src": 2, "seq": 168, "hops": 1, "rssi_last": -39, "batt_mv": 0, "uptime_s": 340, "floor_db": 0, "nbrs": [[1, -40]], "t_host": 1794088312.674}
+{"type": "beacon", "src": 1, "seq": 11, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 25, "floor_db": 0, "nbrs": [[2, -55]], "t_host": 1794088313.279}
+{"type": "gw", "id": 0, "t_ms": 461574, "rx_dropped": 0, "t_host": 1794088313.714}
+{"type": "beacon", "src": 2, "seq": 169, "hops": 0, "rssi_last": -62, "batt_mv": 0, "uptime_s": 342, "floor_db": 0, "nbrs": [[1, -40]], "t_host": 1794088314.724}
+{"type": "beacon", "src": 1, "seq": 12, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 27, "floor_db": 0, "nbrs": [[2, -54]], "t_host": 1794088315.142}
+{"type": "beacon", "src": 2, "seq": 170, "hops": 0, "rssi_last": -65, "batt_mv": 0, "uptime_s": 344, "floor_db": 0, "nbrs": [[1, -40]], "t_host": 1794088316.569}
+{"type": "beacon", "src": 1, "seq": 13, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 29, "floor_db": 0, "nbrs": [[2, -54]], "t_host": 1794088317.171}
+{"type": "beacon", "src": 2, "seq": 171, "hops": 0, "rssi_last": -65, "batt_mv": 0, "uptime_s": 346, "floor_db": 0, "nbrs": [[1, -40]], "t_host": 1794088318.627}
+{"type": "gw", "id": 0, "t_ms": 466574, "rx_dropped": 0, "t_host": 1794088318.627}
+{"type": "beacon", "src": 1, "seq": 14, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 31, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088319.237}
+{"type": "beacon", "src": 2, "seq": 172, "hops": 0, "rssi_last": -66, "batt_mv": 0, "uptime_s": 348, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088320.65}
+{"type": "beacon", "src": 1, "seq": 15, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 33, "floor_db": 0, "nbrs": [[2, -56]], "t_host": 1794088321.053}
+{"type": "beacon", "src": 2, "seq": 173, "hops": 0, "rssi_last": -63, "batt_mv": 0, "uptime_s": 350, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088322.465}
+{"type": "beacon", "src": 1, "seq": 16, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 35, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088323.071}
+{"type": "gw", "id": 0, "t_ms": 471574, "rx_dropped": 0, "t_host": 1794088323.677}
+{"type": "beacon", "src": 2, "seq": 174, "hops": 0, "rssi_last": -67, "batt_mv": 0, "uptime_s": 352, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088324.687}
+{"type": "beacon", "src": 1, "seq": 17, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 37, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088325.09}
+{"type": "beacon", "src": 2, "seq": 175, "hops": 0, "rssi_last": -67, "batt_mv": 0, "uptime_s": 354, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088326.725}
+{"type": "beacon", "src": 1, "seq": 18, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 39, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088327.141}
+{"type": "beacon", "src": 2, "seq": 176, "hops": 0, "rssi_last": -63, "batt_mv": 0, "uptime_s": 356, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088328.556}
+{"type": "gw", "id": 0, "t_ms": 476574, "rx_dropped": 0, "t_host": 1794088328.756}
+{"type": "beacon", "src": 1, "seq": 19, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 41, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088328.972}
+{"type": "beacon", "src": 2, "seq": 177, "hops": 0, "rssi_last": -70, "batt_mv": 0, "uptime_s": 357, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088330.389}
+{"type": "beacon", "src": 1, "seq": 20, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 43, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088330.997}
+{"type": "beacon", "src": 2, "seq": 178, "hops": 0, "rssi_last": -74, "batt_mv": 0, "uptime_s": 360, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088332.621}
+{"type": "beacon", "src": 1, "seq": 21, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 45, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088333.038}
+{"type": "gw", "id": 0, "t_ms": 481574, "rx_dropped": 0, "t_host": 1794088333.647}
+{"type": "beacon", "src": 2, "seq": 179, "hops": 0, "rssi_last": -68, "batt_mv": 0, "uptime_s": 362, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088334.673}
+{"type": "beacon", "src": 1, "seq": 22, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 47, "floor_db": 0, "nbrs": [[2, -57]], "t_host": 1794088334.876}
+{"type": "beacon", "src": 2, "seq": 180, "hops": 1, "rssi_last": -40, "batt_mv": 0, "uptime_s": 364, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088336.71}
+{"type": "beacon", "src": 1, "seq": 23, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 49, "floor_db": 0, "nbrs": [[2, -58]], "t_host": 1794088336.911}
+{"type": "host_cmd", "text": "CMD TXPOWER 84 255", "t_host": 1794088338.13}
+{"type": "log", "text": "# sent CMD TXPOWER arg=84 target=255", "t_host": 1794088338.331}
+{"type": "gw", "id": 0, "t_ms": 486574, "rx_dropped": 0, "t_host": 1794088338.734}
+{"type": "beacon", "src": 2, "seq": 181, "hops": 0, "rssi_last": -47, "batt_mv": 0, "uptime_s": 366, "floor_db": 0, "nbrs": [[1, -43], [0, -45]], "t_host": 1794088338.949}
+{"type": "beacon", "src": 1, "seq": 24, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 51, "floor_db": 0, "nbrs": [[2, -50], [0, -38]], "t_host": 1794088338.949}
+{"type": "beacon", "src": 2, "seq": 182, "hops": 0, "rssi_last": -54, "batt_mv": 0, "uptime_s": 368, "floor_db": 0, "nbrs": [[1, -43], [0, -45]], "t_host": 1794088340.978}
+{"type": "beacon", "src": 1, "seq": 25, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 53, "floor_db": 0, "nbrs": [[2, -46], [0, -38]], "t_host": 1794088341.178}
+{"type": "beacon", "src": 2, "seq": 183, "hops": 0, "rssi_last": -49, "batt_mv": 0, "uptime_s": 370, "floor_db": 0, "nbrs": [[1, -42], [0, -45]], "t_host": 1794088342.798}
+{"type": "beacon", "src": 1, "seq": 26, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 55, "floor_db": 0, "nbrs": [[2, -43], [0, -38]], "t_host": 1794088343.002}
+{"type": "gw", "id": 0, "t_ms": 491574, "rx_dropped": 0, "t_host": 1794088343.61}
+{"type": "beacon", "src": 2, "seq": 184, "hops": 0, "rssi_last": -48, "batt_mv": 0, "uptime_s": 372, "floor_db": 0, "nbrs": [[1, -43], [0, -45]], "t_host": 1794088344.828}
+{"type": "beacon", "src": 1, "seq": 27, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 57, "floor_db": 0, "nbrs": [[2, -43], [0, -38]], "t_host": 1794088344.828}
+{"type": "beacon", "src": 2, "seq": 185, "hops": 0, "rssi_last": -49, "batt_mv": 0, "uptime_s": 374, "floor_db": 0, "nbrs": [[1, -43], [0, -45]], "t_host": 1794088346.858}
+{"type": "beacon", "src": 1, "seq": 28, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 59, "floor_db": 0, "nbrs": [[2, -43], [0, -38]], "t_host": 1794088346.859}
+{"type": "gw", "id": 0, "t_ms": 496574, "rx_dropped": 0, "t_host": 1794088348.692}
+{"type": "beacon", "src": 1, "seq": 29, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 60, "floor_db": 0, "nbrs": [[2, -43]], "t_host": 1794088348.693}
+{"type": "beacon", "src": 2, "seq": 186, "hops": 0, "rssi_last": -46, "batt_mv": 0, "uptime_s": 376, "floor_db": 0, "nbrs": [[1, -44]], "t_host": 1794088348.897}
+{"type": "beacon", "src": 1, "seq": 30, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 62, "floor_db": 0, "nbrs": [[2, -44]], "t_host": 1794088350.529}
+{"type": "beacon", "src": 2, "seq": 187, "hops": 0, "rssi_last": -45, "batt_mv": 0, "uptime_s": 378, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088350.936}
+{"type": "beacon", "src": 1, "seq": 31, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 64, "floor_db": 0, "nbrs": [[2, -43]], "t_host": 1794088352.558}
+{"type": "beacon", "src": 2, "seq": 188, "hops": 0, "rssi_last": -47, "batt_mv": 0, "uptime_s": 380, "floor_db": 0, "nbrs": [[1, -44]], "t_host": 1794088353.167}
+{"type": "gw", "id": 0, "t_ms": 501574, "rx_dropped": 0, "t_host": 1794088353.786}
+{"type": "beacon", "src": 1, "seq": 32, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 66, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088354.413}
+{"type": "beacon", "src": 2, "seq": 189, "hops": 0, "rssi_last": -45, "batt_mv": 0, "uptime_s": 382, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088355.224}
+{"type": "beacon", "src": 1, "seq": 33, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 68, "floor_db": 0, "nbrs": [[2, -43]], "t_host": 1794088356.444}
+{"type": "beacon", "src": 2, "seq": 190, "hops": 0, "rssi_last": -45, "batt_mv": 0, "uptime_s": 384, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088357.054}
+{"type": "host_cmd", "text": "CMD HAIL 0 255", "t_host": 1794088358.064}
+{"type": "log", "text": "# sent CMD HAIL arg=0 target=255", "t_host": 1794088358.279}
+{"type": "beacon", "src": 1, "seq": 34, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 70, "floor_db": 0, "nbrs": [[2, -43], [0, -39]], "t_host": 1794088358.28}
+{"type": "gw", "id": 0, "t_ms": 506574, "rx_dropped": 0, "t_host": 1794088358.703}
+{"type": "beacon", "src": 2, "seq": 191, "hops": 0, "rssi_last": -46, "batt_mv": 0, "uptime_s": 386, "floor_db": 0, "nbrs": [[1, -43], [0, -45]], "t_host": 1794088358.908}
+{"type": "beacon", "src": 1, "seq": 35, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 72, "floor_db": 0, "nbrs": [[2, -42], [0, -39]], "t_host": 1794088360.329}
+{"type": "beacon", "src": 2, "seq": 192, "hops": 0, "rssi_last": -49, "batt_mv": 0, "uptime_s": 388, "floor_db": 0, "nbrs": [[1, -42], [0, -45]], "t_host": 1794088360.734}
+{"type": "beacon", "src": 1, "seq": 36, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 74, "floor_db": 0, "nbrs": [[2, -42], [0, -39]], "t_host": 1794088362.364}
+{"type": "beacon", "src": 2, "seq": 193, "hops": 0, "rssi_last": -47, "batt_mv": 0, "uptime_s": 390, "floor_db": 0, "nbrs": [[1, -42], [0, -45]], "t_host": 1794088362.815}
+{"type": "gw", "id": 0, "t_ms": 511574, "rx_dropped": 0, "t_host": 1794088363.628}
+{"type": "beacon", "src": 1, "seq": 37, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 76, "floor_db": 0, "nbrs": [[2, -42], [0, -39]], "t_host": 1794088364.233}
+{"type": "beacon", "src": 2, "seq": 194, "hops": 0, "rssi_last": -51, "batt_mv": 0, "uptime_s": 392, "floor_db": 0, "nbrs": [[1, -42], [0, -45]], "t_host": 1794088364.839}
+{"type": "beacon", "src": 1, "seq": 38, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 78, "floor_db": 0, "nbrs": [[2, -42], [0, -39]], "t_host": 1794088366.057}
+{"type": "beacon", "src": 2, "seq": 195, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 394, "floor_db": 0, "nbrs": [[1, -42], [0, -45]], "t_host": 1794088366.478}
+{"type": "beacon", "src": 1, "seq": 39, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 80, "floor_db": 0, "nbrs": [[2, -41], [0, -39]], "t_host": 1794088368.3}
+{"type": "gw", "id": 0, "t_ms": 516574, "rx_dropped": 0, "t_host": 1794088368.705}
+{"type": "beacon", "src": 2, "seq": 196, "hops": 0, "rssi_last": -48, "batt_mv": 0, "uptime_s": 396, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088368.706}
+{"type": "beacon", "src": 1, "seq": 40, "hops": 0, "rssi_last": -38, "batt_mv": 0, "uptime_s": 82, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088370.332}
+{"type": "beacon", "src": 2, "seq": 197, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 398, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088370.939}
+{"type": "beacon", "src": 1, "seq": 41, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 84, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088372.156}
+{"type": "beacon", "src": 2, "seq": 198, "hops": 0, "rssi_last": -47, "batt_mv": 0, "uptime_s": 400, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088372.559}
+{"type": "gw", "id": 0, "t_ms": 521574, "rx_dropped": 0, "t_host": 1794088373.773}
+{"type": "beacon", "src": 1, "seq": 42, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 86, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088374.181}
+{"type": "beacon", "src": 2, "seq": 199, "hops": 0, "rssi_last": -46, "batt_mv": 0, "uptime_s": 402, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088374.79}
+{"type": "beacon", "src": 1, "seq": 43, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 88, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088376.225}
+{"type": "beacon", "src": 2, "seq": 200, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 403, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088376.429}
+{"type": "beacon", "src": 1, "seq": 44, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 90, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088378.254}
+{"type": "beacon", "src": 2, "seq": 201, "hops": 0, "rssi_last": -50, "batt_mv": 0, "uptime_s": 405, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088378.458}
+{"type": "gw", "id": 0, "t_ms": 526574, "rx_dropped": 0, "t_host": 1794088378.661}
+{"type": "beacon", "src": 1, "seq": 45, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 92, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088380.083}
+{"type": "beacon", "src": 2, "seq": 202, "hops": 0, "rssi_last": -48, "batt_mv": 0, "uptime_s": 407, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088380.518}
+{"type": "beacon", "src": 1, "seq": 46, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 94, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088382.142}
+{"type": "beacon", "src": 2, "seq": 203, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 409, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088382.547}
+{"type": "gw", "id": 0, "t_ms": 531574, "rx_dropped": 0, "t_host": 1794088383.766}
+{"type": "beacon", "src": 1, "seq": 47, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 96, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088384.404}
+{"type": "beacon", "src": 2, "seq": 204, "hops": 0, "rssi_last": -45, "batt_mv": 0, "uptime_s": 411, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088384.404}
+{"type": "beacon", "src": 1, "seq": 48, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 98, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088386.233}
+{"type": "beacon", "src": 2, "seq": 205, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 413, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088386.436}
+{"type": "beacon", "src": 1, "seq": 49, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 100, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088388.264}
+{"type": "beacon", "src": 2, "seq": 206, "hops": 0, "rssi_last": -41, "batt_mv": 0, "uptime_s": 415, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088388.264}
+{"type": "gw", "id": 0, "t_ms": 536574, "rx_dropped": 0, "t_host": 1794088388.697}
+{"type": "beacon", "src": 1, "seq": 50, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 102, "floor_db": 0, "nbrs": [[2, -40]], "t_host": 1794088390.11}
+{"type": "beacon", "src": 2, "seq": 207, "hops": 0, "rssi_last": -46, "batt_mv": 0, "uptime_s": 417, "floor_db": 0, "nbrs": [[1, -41]], "t_host": 1794088390.11}
+{"type": "beacon", "src": 1, "seq": 51, "hops": 0, "rssi_last": -43, "batt_mv": 0, "uptime_s": 104, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088392.146}
+{"type": "beacon", "src": 2, "seq": 208, "hops": 0, "rssi_last": -44, "batt_mv": 0, "uptime_s": 419, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088392.146}
+{"type": "gw", "id": 0, "t_ms": 541574, "rx_dropped": 0, "t_host": 1794088393.795}
+{"type": "beacon", "src": 1, "seq": 52, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 106, "floor_db": 0, "nbrs": [[2, -41]], "t_host": 1794088393.995}
+{"type": "beacon", "src": 2, "seq": 209, "hops": 0, "rssi_last": -36, "batt_mv": 0, "uptime_s": 421, "floor_db": 0, "nbrs": [[1, -43]], "t_host": 1794088394.4}
+{"type": "beacon", "src": 1, "seq": 53, "hops": 0, "rssi_last": -40, "batt_mv": 0, "uptime_s": 108, "floor_db": 0, "nbrs": [[2, -42]], "t_host": 1794088395.812}
+{"type": "beacon", "src": 2, "seq": 210, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 423, "floor_db": 0, "nbrs": [[1, -44]], "t_host": 1794088396.228}
+{"type": "beacon", "src": 1, "seq": 54, "hops": 0, "rssi_last": -39, "batt_mv": 0, "uptime_s": 110, "floor_db": 0, "nbrs": [[2, -43]], "t_host": 1794088397.889}
+{"type": "beacon", "src": 2, "seq": 211, "hops": 0, "rssi_last": -42, "batt_mv": 0, "uptime_s": 425, "floor_db": 0, "nbrs": [[1, -42]], "t_host": 1794088398.104}

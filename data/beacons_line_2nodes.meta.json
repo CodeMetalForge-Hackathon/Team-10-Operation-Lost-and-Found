@@ -1,0 +1,33 @@
+{
+  "name": "beacons_line_2nodes",
+  "port": "COM13",
+  "start": "2026-11-07T16:49:17",
+  "secs": 240.0,
+  "positions_m": {
+    "0": [
+      0.0,
+      0.0
+    ],
+    "1": [
+      3.0,
+      0.0
+    ],
+    "2": [
+      6.0,
+      0.0
+    ]
+  },
+  "note": "office floor, straight line from laptop, 3 m spacing, nodes on floor, power banks; node 2 unplugged ~120-150 s",
+  "scheduled_cmds": [
+    "60s: CMD BLINK 0 255",
+    "90s: CMD TXPOWER 8 255",
+    "180s: CMD TXPOWER 84 255",
+    "200s: CMD HAIL 0 255"
+  ],
+  "counts": {
+    "gw": 48,
+    "beacon": 230,
+    "log": 4
+  },
+  "observed": "Node 1 (MAC 10:BD:A3:CF:B1:20) went silent ~113-127 s and rebooted (came back at default full TX power); node 2 stayed up the whole run. TXPOWER 8 at ~89 s dropped RSSI ~20 dB; gateway still heard both directly, with occasional hops=1 copies of node 2 relayed via node 1. rx_dropped=0."
+}
