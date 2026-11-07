@@ -49,5 +49,6 @@ Shared context for every teammate's Claude Code session. Read this first, then t
 | `docs/PROJECT_BRIEF.md` | Problem, user, scenario, assumptions, demo metric, pitch angle, judge Q&A |
 | `docs/ARCHITECTURE.md` | Components, message format, algorithms, TAK mapping, repo layout |
 | `docs/HARDWARE.md` | Board allocation, wiring, parts to request or buy, cost per node, power |
+| `docs/SENSORS.md` | **Every people-detecting sensor: physics, role, exact message output, how to fuse it, limits, simulator recipe** (for the data scientist) |
 | `docs/PLAN.md` | Timeline with clock times, owners, checkpoints, cut list |
 | `docs/DECISIONS.md` | Running decision log |

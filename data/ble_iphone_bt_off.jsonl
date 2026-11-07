@@ -1,0 +1,37 @@
+{"type": "beacon", "src": 2, "seq": 1112, "hops": 0, "rssi_last": -25, "batt_mv": 0, "uptime_s": 2226, "floor_db": 0, "nbrs": [[1, -38]], "t_host": 1794090198.813}
+{"type": "host_cmd", "text": "CMD SCAN 5 255", "t_host": 1794090199.018}
+{"type": "log", "text": "# sent CMD SCAN arg=5 target=255", "t_host": 1794090199.22}
+{"type": "beacon", "src": 1, "seq": 582, "hops": 0, "rssi_last": -31, "batt_mv": 0, "uptime_s": 1172, "floor_db": 0, "nbrs": [[2, -39]], "t_host": 1794090199.22}
+{"type": "beacon", "src": 2, "seq": 1113, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2228, "floor_db": 0, "nbrs": [[1, -39], [0, -25]], "t_host": 1794090200.842}
+{"type": "beacon", "src": 1, "seq": 583, "hops": 0, "rssi_last": -32, "batt_mv": 0, "uptime_s": 1174, "floor_db": 0, "nbrs": [[0, -31], [2, -38]], "t_host": 1794090201.044}
+{"type": "device_seen", "src": 1, "seq": 584, "hops": 0, "rssi_last": -33, "t_ms": 1175354, "devs": [["3cb7eb8b", "BLE_APPLE", -40, 1], ["0b1a2769", "BLE_APPLE", -40, 1], ["d7c026ed", "BLE_OTHER", -41, 1], ["3ccca3c1", "BLE_APPLE", -43, 1], ["72d23c75", "BLE_APPLE", -44, 1], ["c2bfbe3e", "BLE_FINDMY", -46, 1], ["72085b01", "BLE_FINDMY", -48, 1], ["ebd20a1e", "BLE_APPLE", -49, 1], ["bf98631a", "BLE_APPLE", -49, 1], ["2b757fc2", "BLE_OTHER", -50, 1], ["a018cb4d", "BLE_APPLE", -50, 1], ["5deb383f", "BLE_OTHER", -52, 1], ["7e6c29d5", "BLE_APPLE", -52, 1], ["5652b0c8", "BLE_OTHER", -55, 1], ["7247179a", "BLE_OTHER", -56, 1]], "t_host": 1794090201.649}
+{"type": "gw", "id": 0, "t_ms": 1561565, "rx_dropped": 0, "t_host": 1794090202.46}
+{"type": "beacon", "src": 2, "seq": 1114, "hops": 0, "rssi_last": -26, "batt_mv": 0, "uptime_s": 2230, "floor_db": 0, "nbrs": [[1, -37], [0, -25]], "t_host": 1794090202.664}
+{"type": "beacon", "src": 1, "seq": 585, "hops": 0, "rssi_last": -31, "batt_mv": 0, "uptime_s": 1176, "floor_db": 0, "nbrs": [[0, -31], [2, -38]], "t_host": 1794090203.069}
+{"type": "beacon", "src": 2, "seq": 1115, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2231, "floor_db": 0, "nbrs": [[1, -37], [0, -25]], "t_host": 1794090204.7}
+{"type": "beacon", "src": 2, "seq": 1116, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2234, "floor_db": 0, "nbrs": [[1, -37], [0, -25]], "t_host": 1794090206.727}
+{"type": "gw", "id": 0, "t_ms": 1566565, "rx_dropped": 0, "t_host": 1794090207.348}
+{"type": "beacon", "src": 2, "seq": 1117, "hops": 0, "rssi_last": -25, "batt_mv": 0, "uptime_s": 2236, "floor_db": 0, "nbrs": [[1, -37], [0, -25]], "t_host": 1794090208.777}
+{"type": "beacon", "src": 1, "seq": 586, "hops": 0, "rssi_last": -31, "batt_mv": 0, "uptime_s": 1182, "floor_db": 0, "nbrs": [[0, -31], [2, -37]], "t_host": 1794090209.191}
+{"type": "beacon", "src": 2, "seq": 1118, "hops": 0, "rssi_last": -25, "batt_mv": 0, "uptime_s": 2237, "floor_db": 0, "nbrs": [[1, -38], [0, -25]], "t_host": 1794090210.636}
+{"type": "beacon", "src": 1, "seq": 587, "hops": 0, "rssi_last": -34, "batt_mv": 0, "uptime_s": 1184, "floor_db": 0, "nbrs": [[2, -38]], "t_host": 1794090211.242}
+{"type": "device_seen", "src": 1, "seq": 588, "hops": 0, "rssi_last": -29, "t_ms": 1185354, "devs": [["a018cb4d", "BLE_APPLE", -42, 1], ["dcdeaa82", "BLE_APPLE", -43, 1], ["0b1a2769", "BLE_APPLE", -43, 1], ["3ccca3c1", "BLE_APPLE", -43, 1], ["d7c026ed", "BLE_OTHER", -44, 1], ["3cb7eb8b", "BLE_APPLE", -44, 1], ["cb3e3d6b", "BLE_APPLE", -45, 1], ["2836776c", "BLE_APPLE", -46, 1], ["c2bfbe3e", "BLE_FINDMY", -48, 1], ["52124c7b", "BLE_APPLE", -49, 1], ["e5c62dd9", "BLE_APPLE", -51, 1], ["800c9a19", "BLE_APPLE", -52, 1], ["bf98631a", "BLE_APPLE", -52, 1], ["9ba2a807", "BLE_APPLE", -53, 1], ["58c9f4ac", "BLE_APPLE", -55, 1], ["2dc13c9d", "BLE_APPLE", -55, 1], ["66f60414", "BLE_APPLE", -56, 1]], "t_host": 1794090211.658}
+{"type": "gw", "id": 0, "t_ms": 1571565, "rx_dropped": 0, "t_host": 1794090212.481}
+{"type": "beacon", "src": 2, "seq": 1119, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2239, "floor_db": 0, "nbrs": [[1, -38]], "t_host": 1794090212.682}
+{"type": "beacon", "src": 1, "seq": 589, "hops": 0, "rssi_last": -28, "batt_mv": 0, "uptime_s": 1186, "floor_db": 0, "nbrs": [[2, -38]], "t_host": 1794090213.087}
+{"type": "beacon", "src": 2, "seq": 1120, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2241, "floor_db": 0, "nbrs": [[1, -37]], "t_host": 1794090214.307}
+{"type": "beacon", "src": 2, "seq": 1121, "hops": 0, "rssi_last": -23, "batt_mv": 0, "uptime_s": 2243, "floor_db": 0, "nbrs": [[1, -37], [0, -24]], "t_host": 1794090216.558}
+{"type": "gw", "id": 0, "t_ms": 1576565, "rx_dropped": 0, "t_host": 1794090217.38}
+{"type": "beacon", "src": 2, "seq": 1122, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2245, "floor_db": 0, "nbrs": [[1, -37], [0, -24]], "t_host": 1794090218.387}
+{"type": "beacon", "src": 1, "seq": 590, "hops": 0, "rssi_last": -29, "batt_mv": 0, "uptime_s": 1193, "floor_db": 0, "nbrs": [[0, -31], [2, -36]], "t_host": 1794090220.202}
+{"type": "beacon", "src": 2, "seq": 1123, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2247, "floor_db": 0, "nbrs": [[1, -37], [0, -24]], "t_host": 1794090220.202}
+{"type": "device_seen", "src": 1, "seq": 591, "hops": 0, "rssi_last": -29, "t_ms": 1195354, "devs": [["0b1a2769", "BLE_APPLE", -41, 1], ["1ae110ba", "BLE_FINDMY", -41, 1], ["3cb7eb8b", "BLE_APPLE", -44, 1], ["72d23c75", "BLE_APPLE", -44, 1], ["d7c026ed", "BLE_OTHER", -45, 1], ["dcdeaa82", "BLE_APPLE", -49, 1], ["3ccca3c1", "BLE_APPLE", -50, 1], ["a018cb4d", "BLE_APPLE", -51, 1], ["2836776c", "BLE_APPLE", -52, 1], ["66f60414", "BLE_APPLE", -55, 1], ["58c9f4ac", "BLE_APPLE", -56, 1], ["52124c7b", "BLE_APPLE", -57, 1], ["84b303b9", "BLE_OTHER", -57, 1], ["d439e019", "BLE_APPLE", -58, 1]], "t_host": 1794090221.631}
+{"type": "beacon", "src": 1, "seq": 592, "hops": 0, "rssi_last": -28, "batt_mv": 0, "uptime_s": 1195, "floor_db": 0, "nbrs": [[0, -31], [2, -37]], "t_host": 1794090222.238}
+{"type": "beacon", "src": 2, "seq": 1124, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2249, "floor_db": 0, "nbrs": [[1, -37], [0, -24]], "t_host": 1794090222.238}
+{"type": "gw", "id": 0, "t_ms": 1581565, "rx_dropped": 0, "t_host": 1794090222.44}
+{"type": "beacon", "src": 1, "seq": 593, "hops": 0, "rssi_last": -29, "batt_mv": 0, "uptime_s": 1197, "floor_db": 0, "nbrs": [[0, -31], [2, -37]], "t_host": 1794090224.27}
+{"type": "beacon", "src": 2, "seq": 1125, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2251, "floor_db": 0, "nbrs": [[1, -37], [0, -24]], "t_host": 1794090224.473}
+{"type": "beacon", "src": 2, "seq": 1126, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2253, "floor_db": 0, "nbrs": [[1, -37]], "t_host": 1794090226.514}
+{"type": "gw", "id": 0, "t_ms": 1586565, "rx_dropped": 0, "t_host": 1794090227.325}
+{"type": "beacon", "src": 2, "seq": 1127, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2255, "floor_db": 0, "nbrs": [[1, -37]], "t_host": 1794090228.543}
+{"type": "beacon", "src": 2, "seq": 1128, "hops": 0, "rssi_last": -24, "batt_mv": 0, "uptime_s": 2257, "floor_db": 0, "nbrs": [[1, -37]], "t_host": 1794090230.583}

@@ -1,0 +1,17 @@
+{
+  "name": "ble_quiet_node2_nophone",
+  "port": "COM13",
+  "start": "2026-11-07T17:33:10",
+  "secs": 32.0,
+  "positions_m": {},
+  "note": "node 2 in quietest BLE spot (hallway), iPhone >5 m away; scan 5 s/window",
+  "scheduled_cmds": [
+    "0.5s: CMD SCAN 5 255"
+  ],
+  "counts": {
+    "device_seen": 7,
+    "beacon": 19,
+    "log": 1,
+    "gw": 7
+  }
+}

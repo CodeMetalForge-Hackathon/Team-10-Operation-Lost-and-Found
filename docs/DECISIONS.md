@@ -32,6 +32,7 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 - 2026-11-07 (evening): EVENT kinds 6 = VIBRATION and 7 = MOVED stay in the contract as **reserved** (additive, unused), so an accelerometer can be added later without a format change.
 
 ## What worked / didn't / unfinished
+- ✅ BLE phone detection on the C5 (2026-11-07 ~17:40): an iPhone touching a node in a quiet hallway read −33 to −39 dBm, against a background of −59 to −66 (+25–30 dB). The same hash was seen at a second node, more weakly. ❌ Near the crowded laptop area the phone was indistinguishable (dozens of Apple devices at about −40 to −45), so the demo places the victim node away from people. Gateway settings rebroadcast verified: a rebooted node re-learned its TX power within 19 s.
 - ✅ C5↔C5 ESP-NOW, C5→S3 gateway JSON, multi-hop forwarding (hops=1 observed), gateway→node commands.
 
 ## What existed before this weekend

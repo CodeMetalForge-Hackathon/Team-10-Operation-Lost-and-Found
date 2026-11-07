@@ -1,0 +1,15 @@
+{
+  "name": "ble_quiet_node2_phone",
+  "port": "COM13",
+  "start": "2026-11-07T17:34:14",
+  "secs": 32.0,
+  "positions_m": {},
+  "note": "node 2 in quiet hallway spot, iPhone (BT on, unlocked) almost touching node 2 antenna; scan 5 s/window",
+  "scheduled_cmds": [],
+  "counts": {
+    "device_seen": 6,
+    "beacon": 18,
+    "gw": 6,
+    "log": 1
+  }
+}
