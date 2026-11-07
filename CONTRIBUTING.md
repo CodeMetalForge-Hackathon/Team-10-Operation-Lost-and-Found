@@ -6,7 +6,7 @@ Read `CLAUDE.md` first. Architecture, hardware, and the plan live in `docs/`. Th
 
 - The over-the-air and gateway JSON formats in `docs/ARCHITECTURE.md` are the contract. Do not change them in code without updating that doc and telling the team.
 - TAK is the primary operator output. The page in `ui/` is the secondary dashboard. See `docs/DECISIONS.md`.
-- There is no project README yet. Do not invent one that claims history. `docs/DECISIONS.md` already lists what existed before this weekend.
+- There is a root `README.md`. It describes this checkout. It does not claim hardware results that were not run.
 
 ## Branches
 
@@ -37,10 +37,14 @@ The planned layout keeps firmware, fusion, the simulator, the dashboard, and dro
 
 ## How to run
 
-Nothing in this repo runs yet. These commands are planned in `docs/PLAN.md`. They are not verified:
+Python 3.11+ (`python3` on the current Mac is 3.9; `python3.11` is installed).
 
-- Python 3.11+ (`python3` on this Mac is 3.9; `python3.11` is installed)
-- packages named in the plan: numpy, scipy, fastapi, uvicorn, pyserial, pytak, scikit-learn
-- firmware: Arduino IDE 2 or arduino-cli, with arduino-esp32 core >= 3.3
+```bash
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests
+python -m fusion.server --demo
+```
 
-`ui/index.html` is a static skeleton. It does not start a server and does not define a new message format.
+The `--demo` input is simulated. Firmware still uses Arduino IDE 2 or arduino-cli, with arduino-esp32 core >= 3.3. That path is not in this branch.

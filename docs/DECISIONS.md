@@ -20,6 +20,8 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 
 - 2026-11-07: **Mic = Adafruit ICS-43434 I2S MEMS breakout (#6049), the same model on all 5 C5 nodes.** Why: available at Micro Center today, digital I2S with fixed gain (no automatic gain control), works with ESP32. One mic and one piezo per node.
 
+- 2026-11-07 evening: Mac proof of concept plays simulated gateway lines into fusion state and a proposed `/ws` v1 payload (`docs/WS_CONTRACT.md`). Positions are not estimated. The five gateway JSON types are unchanged. Why: the dashboard demo cannot wait on a live board, and the socket shape has to be visible before anyone treats it as frozen.
+
 ## What existed before this weekend
 - Open-source: Arduino-ESP32 core, ESP-NOW, NumPy/SciPy/scikit-learn, FastAPI, pytak, TAK/WinTAK.
 - Pretrained models (if used): YAMNet (Google AudioSet).
@@ -27,3 +29,6 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 
 ## What worked / didn't / unfinished
 (keep this updated; it answers judge question #3)
+
+- Worked, simulated only, 2026-11-07 evening: all five gateway JSON types reach fusion state, and the dashboard shows a node, a tap cue, a hashed `device_seen`, and a node going inactive. Not a hardware run. Not a location.
+- Not working yet: ESP32 firmware is not in this repo, there is no localization or heatmap, command buttons have no agreed body, and nothing sends CoT to TAK.
