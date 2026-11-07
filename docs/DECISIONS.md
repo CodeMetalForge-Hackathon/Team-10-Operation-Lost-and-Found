@@ -18,6 +18,8 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 - 2026-11-07 ~14:00: Priority order is now DEVICE_SEEN before acoustic ranging. Why: device detection is a new detection channel with high demo value; node localization already has fallbacks (anchors and signal strength).
 - Known risk: the demo room is full of other teams' phones. Mitigations: BASELINE exclusion, stationarity, strong-signal-at-one-node scoring. Demo the hidden phone under boxes on the floor (strong at one node).
 
+- 2026-11-07: **Mic = Adafruit ICS-43434 I2S MEMS breakout (#6049), the same model on all 5 C5 nodes.** Why: available at Micro Center today, digital I2S with fixed gain (no automatic gain control), works with ESP32. One mic and one piezo per node.
+
 ## What existed before this weekend
 - Open-source: Arduino-ESP32 core, ESP-NOW, NumPy/SciPy/scikit-learn, FastAPI, pytak, TAK/WinTAK.
 - Pretrained models (if used): YAMNet (Google AudioSet).
