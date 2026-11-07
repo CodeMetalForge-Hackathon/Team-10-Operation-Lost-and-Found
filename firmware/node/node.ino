@@ -24,13 +24,20 @@
 #define ROLE_DRONE_BRIDGE 3
 
 // ======================= EDIT PER BOARD (only these two lines) =======================
+// (or leave as-is and flash with tools/flash.py, which passes -DROLE=.. -DNODE_ID=..)
+#ifndef ROLE
 #define ROLE ROLE_NODE   // ROLE_NODE | ROLE_GATEWAY | ROLE_DRONE_BRIDGE
+#endif
+#ifndef NODE_ID
 #define NODE_ID 2        // nodes 1..5, gateway 0, drone 200
+#endif
 // =====================================================================================
 
 static_assert(ROLE_NODE != ROLE_GATEWAY && ROLE_GATEWAY != ROLE_DRONE_BRIDGE, "role constants were edited");
 
+#ifndef ENABLE_BLE_SCAN
 #define ENABLE_BLE_SCAN 0     // STEP 2: set to 1 on field nodes
+#endif
 #define ESPNOW_CHANNEL 1
 #define START_TTL 4
 #define BEACON_PERIOD_MS 2000
