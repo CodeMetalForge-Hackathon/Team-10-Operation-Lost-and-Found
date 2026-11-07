@@ -118,12 +118,13 @@ Common header, 8 bytes:
 - **Status strip:** nodes alive, packets per second, bytes per second, localization mode (ANCHORED / RELATIVE).
 - The panel's "red light / green light" advice: a single big banner, `0 / 1 / 2 possible survivors`.
 
-## 5. Drone (`drone/`, Pi 5)
+## 5. Drone (`drone/`, Pi 5, **carried by hand to simulate flight**; the Cetus X can't lift it)
+- `droplog.py` logs each drop: a keypress records the time, the camera frame and GPS if there's a fix.
 - A Pi camera captures frames.
 - `ledid.py` detects blinking LEDs, decodes the IDs, and converts pixel positions to ground positions. Scale comes from the known altitude or from two reference markers. The output is anchors.
 - An ESP32 in `ROLE_DRONE_BRIDGE` connects over USB to the Pi. It relays the mesh and logs signal strength per node along with GPS (if a GPS module is attached).
 - With GPS, the drone's signal-strength samples taken at many known points are multilaterated into each node's position. This replaces the "drop log" when a real drop isn't possible.
-- **Stretch:** a person detector on the AI HAT (Hailo, using the prebuilt `hailo-rpi5-examples` YOLO models), or a thermal camera.
+- **Stretch:** a person detector on the AI HAT (Hailo, using the prebuilt `hailo-rpi5-examples` YOLO models), or the HT-203U thermal camera if it works as a UVC webcam.
 
 ## 6. Repo layout
 ```

@@ -30,11 +30,20 @@
 
 **Production parts cost estimate per node** (bulk): ESP32-C5 module $3 + MEMS microphone $1 + buzzer/LED/piezo $0.50 + 400 mAh LiPo $2 + moulded shell $2 + PCB/assembly $3 ≈ **$12**, or **~$15 with radar**.
 
-## Drone payload
-- Pi 5 (16 GB) + AI HAT (26 TOPS, Hailo) + Pi Camera, plus the ESP32-S3 drone bridge over USB.
-- **GPS/GNSS module from the library if available** (UART to the Pi). Indoors it won't get a fix, which naturally demonstrates GPS-denied mode.
-- Power: Pi 5 draws 5 V at about 3–5 A peak. Check the drone's payload capacity and use a separate 5 V battery pack.
-- **Drones fly only with Code Metal staff, in daytime.** Book a slot. Fallback: the same payload on a pole or held overhead from a balcony/chair to simulate a hover.
+## Drone: simulated, carried by hand
+- The available drone is a **BetaFPV Cetus X (payload about 15–30 g)**. It can't lift the Pi 5, so **we simulate the drone**. A teammate carries the "drone payload" overhead along a lawnmower path over the field and drops the nodes by hand at logged points.
+- The simulated drone payload is:
+  - Pi 5 (16 GB) + AI HAT (26 TOPS) + Pi Camera, facing down;
+  - the ESP32-S3 drone bridge over USB;
+  - a USB power bank;
+  - optionally, a GPS/GNSS module from the library. Indoors it won't get a fix, which demonstrates GPS-denied mode.
+- **Drop log in GPS-denied mode:** the carrier presses a key or button at each drop. The Pi logs the time and the camera frame, and the drop point is anchored in the overhead image.
+- **Optional real-drone clip (stretch, for video only):** the Cetus X carries **one bare ESP32-C5 node with a 1S 100–150 mAh LiPo (about 10–15 g)** and releases it, filmed with Code Metal staff in daylight. This proves the drop concept physically and doesn't block anything else.
+
+## Thermal camera (low priority)
+- The **HT-203U** is a USB-C smartphone thermal camera.
+- Later, test whether it enumerates as a UVC webcam on the laptop or Pi. If it does, OpenCV `VideoCapture` can read it, and it can sit on the drone payload or a hero node for "heat" (OBJ.02).
+- If it only works through its phone app, use phone screenshots or video as supporting evidence only.
 
 ## Power math (talking point)
 - An ESP32-C5 with ESP-NOW receive always on draws about 80–100 mA. A 400 mAh LiPo gives about **4 h**, which meets the 1–2 h requirement with margin.

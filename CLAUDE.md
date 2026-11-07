@@ -30,7 +30,7 @@ Shared context for every teammate's Claude Code session. Read this first, then t
   - source clustering and count;
   - a web dashboard;
   - **Cursor-on-Target (CoT) output to WinTAK**.
-- **Drone** (Pi 5 + Pi camera + an ESP32 bridge, plus GPS if available): an extra mobile mesh node. With GPS it adds absolute anchors. Without GPS it acts as a relay and an overhead camera that spots the nodes' LED blinks to fix their positions.
+- **Drone** (Pi 5 + Pi camera + an ESP32 bridge, plus GPS if available): an extra mobile mesh node. **For the demo it is carried by hand to simulate flight**, because the Cetus X only lifts about 15–30 g. With GPS it adds absolute anchors. Without GPS it acts as a relay and an overhead camera that spots the nodes' LED blinks to fix their positions.
 - Full details are in `docs/ARCHITECTURE.md`.
 
 ## Rules for Claude sessions on this repo

@@ -15,16 +15,16 @@
 | **18:00–22:00** thin E2E | Flooding (TTL, de-dup); FEAT + BEACON + onset/LOUD events on 4 nodes; CMD downlink (PING, BLINK) | `server.py` + `ui/` canvas: nodes, links, heatmap, buttons; serial ingest; wire real data | Wire `tak.py` to fusion state; write the operations-concept storyline; draft the cost/bandwidth/power slide | **Tap near a node → heatmap + TAK marker move to the right spot** |
 | **22:00–02:00** | TAP_PATTERN + VOICE_LIKE detection; HAIL (buzzer sync); **acoustic ranging spike (timebox 2 h)**; TX-power-down multi-hop | Per-node gain calibration; DBSCAN source count; record + replay runs to `data/`; error metrics vs. tape-measured truth | Pitch deck v1 (problem → scenario → demo → PACE → deployability → ask); README "what existed before" | Runs 3× in a row |
 | **02:00–08:00** harden + sleep shifts | Sleep 05:00–07:30. Enclosures (weeble cups); drone payload assembled; LED-ID blink | Sleep 02:30–05:00. `drone/ledid.py` from overhead camera (or hand-measured anchors as fallback); tune thresholds in the hallway | Sleep 00:30–04:00. Then rehearse the 15-min table walkthrough and 10-min finals talk | Measured: source error, time to detect, node-localization error |
-| **08:00–10:00** (daylight) | **Drone flight with Code Metal staff:** Pi + camera + bridge; record LED-ID + relay footage | Deploy fusion to the Pi 5 (optional); final tuning | Film the **backup demo video** | Video recorded |
+| **08:00–10:00** | **Simulated drone pass:** carry the Pi + camera + bridge overhead, drop nodes, record LED-ID + relay footage. *Optional:* Cetus X drops one bare node (with staff, daylight) for the video | Deploy fusion to the Pi 5 (optional); final tuning | Film the **backup demo video** | Video recorded |
 | **10:00–11:00** | **Feature freeze.** Bug fixes only | Clean `data/` replay demo as fallback | Finalize deck + README | Repo pushed |
 | **11:00–11:45** | Final push & submit | | | **Submitted before 11:45** |
 | 12:00–14:00 | Table judging: one person at the table at all times. Live demo + replay fallback | | | |
 | 14:45 | Finals (if selected): 10 min | | | |
 
 ## Cut list (cut from the bottom first if behind)
-1. ~~Hailo person detection / thermal on drone~~
+1. ~~Hailo person detection / HT-203U thermal~~
 2. ~~Time-difference-of-arrival (TDoA) source localization~~
-3. ~~Real drone flight~~ → overhead camera on a pole
+3. ~~Cetus X single-node drop clip~~
 4. ~~Optical LED-ID~~ → hand-measured anchors entered in the UI
 5. ~~Acoustic ranging~~ → signal strength + anchors only
 6. ~~mmWave / gas hero node~~
