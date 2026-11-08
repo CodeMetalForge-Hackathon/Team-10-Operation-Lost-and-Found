@@ -1,0 +1,14 @@
+[Unit]
+Description=T10 drone camera mosaic (drone/live_mosaic.py, :8080)
+After=network.target
+
+[Service]
+User=t10pi
+WorkingDirectory=/home/t10pi/t10
+EnvironmentFile=/home/t10pi/t10/deploy/pi/t10.env
+ExecStart=/bin/bash -c 'exec python3 drone/live_mosaic.py $$T10_CAMERA_ARGS'
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -14,6 +14,9 @@ Node positions (metres, local frame):
     (or the camera page) when a node is dropped; it is placed right under the camera, origin = the first drop.
   * --pos 1=0,0 --pos 2=3,0 ...: hand-measured, fixed.
   * --sim / --replay without either: the 3-node test layout N1 (0,0), N2 (3,0), N5 (0,3).
+The heatmap shows where evidence is strongest, not a confirmed survivor location.
+The live demo runs this model inside fusion/server.py (one process owns the gateway); this file stays runnable on its own
+for bench tests. ``t_host`` in a recording is Unix seconds; ``as_unix_seconds`` also accepts milliseconds.
 
 Model (docs/SENSORS.md section 1, field meanings in docs/ARCHITECTURE.md section 2):
   * Events from different nodes arriving within GROUP_S of each other, of the same kind, are one sound.
@@ -39,6 +42,11 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import numpy as np
+
+try:
+    from fusion.time_contract import as_unix_seconds
+except ImportError:  # python fusion/heatmap.py puts this directory on sys.path
+    from time_contract import as_unix_seconds
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -116,7 +124,7 @@ class Fusion:
         return now - self.nodes[i]["last"] < ALIVE_S
 
     def ingest(self, m):
-        t = m.get("t_host", time.time())
+        t = as_unix_seconds(m.get("t_host"), time.time())
         typ = m.get("type")
         with self.lock:
             if typ == "host_cmd" and "HAIL" in m.get("text", ""):
@@ -391,7 +399,7 @@ def drops_poller(fusion, base, on_change):
 
 
 # ----------------------------------------------------------------------------- web
-PAGE = r"""<!doctype html><html><head><meta charset="utf-8"><title>Team 10 heatmap (test)</title>
+PAGE = r"""<!doctype html><html><head><meta charset="utf-8"><title>Team 10 heatmap</title>
 <style>
 body{margin:0;font:14px system-ui,sans-serif;background:#111;color:#ddd;display:flex;gap:16px;padding:16px}
 canvas{background:#1b1b1b;border:1px solid #333;align-self:flex-start} /* no stretching: 1 m = 1 m both ways */
@@ -403,7 +411,7 @@ button{background:#2a2a2a;color:#eee;border:1px solid #555;padding:6px 12px;marg
 #bgmsg{color:#fc6;margin-top:4px} canvas.aligning{cursor:crosshair}
 </style></head><body>
 <canvas id="c" width="640" height="640"></canvas>
-<div id="side"><h2>Team 10: where to dig (test heatmap)</h2>
+<div id="side"><h2>Team 10: where to look</h2>
 <div><button onclick="cmd('HAIL')">HAIL</button><button onclick="cmd('PING')">PING</button><button onclick="cmd('BLINK')">BLINK</button><button onclick="fetch('/reset',{method:'POST'})">Reset map</button></div>
 <div id="bgctl" class="muted">Camera photo: <input id="murl" size="24" placeholder="http://PI-IP:8080 (blank: this host)">
 <button onclick="setMos()">Load</button><button id="abtn" onclick="startAlign()">Align photo</button>
@@ -517,7 +525,7 @@ async function tick(){
   if(p){const X=px(p.x),Y=py(p.y);ctx.strokeStyle='#fff';ctx.lineWidth=2;
     ctx.beginPath();ctx.arc(X,Y,Math.max(8,p.radius*sc),0,7);ctx.stroke();
     ctx.beginPath();ctx.moveTo(X-10,Y);ctx.lineTo(X+10,Y);ctx.moveTo(X,Y-10);ctx.lineTo(X,Y+10);ctx.stroke();
-    pk.innerHTML=`<b>Dig here:</b> (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) m &plusmn;${p.radius.toFixed(1)} m &middot; strength ${p.strength}`;}
+    pk.innerHTML=`<b>Look here:</b> (${p.x.toFixed(1)}, ${p.y.toFixed(1)}) m &plusmn;${p.radius.toFixed(1)} m &middot; strength ${p.strength}`;}
   else pk.innerHTML='<span class="muted">No confident source yet</span>';
   if(s.warmup>0) pk.innerHTML+=`<div class="muted">learning room background: ${s.warmup}s left (map may show steady noise until then)</div>`;
   document.getElementById('hail').textContent=s.hail_age!=null?`HAIL ${s.hail_age}s ago ${s.hail_age<3.5?'(nodes deaf until 3.5 s)':s.hail_age<13.5?'- LISTENING for replies (x2 weight)':''}`:'';
