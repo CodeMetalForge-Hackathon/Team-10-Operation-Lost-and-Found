@@ -146,7 +146,12 @@ The heatmap model runs inside the fusion host. Every gateway line goes to both t
 
 - **Main panel, the map:** the camera mosaic, the evidence heat, nodes in their own colour with a green (up) or red (lost) ring, mesh links (brighter = stronger), a pulsing **LOOK HERE** ring with its ± radius, and a HAIL countdown while the network listens.
 - **Header:** data source, gateway and TAK links, **nodes operational / dropped** as a segmented bar (plus nodes heard but not dropped yet), **EST. PEOPLE**, packets and bytes per second, and **HAIL / PING / BLINK**.
-- **EST. PEOPLE (rough):** the number of separate evidence hotspots on the map. A spot counts if it is a local maximum ≥ 50% of the main peak, ≥ 1.5 m from a stronger one, and with a valley between them. Secondary hotspots are drawn as small numbered rings. It is not shown during the 2 min background warm-up, and it is smoothed over 10 s. It is a hotspot count, not a headcount.
+- **EST. PEOPLE (rough):** one number in the header, the largest of three channels over the last 60 s:
+  - **sound:** separate evidence hotspots on the map (≥ 50% of the main peak, ≥ 1.5 m apart, with a valley between; secondary ones drawn as small numbered rings; not counted during the 2 min warm-up);
+  - **vibration:** separate spots where nodes felt taps (nodes within 1.5 m grouped);
+  - **phones/wearables:** unique nearby personal devices ÷ 1.5.
+
+  The channels overlap, so they aren't added. The number is smoothed over 10 s. It is a planning number, not a headcount (`fusion/people.py`).
 - **Node fleet** (drag the handle between the fleet and the matrix to resize them): one tile per node, with status, a 60 s audio-level sparkline, cue counts for the last 30 s (TAP, FELT, VOICE, LOUD, BLE devices), hops, link dBm and last-heard age.
 - **Distance matrix:** metres between drop positions above the diagonal; mesh link strength in dBm (the mean of both directions) below it.
 - **Sensor graphs, last 5 min, all nodes:**
@@ -339,7 +344,7 @@ firmware/node/      one Arduino sketch for every role (node, gateway, drone brid
 firmware/sensor_test/  sound sensor / SW-420 bench sketch
 hardware/enclosure/ parametric node case (CadQuery) + STLs
 drone/              live_mosaic.py (camera, mosaic, drops), mosaic.py (stitcher), fps_ramp.sh (power test)
-fusion/             server.py (the host), heatmap.py (model + page), history.py, state.py, serial_ingest.py,
+fusion/             server.py (the host), heatmap.py (model + page), history.py, people.py, state.py, serial_ingest.py,
                     tak.py (CoT), tak_picture.py, tak_overlay.py (map -> KMZ), recording.py, store.py
 ui/                 ops.html/js/css (ops dashboard at /), index.html + review.js (evidence review at /review); ECharts + Tabler vendored
 sim/                scripted gateway lines for the dashboard demo

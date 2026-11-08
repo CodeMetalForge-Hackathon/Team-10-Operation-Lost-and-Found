@@ -5,6 +5,7 @@ t_ingest_ms = host receipt time). Keeps only what the charts draw:
   audio   from feat:        (t, rms_db, peak_db)                  1 Hz per node
   events  from event:       (t, kind, peak_db, count, conf)       LOUD / VOICE_LIKE / TAP_PATTERN / VIBRATION
   ble     from device_seen: (t, n_devs, strongest_dbm, {kind: n}) every 10 s per node
+  devices from device_seen: hash -> latest {t, kind, rssi (strongest at any node), src}, for unique-device counts
 """
 
 import threading
@@ -26,6 +27,7 @@ class History:
             self.audio = defaultdict(deque)
             self.events = defaultdict(deque)
             self.ble = defaultdict(deque)
+            self.dev = {}
 
     def ingest(self, m):
         kind, src = m.get("type"), m.get("src")
@@ -40,8 +42,13 @@ class History:
             else:
                 devs = m.get("devs") or []
                 kinds = defaultdict(int)
-                for _hash, dev_kind, _rssi, _count in devs:
+                for digest, dev_kind, rssi, _count in devs:
                     kinds[dev_kind] += 1
+                    old = self.dev.get(digest)  # keep the strongest reading, refreshed if older than 30 s
+                    if old is None or t - old["t"] > 30 or rssi >= old["rssi"]:
+                        self.dev[digest] = {"t": t, "kind": dev_kind, "rssi": rssi, "src": src}
+                    else:
+                        old["t"] = t
                 strongest = max((d[2] for d in devs), default=None)
                 self.ble[src].append((t, len(devs), strongest, dict(kinds)))
 
@@ -57,6 +64,13 @@ class History:
                     out.setdefault(src, {"audio": [], "events": [], "ble": []})[name] = [
                         [round(r[0], 2), *r[1:]] for r in rows]
         return out
+
+    def devices(self, now_s, window_s):
+        """Unique device hashes heard in the last window_s: [{"hash", "t", "kind", "rssi", "src"}]."""
+        with self.lock:
+            for digest in [k for k, v in self.dev.items() if now_s - v["t"] > self.window_s]:
+                del self.dev[digest]
+            return [dict(v, hash=k) for k, v in self.dev.items() if now_s - v["t"] <= window_s]
 
 
 def _db(value):

@@ -52,11 +52,11 @@
     $("n-bar").innerHTML = d.dropped.map(i =>
       `<i class="${d.operational.includes(i) ? "ok" : "bad"}" title="N${i} ${d.operational.includes(i) ? "up" : "lost"}"></i>`).join("");
     $("n-extra").textContent = d.heard_not_dropped.length ? `+${d.heard_not_dropped.length} not dropped` : "";
-    // null while the room background is being learned; shown as the median of the last 10 s so it doesn't flicker
-    const raw = d.heat ? d.heat.people_est : 0;
+    // combined estimate (fusion/people.py); shown as the median of the last 10 s so it doesn't flicker
+    const P = d.people || {};
+    const raw = P.est;
     st.ppl = raw == null ? [] : (st.ppl || []).concat(raw).slice(-10);
     const ppl = raw == null ? null : st.ppl.slice().sort((a, b) => a - b)[Math.floor(st.ppl.length / 2)];
-    st.pplShown = ppl;
     $("ppl").textContent = ppl == null ? "…" : ppl;
     $("people").classList.toggle("on", ppl > 0);
     $("pps").textContent = d.packets_per_s;
@@ -235,11 +235,7 @@
 
     // overlay pills
     $("look").hidden = !pk;
-    if (pk) {
-      const n = st.pplShown;
-      $("look").innerHTML = `<b>LOOK HERE</b>${pk.x.toFixed(1)}, ${pk.y.toFixed(1)} m<span class="unc">±${pk.radius.toFixed(1)} m</span>` +
-        (n ? `<span class="ppl">≈ ${n} ${n === 1 ? "person" : "people"}</span>` : "");
-    }
+    if (pk) $("look").innerHTML = `<b>LOOK HERE</b>${pk.x.toFixed(1)}, ${pk.y.toFixed(1)} m<span class="unc">±${pk.radius.toFixed(1)} m</span>`;
     const ha = h && h.hail_age;
     $("hail").hidden = ha == null;
     if (ha != null) {

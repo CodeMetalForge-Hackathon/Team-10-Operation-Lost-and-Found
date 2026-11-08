@@ -77,6 +77,7 @@ class OpsPictureTest(unittest.TestCase):
         d = client.get("/ops").json()
         self.assertEqual(d["operational"], [1])
         self.assertEqual(d["history"]["1"]["audio"][0][1], -20)
+        self.assertEqual(sorted(d["people"]), ["ble", "ble_devices", "est", "felt_nodes", "sound", "vibration"])
         self.assertEqual(sorted(d["heat"]), sorted(["bounds", "res", "nx", "ny", "heat", "peak", "sources", "people_est",
                                                     "hail_age", "warmup"]))
 
@@ -110,6 +111,38 @@ class PeopleEstimateTest(unittest.TestCase):
 
         f = Fusion({1: (0, 0), 2: (4, 0)})
         self.assertIsNone(f.snapshot(f.started + 5)["people_est"])
+
+
+class CombinedPeopleTest(unittest.TestCase):
+    """fusion/people.py: the largest of sound hotspots, felt-tap spots and nearby personal devices / 1.5."""
+
+    def test_channels_and_largest_wins(self):
+        from fusion.people import estimate
+
+        now = 1000.0
+        pos = {1: (0, 0), 2: (1, 0), 3: (5, 0)}
+        felt = lambda t, edges: [t, "VIBRATION", -15, edges, 90]
+        series = {1: {"events": [felt(990, 6)]}, 2: {"events": [felt(995, 3)]}, 3: {"events": [felt(980, 9), felt(900, 9)]}}
+        dev = lambda h, kind, rssi, t=995: {"hash": h, "kind": kind, "rssi": rssi, "t": t, "src": 1}
+        devices = [dev("a", "BLE_APPLE", -50), dev("b", "BLE_APPLE", -60), dev("c", "BLE_FINDMY", -70),
+                   dev("d", "BLE_OTHER", -40),          # generic BLE: not a person
+                   dev("e", "BLE_APPLE", -85),          # too far
+                   dev("f", "WIFI_PROBE", -55, t=900)]  # too old
+        r = estimate(2, series, devices, pos, now)
+        self.assertEqual((r["vibration"], r["felt_nodes"]), (2, [1, 2, 3]))  # N1+N2 are 1 m apart: one spot
+        self.assertEqual((r["ble_devices"], r["ble"]), (3, 2))               # 3 devices / 1.5
+        self.assertEqual(r["est"], 2)                                          # largest, not the sum
+        self.assertEqual(estimate(None, {}, devices * 0, pos, now)["est"], 0)  # warm-up, nothing else: 0
+        many = [dev(str(i), "BLE_APPLE", -55) for i in range(30)]
+        self.assertEqual(estimate(1, series, many, pos, now)["est"], 20)       # a crowd of phones drives it
+
+    def test_unique_devices_across_nodes(self):
+        state, hist = FusionState(), History()
+        state.observers.append(hist.ingest)
+        feed(state, SEEN, SEEN.replace('"src":1', '"src":2').replace("-52", "-40"))
+        devs = {d["hash"]: d for d in hist.devices(NOW / 1000.0, 60)}
+        self.assertEqual(sorted(devs), ["07bb4e10", "9f3a01c2"])
+        self.assertEqual((devs["9f3a01c2"]["rssi"], devs["9f3a01c2"]["src"]), (-40, 2))  # strongest reading kept
 
 
 class RoutesTest(unittest.TestCase):

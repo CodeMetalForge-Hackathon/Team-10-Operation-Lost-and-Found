@@ -28,6 +28,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from fusion.history import History
+from fusion.people import WINDOW_S as PEOPLE_WINDOW_S, estimate as people_estimate
 from fusion.serial_ingest import accept_line, read_simulated
 from fusion.state import FusionState
 
@@ -100,7 +101,8 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None, heatmap=None, co
         now = _now(now_ms)
         snap = snapshot()
         heat = heatmap.snapshot(now / 1000.0) if heatmap is not None else None
-        return build_ops(snap, heat, pos["now"], sensor_history.series(now / 1000.0), mosaic_url, now)
+        return build_ops(snap, heat, pos["now"], sensor_history.series(now / 1000.0), mosaic_url, now,
+                         devices=sensor_history.devices(now / 1000.0, PEOPLE_WINDOW_S))
 
     @app.get("/heatmap")
     def heatmap_index():
@@ -455,7 +457,7 @@ def main(argv=None):
 HEAT_KEYS = ("bounds", "res", "nx", "ny", "heat", "peak", "sources", "people_est", "hail_age", "warmup")
 
 
-def build_ops(snap, heat, positions, series, mosaic_url, now_ms):
+def build_ops(snap, heat, positions, series, mosaic_url, now_ms, devices=()):
     """Everything the ops dashboard draws, in one JSON (polled at 1 Hz).
 
     dropped = nodes with a position (camera drops or --pos); operational = dropped and reporting.
@@ -498,6 +500,7 @@ def build_ops(snap, heat, positions, series, mosaic_url, now_ms):
         "matrix": {"ids": ids, "metres": metres, "dbm": dbm},
         "heat": {k: heat.get(k) for k in HEAT_KEYS} if heat else None,
         "history": {str(k): v for k, v in series.items()},
+        "people": people_estimate(heat.get("people_est") if heat else None, series, devices, positions, now_ms / 1000.0),
         "mosaic_url": mosaic_url,
     }
 
