@@ -5,13 +5,16 @@ tak.py turns heatmap metres into lat/lon with --lat/--lon/--heading. This applie
 image, so the node markers from tak.py sit exactly on the nodes in the photo. Use identical --lat/--lon/--heading
 for both. Uncovered parts of the mosaic are transparent, so the satellite map shows around it.
 
-  # one-off file: drag it into WinTAK (or Import Manager)
+  # one-off file of the published map: drag it into WinTAK (or Import Manager)
   python fusion/tak_overlay.py --mosaic http://PI-IP:8080 --lat 42.359389 --lon -71.056580 --out data/tak/t10_mosaic.kmz
-  python fusion/tak_overlay.py --mosaic data/camera/walk3_mosaic --lat ... --lon ...      # a saved mosaic
+  python fusion/tak_overlay.py --mosaic data/camera/walk3_mosaic --source live --lat ... --lon ...  # a saved mosaic
 
-  # live: serve a KMZ that always holds the latest mosaic; in WinTAK import http://THIS-HOST:8090/link.kml once
-  # (a KML network link: WinTAK re-downloads the overlay every --refresh seconds)
+  # served (the t10-overlay service): in WinTAK import http://THIS-HOST:8090/link.kml ONCE (a KML network link;
+  # WinTAK re-downloads the overlay every --refresh seconds). The operator then presses "Scan done -> TAK" (camera
+  # page or ops dashboard) when the area is covered, and the finished floor map appears in TAK within --refresh s.
+  # Nothing is shown before the first Scan done, and a half-built mosaic never is; pressing again republishes.
   python fusion/tak_overlay.py --mosaic :8080 --lat ... --lon ... --serve 8090
+  python fusion/tak_overlay.py --mosaic :8080 --lat ... --lon ... --serve 8090 --source live   # follow the growing map
 
 --heading: true bearing of the camera's "up" (top of its first frame) when the walk/flight started, degrees.
 """
@@ -22,6 +25,7 @@ import math
 import os
 import sys
 import time
+import urllib.error
 import urllib.request
 import zipfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -33,20 +37,39 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tak import M_PER_DEG_LAT, Frame  # noqa: E402  (same geometry as the CoT markers)
 
 
-def load_mosaic(src):
-    """(png bytes, meta dict) from a camera address (http://..., or :PORT on this host) or a file prefix."""
+def load_mosaic(src, final=False):
+    """(png bytes, meta dict) from a camera address (http://..., or :PORT on this host) or a file prefix.
+    final: the mosaic published by Scan done (camera /final.*, file <prefix>_final.*), not the growing one."""
+    name = "final" if final else "mosaic"
     if src.startswith(("http", ":")):
         base = ("http://127.0.0.1" + src) if src.startswith(":") else src.rstrip("/")
-        meta = json.load(urllib.request.urlopen(base + "/mosaic.json", timeout=5))
-        png = urllib.request.urlopen(base + "/mosaic.png", timeout=10).read()
+        try:
+            meta = json.load(urllib.request.urlopen(f"{base}/{name}.json", timeout=5))
+            png = urllib.request.urlopen(f"{base}/{name}.png", timeout=10).read()
+        except urllib.error.HTTPError as e:
+            if final and e.code == 503:
+                raise ValueError("scan not published yet: press Scan done") from None
+            raise
     else:
-        with open(src + ".json") as f:
-            meta = json.load(f)
-        with open(src + ".png", "rb") as f:
-            png = f.read()
+        prefix = src + "_final" if final else src
+        try:
+            with open(prefix + ".json") as f:
+                meta = json.load(f)
+            with open(prefix + ".png", "rb") as f:
+                png = f.read()
+        except FileNotFoundError:
+            if final:
+                raise ValueError(f"scan not published yet: no {prefix}.png") from None
+            raise
     if not meta.get("width"):
         raise ValueError("no mosaic yet")
     return png, meta
+
+
+def overlay_name(meta, final):
+    if final and meta.get("published_at"):
+        return "T10 floor map (final %s)" % time.strftime("%H:%M:%S", time.localtime(meta["published_at"]))
+    return "T10 camera mosaic"
 
 
 def overlay_geometry(px_to_m, w, h, frame):
@@ -82,10 +105,12 @@ def build_kmz(png, meta, frame, max_side=2048, opacity=1.0, name="T10 camera mos
     n, s, e, wst, rot = overlay_geometry(A, w, h, frame)
     color = f"{round(255 * opacity):02x}ffffff"
     drops = ", ".join(f"N{d['id']}" for d in meta.get("drops", [])) or "none"
+    how = (f"published by Scan done (v{meta['final_version']})" if meta.get("final_version")
+           else "live, still growing")
     kml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>{name}</name>
 <GroundOverlay><name>{name}</name>
-<description>Drone camera mosaic, {meta.get('keyframes', '?')} keyframes, nodes dropped: {drops}. Built {time.strftime('%H:%M:%S')}.</description>
+<description>Drone camera mosaic, {how}, {meta.get('keyframes', '?')} keyframes, nodes dropped: {drops}. Built {time.strftime('%H:%M:%S')}.</description>
 <color>{color}</color><Icon><href>files/mosaic.png</href></Icon>
 <LatLonBox><north>{n:.8f}</north><south>{s:.8f}</south><east>{e:.8f}</east><west>{wst:.8f}</west><rotation>{rot:.3f}</rotation></LatLonBox>
 </GroundOverlay></Document></kml>"""
@@ -96,24 +121,27 @@ def build_kmz(png, meta, frame, max_side=2048, opacity=1.0, name="T10 camera mos
     return buf.getvalue(), {"north": n, "south": s, "east": e, "west": wst, "rotation": rot, "size": [w, h]}
 
 
-def network_link(url, refresh_s, name="T10 camera mosaic (live)"):
+def network_link(url, refresh_s, name="T10 floor map"):
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><NetworkLink><name>{name}</name>
 <Link><href>{url}</href><refreshMode>onInterval</refreshMode><refreshInterval>{refresh_s}</refreshInterval></Link>
 </NetworkLink></kml>"""
 
 
-def serve(a, frame):
+def make_server(a, frame):
+    """HTTP server for /link.kml + /t10_mosaic.kmz (a.source: 'final' = the Scan done map, 'live' = growing)."""
     cache = {"key": None, "kmz": b""}
+    final = getattr(a, "source", "final") == "final"
 
     def latest():
-        png, meta = load_mosaic(a.mosaic)
-        key = (meta.get("version"), meta.get("t"), len(meta.get("drops", [])))
+        png, meta = load_mosaic(a.mosaic, final=final)
+        key = (meta.get("final_version"), meta.get("version"), meta.get("t"), len(meta.get("drops", [])))
         if key != cache["key"]:
-            cache["kmz"], info = build_kmz(png, meta, frame, a.max_side, a.opacity)
+            cache["kmz"], info = build_kmz(png, meta, frame, a.max_side, a.opacity, name=overlay_name(meta, final))
             cache["key"] = key
-            print(f"# overlay rebuilt: {meta.get('keyframes')} keyframes, {info['size'][0]}x{info['size'][1]} px, "
-                  f"rotation {info['rotation']:.1f} deg", flush=True)
+            what = f"published map v{meta.get('final_version')}" if final else "live mosaic"
+            print(f"# overlay rebuilt ({what}): {meta.get('keyframes')} keyframes, "
+                  f"{info['size'][0]}x{info['size'][1]} px, rotation {info['rotation']:.1f} deg", flush=True)
         return cache["kmz"]
 
     class H(BaseHTTPRequestHandler):
@@ -141,8 +169,14 @@ def serve(a, frame):
                     return self._send(503, str(e).encode(), "text/plain")
             self._send(404, b"try /link.kml or /t10_mosaic.kmz", "text/plain")
 
-    srv = ThreadingHTTPServer((a.bind, a.serve), H)
-    print(f"# serving the live overlay: in WinTAK import http://<this-host>:{a.serve}/link.kml "
+    return ThreadingHTTPServer((a.bind, a.serve), H)
+
+
+def serve(a, frame):
+    srv = make_server(a, frame)
+    what = ("the map published by Scan done" if getattr(a, "source", "final") == "final"
+            else "the live (growing) mosaic")
+    print(f"# serving {what}: in WinTAK import http://<this-host>:{a.serve}/link.kml once "
           f"(refresh every {a.refresh} s); file: /t10_mosaic.kmz", flush=True)
     srv.serve_forever()
 
@@ -156,15 +190,18 @@ def main():
     ap.add_argument("--out", default="data/tak/t10_mosaic.kmz", help="one-off KMZ file")
     ap.add_argument("--serve", type=int, default=None, help="serve a live KMZ + link.kml on this port instead")
     ap.add_argument("--bind", default="0.0.0.0")
-    ap.add_argument("--refresh", type=int, default=15, help="network-link refresh, seconds")
+    ap.add_argument("--refresh", type=int, default=5, help="network-link refresh, seconds")
+    ap.add_argument("--source", choices=("final", "live"), default="final",
+                    help="final: the map published by Scan done (default); live: the growing mosaic")
     ap.add_argument("--max-side", type=int, default=2048)
     ap.add_argument("--opacity", type=float, default=1.0)
     a = ap.parse_args()
     frame = Frame(a.lat, a.lon, a.heading)
     if a.serve:
         return serve(a, frame)
-    png, meta = load_mosaic(a.mosaic)
-    kmz, info = build_kmz(png, meta, frame, a.max_side, a.opacity)
+    final = a.source == "final"
+    png, meta = load_mosaic(a.mosaic, final=final)
+    kmz, info = build_kmz(png, meta, frame, a.max_side, a.opacity, name=overlay_name(meta, final))
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     with open(a.out, "wb") as f:
         f.write(kmz)

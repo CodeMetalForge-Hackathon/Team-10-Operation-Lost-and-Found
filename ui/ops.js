@@ -47,6 +47,7 @@
     const c = d.link && d.link.connected;
     chip("c-gw", c === true ? "good" : c === false ? "bad" : "", "GW");
     chip("c-tak", d.tak ? "good" : "", "TAK");
+    $("scan-done").classList.toggle("off", !d.mosaic_url);
     $("n-up").textContent = d.operational.length;
     $("n-drop").textContent = d.dropped.length;
     $("n-bar").innerHTML = d.dropped.map(i =>
@@ -74,6 +75,19 @@
     } catch (e) { toast("host not reachable", true); }
     setTimeout(() => { b.disabled = false; }, 1500);
   }));
+  // Scan done: the camera (drone/live_mosaic.py) freezes its mosaic as the floor map TAK shows
+  // (fusion/tak_overlay.py serves it to WinTAK, which picks it up within its refresh interval).
+  $("scan-done").addEventListener("click", async () => {
+    const b = $("scan-done");
+    if (!st.mos.url) { toast("no live camera on this host (--mosaic :8080)", true); return; }
+    b.disabled = true;
+    try {
+      const r = await fetch(st.mos.url + "/scan_done", { method: "POST" });
+      const j = await r.json();
+      toast(j.ok ? `Floor map v${j.final_version} sent to TAK (${j.keyframes} keyframes)` : j.error, !j.ok);
+    } catch (e) { toast("camera not reachable", true); }
+    setTimeout(() => { b.disabled = false; }, 1500);
+  });
   let toastT;
   function toast(text, err) {
     const t = $("toast"); t.textContent = text; t.className = err ? "err" : ""; t.hidden = false;
