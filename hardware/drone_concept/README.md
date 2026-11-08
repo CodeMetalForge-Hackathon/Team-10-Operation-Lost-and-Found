@@ -6,6 +6,12 @@ This is a **concept, not a load-checked design**. Nothing here has been printed 
 
 ![iso](renders/01_iso_front.png)
 
+| Turntable | One drop: the node over the hole falls, the rotor steps 60° |
+|---|---|
+| ![turntable](../../media/gifs/drone_concept_turntable.gif) | ![drop](../../media/gifs/drone_concept_drop.gif) |
+
+Animations: `python tools/make_concept_gifs.py` (also writes `media/video/drone_concept_turntable.mp4`).
+
 ## What's in the model
 
 | Part | Notes |

@@ -427,7 +427,6 @@
   function setFleetH(px) {
     if (px == null) { mainEl.style.removeProperty("--fleet-h"); mainEl.classList.remove("sized"); }
     else { mainEl.style.setProperty("--fleet-h", px + "px"); mainEl.classList.add("sized"); }
-    mx.resize();
   }
   try { const v = +localStorage.getItem("t10_fleet_h"); if (v) setFleetH(v); } catch (e) { /* no storage */ }
   $("split").addEventListener("pointerdown", e => {
@@ -444,5 +443,8 @@
   });
   $("split").addEventListener("dblclick", () => { setFleetH(null); try { localStorage.removeItem("t10_fleet_h"); } catch (e) { /* ignore */ } });
 
-  window.addEventListener("resize", () => { mx.resize(); sx.resize(); drawMap(); if (st.d) tiles(st.d, true); });
+  window.addEventListener("resize", () => { drawMap(); if (st.d) tiles(st.d, true); });
+  // charts follow their panels: the fleet grows when nodes appear, and the splitter moves the matrix
+  new ResizeObserver(() => mx.resize()).observe($("mx"));
+  new ResizeObserver(() => sx.resize()).observe($("sx"));
 })();
