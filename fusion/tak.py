@@ -1,15 +1,18 @@
 """tak.py: push the fusion picture to WinTAK / ATAK as Cursor-on-Target (CoT). Standard library only.
 
-What responders see in TAK:
+What responders see in TAK (from the fusion server's /tak, docs/DECISIONS.md 2026-11-08 ~07:10):
   * one marker per sensor node    (friendly ground sensor; "LOST" in the callsign when it stops reporting)
-  * "LOOK HERE" marker at the heatmap peak, with its uncertainty as the marker's circular error (ce)
+  * one "T10 LOOK HERE" marker at the heatmap peak while it is confident, with its uncertainty as the
+    marker's circular error (ce). Node callsigns stay fixed; the last cue and its time go in the node's remarks.
 Each item has one fixed uid and is re-sent only when it really changes, or every 20 s, so markers clear
 themselves when the fusion host stops confirming them. Keep updates rare: WinTAK crashes if a marker is
 updated while its details pane is open (close the pane after reading it).
 
 Usage (WinTAK on the same laptop):
-  python fusion/tak.py --lat 42.359389 --lon -71.056580                  # bridge from heatmap.py at :8000
-  python fusion/tak.py --lat ... --lon ... --state-url http://127.0.0.1:8000/state
+  python fusion/tak.py --lat 42.359389 --lon -71.056580                  # bridge from the fusion server's /tak
+  python fusion/tak.py --lat ... --lon ... --state-url http://<pi-ip>:8000/tak   # fusion host on the Pi
+  python fusion/tak.py --lat ... --lon ... --multicast --iface <pi-hotspot-ip>   # run on the Pi, all TAK devices
+  python fusion/tak.py --lat ... --lon ... --state-url http://127.0.0.1:8000/state  # legacy standalone heatmap.py
   python fusion/tak.py --lat ... --lon ... --test                         # static test pattern, no fusion needed
   python fusion/tak.py ... --multicast    # 239.2.3.1:6969 SA channel: other TAK devices on the LAN see it too!
 
@@ -66,7 +69,7 @@ def node_cot(frame, node, stale_s):
     """node: {"id", "x", "y", "alive", optional "floor", "remarks"}"""
     lat, lon = frame.to_latlon(node["x"], node["y"])
     alive = node.get("alive", True)
-    callsign = f"T10 N{node['id']}" + ("" if alive else " LOST")
+    callsign = node.get("callsign") or (f"T10 N{node['id']}" + ("" if alive else " LOST"))
     rem = node.get("remarks") or (
         f"Acoustic/vibration sensor node {node['id']}. "
         + ("Reporting" if alive else "NOT reporting (lost or out of range)")
@@ -89,7 +92,7 @@ def source_cot(frame, src, stale_s, idx=1):
 
 # ----------------------------------------------------------------------------- transport
 class Sender:
-    def __init__(self, host="127.0.0.1", port=4242, multicast=False):
+    def __init__(self, host="127.0.0.1", port=4242, multicast=False, iface=None):
         if multicast:
             host, port = "239.2.3.1", 6969
         self.addr = (host, port)
@@ -97,6 +100,10 @@ class Sender:
         if multicast:
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
             self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
+            if iface:
+                # Pick the network multicast goes out on. Needed on a Pi that only runs its own
+                # hotspot: with no default route, sending to 239.2.3.1 fails "Network unreachable".
+                self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(iface))
 
     def send(self, payload):
         self.sock.sendto(payload, self.addr)
@@ -116,6 +123,15 @@ def picture_from_heatmap_state(s):
     if s.get("hail_age") is not None:
         note = f"HAIL sent {s['hail_age']:.0f} s ago"
     return {"nodes": nodes, "sources": sources, "note": note}
+
+
+def picture_from_json(s):
+    """Accept the fusion server's /tak picture as-is, or heatmap.py's /state via its adapter."""
+    if "sources" in s:  # fusion/server.py GET /tak (fusion/tak_picture.py)
+        return s
+    if "v" in s:  # the dashboard's /state: no node positions in it
+        raise ValueError("that is the dashboard /state; point --state-url at the server's /tak")
+    return picture_from_heatmap_state(s)  # standalone fusion/heatmap.py /state
 
 
 class Publisher:
@@ -147,7 +163,9 @@ class Publisher:
         now = time.time() if now is None else now
         f, n = self.frame, 0
         for node in pic["nodes"]:
-            n += self._send(f"node{node['id']}", node["alive"], lambda: node_cot(f, node, self.STALE_S), now)
+            # Re-send on LOST/back or a callsign change (a new evidence kind); remarks ride the 20 s refresh.
+            key = (node["alive"], node.get("callsign"))
+            n += self._send(f"node{node['id']}", key, lambda node=node: node_cot(f, node, self.STALE_S), now)
         src = pic["sources"][0] if pic["sources"] else None
         if src:
             key = tuple(round(v / self.STEP_M) for v in (src["x"], src["y"], src["radius"]))
@@ -173,16 +191,19 @@ def main():
     ap.add_argument("--lat", type=float, required=True, help="latitude of local (0,0), e.g. node N1")
     ap.add_argument("--lon", type=float, required=True)
     ap.add_argument("--heading", type=float, default=0.0, help="true bearing of the local +y axis, degrees")
-    ap.add_argument("--state-url", default="http://127.0.0.1:8000/state", help="heatmap.py /state")
+    ap.add_argument("--state-url", default="http://127.0.0.1:8000/tak",
+                    help="fusion server /tak (default), or a standalone heatmap.py /state")
     ap.add_argument("--test", action="store_true", help="send a fixed test pattern instead of polling fusion")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=4242)
     ap.add_argument("--multicast", action="store_true", help="239.2.3.1:6969 (shared SA channel on the LAN)")
+    ap.add_argument("--iface", default=None,
+                    help="with --multicast: this machine's IP on the network to send on (e.g. the Pi's hotspot IP)")
     ap.add_argument("--period", type=float, default=2.0)
     a = ap.parse_args()
 
     frame = Frame(a.lat, a.lon, a.heading)
-    sender = Sender(a.host, a.port, a.multicast)
+    sender = Sender(a.host, a.port, a.multicast, a.iface)
     pub = Publisher(sender, frame)
     print(f"# CoT -> {sender.addr[0]}:{sender.addr[1]} every {a.period:g}s; origin {a.lat:.6f},{a.lon:.6f} "
           f"heading {a.heading:g}; source: {'TEST PATTERN' if a.test else a.state_url}", flush=True)
@@ -193,7 +214,7 @@ def main():
             if a.test:
                 pic = test_picture()
             else:
-                pic = picture_from_heatmap_state(json.load(urllib.request.urlopen(a.state_url, timeout=2)))
+                pic = picture_from_json(json.load(urllib.request.urlopen(a.state_url, timeout=2)))
             n = pub.update(pic)
             if last_err:
                 print("# fusion reachable again", flush=True)

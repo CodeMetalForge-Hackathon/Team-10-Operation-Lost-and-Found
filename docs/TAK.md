@@ -38,6 +38,14 @@ python fusion/tak.py --lat 42.35938882464616 --lon -71.05658046185967 --heading 
 3. **Run exactly one `tak.py`.** Check with `Get-CimInstance Win32_Process -Filter "Name like 'python%'" | ? CommandLine -match 'tak.py'`. Stopping a background shell can leave the Python process running, and a leftover old bridge kept drawing shapes on the map.
 4. Other teams' TAK markers may appear (e.g. "SAR #3 RESPONSIVE INJURED"): the venue network carries shared SA multicast. Ours are all prefixed **T10**.
 
+## Merged host (2026-11-08): node markers + LOOK HERE
+The fusion server (`python -m fusion.server`, on the Pi as `t10-heatmap`) serves `GET /tak`, and `tak.py` polls it by default (`--state-url http://<pi-ip>:8000/tak`). See `docs/DECISIONS.md` 2026-11-08 ~07:10.
+- One marker per placed node. The callsign is fixed: `T10 N2`, or `T10 N2 LOST`. Each callsign change would re-send the marker (WinTAK crash risk, demo rule 2), so cues don't go in the callsign.
+- Remarks: last cue and its time, the cue kinds heard in the last 30 s, and "Evidence at this node, not a survivor location." They ride the 20 s refresh.
+- One `T10 LOOK HERE` marker at the heatmap peak, only while the heatmap is confident, with its uncertainty as `ce`.
+- Node positions come from the drone camera's drops (`--mosaic :8080`), or `--pos` (hand-measured). A node without a position is listed as `unplaced` and not sent.
+- On the Pi's own hotspot, sending from the Pi itself: add `--multicast --iface <pi-ip>`.
+
 ## How it plugs into the fusion host
 `tak.py` only reads JSON over HTTP. It needs a picture of this shape, built by one adapter function (`picture_from_heatmap_state`):
 ```json

@@ -1,0 +1,16 @@
+[Unit]
+Description=T10 fusion host on the USB gateway (fusion/server.py, :8000: dashboard, /heatmap, /tak); node positions from camera drops
+After=network.target t10-camera.service
+
+[Service]
+User=t10pi
+WorkingDirectory=/home/t10pi/t10
+EnvironmentFile=/home/t10pi/t10/deploy/pi/t10.env
+# No gateway plugged in -> exits -> retried every 5 s until it is. Once running, server.py rides out unplugs itself.
+# Records every gateway line to data/live_<time>.jsonl (+ .meta.json with the drop positions).
+ExecStart=/bin/bash -c 'GW=$$(ls /dev/serial/by-id/*Espressif* 2>/dev/null | head -1); [ -n "$$GW" ] || { echo "no ESP32 gateway on USB"; exit 1; }; exec python3 -m fusion.server --gateway "$$GW" --host 0.0.0.0 --mosaic :8080'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
