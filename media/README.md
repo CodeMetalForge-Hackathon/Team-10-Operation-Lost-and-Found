@@ -39,15 +39,17 @@ Everything except the photos and the WinTAK screenshots is generated from the re
 | `screenshots/heatmap_real_3node_recording.png` | The heatmap on **real data**: the 3-node hall recording (`data/live_3node_test1.jsonl`) |
 | `screenshots/heatmap_simulator.png` | The built-in simulator (taps from a hidden source plus room chatter) |
 
-Note: the page still says "where to dig" / "Dig here". It is renamed to match TAK's "LOOK HERE" in the PR #14 merge.
+Note: these page screenshots predate the PR #14 merge; the page now says "where to look" / "Look here".
 
 ## TAK
+![WinTAK with the live floor map](screenshots/wintak_mosaic_overlay.png)
+
 | File | What it shows |
 |---|---|
+| `screenshots/wintak_mosaic_overlay.png` | **Live run, 2026-11-08 ~07:35:** WinTAK with the drone camera's mosaic as a live overlay; T10 N1/N2/N3/N5 placed by their drops; T10 LOOK HERE at the heatmap peak. Pi field box running `fusion/server.py`, no GPS, no internet |
 | `screenshots/wintak_first_test_zoomed.png` | WinTAK, first TAK test (simulator): T10 N1/N2 node markers, N5 shown LOST, the heatmap estimate (then a search-area marker; now "T10 LOOK HERE") |
 | `screenshots/wintak_first_test_venue.png` | Zoomed out over the venue: our T10 N1 next to other teams' markers on the shared SA network |
 
-Still to capture: WinTAK with the **camera mosaic overlay** (`fusion/tak_overlay.py`) under the node markers.
 
 ## Regenerate
 ```bash
