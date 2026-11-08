@@ -25,12 +25,22 @@
   - If `ttl > 0`, rebroadcast with `ttl-1` and `hops+1` after a random 0–20 ms jitter.
   - Starting TTL is 4.
   - The transmit power is adjustable by command, so we can force multi-hop on a small floor.
-- **Audio:**
+- **Audio + SW-420 + buzzer, AS BUILT (`node.ino` STEP 3, 2026-11-07).** Policy: **report every sound and every movement with its strength; fusion decides the weight.** No classification gates on the node.
+  - Sound sensor sampled at **16 kHz by the ADC DMA driver** in its own FreeRTOS task (the C5 is single-core, and the 2 s BLE scans block `loop()`). The audio task sends its own packets, so events are not held up by a BLE scan.
+  - **Level** per 10 ms frame = mean absolute deviation around a ~1 s running average, in **dBFS re 2048 counts** (room noise on the hackathon floor ≈ −22 dBFS; clipped buzzer ≈ −1 dBFS). **Noise floor** follows quiet frames quickly and loud stretches slowly (~5 s); it is `floor_db` in BEACON.
+  - **LOUD:** an onset is a frame ≥ floor + 10 dB and ≥ 6 dB above the previous frame. Onsets within 250 ms merge into one LOUD (strongest kept).
+  - **VIBRATION (SW-420):** a burst = edges until 300 ms of silence.
+  - **VOICE_LIKE = any sustained sound** (≥ floor + 6 dB for ≥ 400 ms, gaps ≤ 150 ms allowed). Not a voice classifier: voice, moaning, machinery and room chatter all count. Re-sent every 2 s while it lasts.
+  - **TAP_PATTERN:** built from mic onsets (outside sustained sound) and SW-420 bursts, merged when within 120 ms. Any run of ≥ 2 taps with gaps of 150–1500 ms. Sent in addition to the individual LOUD/VIBRATION events.
+  - **HAIL:** 3 × 150 ms beeps at 2.3 kHz (300 ms period). The node ignores the mic and the SW-420 from the first beep until 2.5 s after the last, because neighbours receive the command (and beep) up to ~2 s late when a BLE scan is running.
+  - Debug: on a field node's USB serial, `H` triggers a local HAIL; every 5 s it prints floor, level, event counters and the raw SW-420 edge count.
+  - The older design notes below (50 ms frames, band energies, voice-band dominance) are superseded where they disagree.
+- **Audio (original design notes):**
   - Grove Sound Sensor (analog) on the ADC at 16 kHz (ADC continuous driver). Fallback: Grove Loudness Sensor (loudness level only). Taps are also caught by a Grove Vibration SW-420 contact switch (digital interrupt, timestamps only).
   - **Measured limits (N2 bench test):** the sensor output is clipped at both ends (bottom half of the wave lost, top flat at ~1.5 V), because its LM386 runs below spec at 3V3. We accept this and design around it:
     - Sample at **16 kHz**. Count samples at ≤ 8 or ≥ 1850 counts per frame as `clip`; a frame that is mostly clipped means "very loud, level unknown (at least this loud)".
     - Measure level as the mean absolute deviation from the slow average (robust to the missing bottom half) and convert to dB. Levels compress for close, loud sources, so keep demo sources ≥ 1 m from nodes.
-    - **Band energies are unreliable** (clipping creates false harmonics). Send them, but fusion must not depend on them; `VOICE_LIKE` falls back to "sustained energy above floor for > 400 ms without tap-like onsets".
+    - **Band energies are unreliable** (clipping creates false harmonics), so they are **not sent: FEAT band fields are always `-128`**; `VOICE_LIKE` falls back to "sustained energy above floor for > 400 ms without tap-like onsets".
     - **Blank all detection (mic onsets and SW-420) while this node's own buzzer is on, plus 50 ms after.**
   - Every 50 ms frame, compute RMS in dB and three band energies: low 60–300 Hz, voice 300–3000 Hz, high 3000–8000 Hz. Use cheap IIR band-pass filters or a 256-point FFT.
   - Track the noise floor as an exponential moving average of quiet frames.
@@ -84,17 +94,24 @@ Common header, 8 bytes:
 | 7 | DEVICE_SEEN | `t_ms u32, n u8, devs[n]{hash u32, kind u8, rssi_max i8, count u8}` (7 B/device, n ≤ 20) | every 10 s if any were seen |
 
 - EVENT `kind`: 1 = LOUD, 2 = TAP_PATTERN, 3 = VOICE_LIKE, 4 = RADAR_PRESENCE, 5 = GAS, 6 = VIBRATION, 7 = MOVED.
-  - Kinds 6 and 7 are **reserved for an optional accelerometer (not fitted for the demo); nothing sends them yet.**
-  - **VIBRATION** (accelerometer): `peak_db` = peak acceleration in dB re 1 mg (`20·log10(mg)`, int8), `voice_db` = 0, `count` = jolts in the window, `conf` = 0–100 (higher when the SW-420 or the mic saw an onset at the same time).
+  - **All dB fields are dBFS re 2048 ADC counts (≤ 0). `-128` = not available.** FEAT band fields (`low_db`, `voice_db`, `high_db`) are always `-128` on the Grove sound sensor (clipping makes bands meaningless). FEAT `peak_db` = loudest 10 ms frame in the second.
+  - **LOUD:** `peak_db` = loudest 10 ms frame in the 250 ms after the onset, `voice_db` = -128, `count` = onsets merged, `conf` = 4 × (peak − floor) dB.
+  - **TAP_PATTERN:** `peak_db` = loudest tap as heard by the mic, **or the node's floor if no tap was heard ("felt, not heard"; `conf` ≤ 50)**, `voice_db` = -128, `count` = taps, `conf` = 30 + 10·min(taps, 5) + 20 if most taps were felt + 15 if regular.
+  - **VOICE_LIKE (= sustained sound, not a voice classifier):** `peak_db` = loudest frame since the last report, `voice_db` = **average level** over the episode, `count` = duration so far in 100 ms units (cap 255), `conf` = 5 × (average − floor) dB.
+  - **VIBRATION, from the SW-420 (repurposed from the parked accelerometer):** one event per burst of switch edges. `count` = **number of edges (strength proxy: light tap ≈ 2–6, hard hit or handling ≈ 50–255)**, `peak_db` = how loud the mic heard it (loudest frame from 50 ms before to 150 ms after the burst start) **or the floor if not heard**, `voice_db` = -128, `conf` = 90 if the mic also heard it, else 60. `t_ms` = burst start.
+  - Kind 7 (MOVED) is **reserved for an optional accelerometer (not fitted); nothing sends it yet.** If an accelerometer is ever fitted, its jolts would also use VIBRATION:
+  - **VIBRATION** (accelerometer, not fitted): `peak_db` = peak acceleration in dB re 1 mg (`20·log10(mg)`, int8), `voice_db` = 0, `count` = jolts in the window, `conf` = 0–100 (higher when the SW-420 or the mic saw an onset at the same time).
   - **MOVED** (accelerometer): `peak_db` = 0, `voice_db` = 0, `count` = orientation code (0 = mic up, 1 = upside down, 2 = on its side, 255 = unknown), `conf` = tilt change in degrees (capped at 255). Sent once at boot and on each disturbance.
 - CMD `cmd`: 1 = HAIL, 2 = BLINK_ID, 3 = START_RANGING (nodes chirp in ID order, 500 ms apart), 4 = SET_TX_POWER, 5 = SET_RATE, 6 = PING, 7 = SET_SCAN (arg = BLE scan seconds per 10 s window; 0 = off), 8 = SET_SALT (arg = deployment salt).
 - DEVICE_SEEN `kind`: 1 = BLE_OTHER, 2 = BLE_APPLE, 3 = BLE_FINDMY, 4 = BLE_GOOGLE, 5 = WIFI_PROBE.
 
 ### Gateway → host (one JSON object per line over USB serial, 921600 baud)
 ```json
-{"type":"beacon","src":3,"seq":120,"hops":1,"rssi_last":-58,"batt_mv":3950,"floor_db":-62,"nbrs":[[1,-55],[2,-71]]}
-{"type":"feat","src":3,"seq":121,"hops":1,"rssi_last":-58,"t_ms":51234,"rms_db":-40,"low_db":-50,"voice_db":-42,"high_db":-55,"peak_db":-30}
-{"type":"event","src":3,"seq":122,"hops":2,"rssi_last":-70,"t_ms":51800,"kind":"TAP_PATTERN","peak_db":-20,"voice_db":-35,"count":3,"conf":80}
+{"type":"beacon","src":3,"seq":120,"hops":1,"rssi_last":-58,"batt_mv":0,"floor_db":-22,"nbrs":[[1,-55],[2,-71]]}
+{"type":"feat","src":3,"seq":121,"hops":1,"rssi_last":-58,"t_ms":51234,"rms_db":-21,"low_db":-128,"voice_db":-128,"high_db":-128,"peak_db":-12}
+{"type":"event","src":3,"seq":122,"hops":2,"rssi_last":-70,"t_ms":51800,"kind":"TAP_PATTERN","peak_db":-11,"voice_db":-128,"count":5,"conf":80}
+{"type":"event","src":3,"seq":123,"hops":2,"rssi_last":-70,"t_ms":51790,"kind":"VIBRATION","peak_db":-11,"voice_db":-128,"count":14,"conf":90}
+{"type":"event","src":3,"seq":124,"hops":2,"rssi_last":-70,"t_ms":53000,"kind":"VOICE_LIKE","peak_db":-10,"voice_db":-14,"count":38,"conf":42}
 {"type":"range","src":2,"chirper":3,"delay_us":10450,"snr_db":18}
 {"type":"device_seen","src":4,"seq":88,"hops":1,"rssi_last":-61,"t_ms":60000,"devs":[["9f3a01c2","BLE_APPLE",-52,14],["07bb4e10","WIFI_PROBE",-70,2]]}
 ```
@@ -177,6 +194,6 @@ docs/                 these docs
 ```
 
 ## Bandwidth budget (deployability talking point)
-- Per node: BEACON about 30 B every 2 s, plus FEAT 16 B at 1 Hz, plus DEVICE_SEEN (about 13 + 7n B every 10 s, so about 8 B/s with 10 devices), plus occasional events. That's about **45 B/s per node**.
+- Per node: BEACON about 30 B every 2 s, plus FEAT 16 B at 1 Hz, plus DEVICE_SEEN (about 13 + 7n B every 10 s, so about 8 B/s with 10 devices), plus events (16 B each; measured ~0.5–1 per second per node on the noisy hall floor, because nodes report every sound: ≤ 16 B/s). That's about **45–60 B/s per node**.
 - Raw 16 kHz 16-bit audio (the reference paper's approach) is 32,000 B/s, about **700× more**.
 - Flooding multiplies traffic by the node count. 50 nodes × 45 B/s × 50 is about 110 kB/s, well within what ESP-NOW can carry. Larger fields use TTL limits and cluster heads.
