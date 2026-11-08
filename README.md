@@ -4,6 +4,8 @@
 
 [Live dashboard operation video](https://drive.google.com/file/d/1vHLDzt6p8P7qkAEGmnXaSo0NZ8E4LLdO/edit)
 
+[Node deployment video](media/Node_deployment.mov) (`media/Node_deployment.mov`)
+
 **Drop a handful of cheap acoustic sensor nodes onto a collapsed structure. They mesh with each other with no infrastructure, a drone camera maps the floor and records where each node landed, the nodes listen for trapped survivors (tapping, voices, phones), and a live "look here" picture appears in TAK, the map responders already use.**
 
 Code Metal Forge 2026, Team 10. Everything below was built between Sat Nov 7 10:00 and Sun Nov 8 12:00, except the open-source tools listed in [What existed before](#what-existed-before-this-weekend).

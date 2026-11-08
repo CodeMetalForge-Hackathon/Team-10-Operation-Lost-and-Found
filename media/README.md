@@ -8,6 +8,9 @@ Everything except the photos and the WinTAK screenshots is generated from the re
 
 `diagrams/system_overview.png`: nodes → ESP-NOW mesh → gateway → Pi 5 field box (camera mosaic, fusion heatmap, TAK overlay, own Wi-Fi) → responders in WinTAK / ATAK.
 
+## Node deployment (video)
+[`Node_deployment.mov`](Node_deployment.mov): the sensor nodes being deployed (recorded 2026-11-08).
+
 ## Hardware
 | File | What it shows |
 |---|---|
