@@ -13,7 +13,7 @@
 | **Where data comes from** | Each field node (XIAO ESP32-C5) processes its sensors on board and sends **small summaries over the ESP-NOW mesh**. The gateway (S3, USB) prints **one JSON object per line**. **No raw audio ever reaches you.** |
 | **Common fields** | Every message has `type`, `src` (node ID: 1–5 field nodes, 0 = gateway, 200 = drone), `seq` (per-node counter, wraps at 65535), `hops` (0 = heard directly by the gateway), `rssi_last` (gateway's signal strength for the last radio hop, in dBm). |
 | **Timestamps** | `t_ms` is the **node's own clock** (milliseconds since boot). Clocks are **not synchronised** and reset on reboot. **Use `t_host` (Unix seconds, added by the laptop on arrival) to align nodes.** Arrival jitter is about ±30 ms: a 0–20 ms random relay delay per hop, plus USB. Use `t_ms` only for ordering and intervals *within* one node. |
-| **Audio units** | All `*_db` audio fields are **dBFS**: `20·log10(level / ADC full scale)`, as int8. 0 is the loudest possible; quiet rooms sit around −50 to −60. **Each node's mic and amplifier has a different gain**, so the same sound reads differently at different nodes. Correct this with a per-node offset `g_i`, measured by having every node hear one buzzer chirp (§5). |
+| **Audio units** | All `*_db` audio fields are **dBFS re 2048 ADC counts**: `20·log10(mean |x − running average| / 2048)`, as int8, ≤ 0. **`-128` = not available.** Measured on N2: hackathon-floor room noise ≈ **−22 dBFS** (floor), claps/taps at 20 cm–1 m ≈ −14 to −4, the node's own buzzer ≈ −1 (clipped). The scale is compressed because the sensor clips (§1). **Each node's mic and amplifier has a different gain**, so the same sound reads differently at different nodes. Correct this with a per-node offset `g_i`, measured by having every node hear one buzzer chirp (§5). |
 | **Positions** | Sensors don't know where they are. Node positions come from the localization layer: hand-measured or camera anchors, acoustic ranging, and signal strength as a weak hint. Ground truth for recorded runs is in `data/*.meta.json`. |
 | **Signal strength ≠ distance** | Measured on our floor (`data/rssi_calibration.csv`): −40 dBm at 1 m, −46 at 2 m, −44 at 4 m, −44 at 8 m. The fitted path-loss exponent is **0.3**, so signal strength can't measure distance indoors. Treat it as "which node is closest" or "is it in range", with σ ≥ 6 dB. |
 | **Missing data** | Broadcast packets can be lost, with no retries. Gaps in `seq` mean lost packets. A node with no BEACON for more than 6 s is "lost" (see the dropout in `data/beacons_line_2nodes.jsonl`, about 113–127 s). |
@@ -38,36 +38,42 @@ These channels are **independent evidence**. Fuse them as `P = 1 − Π(1 − P_
 - Detect **voices and tapping** from conscious survivors.
 - Provide the **loudness at each node** used for the acoustic heatmap (energy-based localization).
 - Detect the reply after a **HAIL** (call-out-and-listen).
-- Hear other nodes' **buzzer chirps** for acoustic ranging (§5).
+- ~~Hear other nodes' buzzer chirps for acoustic ranging (§5)~~ (acoustic ranging is on the cut list; the clipped sensor makes chirp timing unreliable).
 
-**On-node processing:**
-- 50 ms frames.
-- Per frame: RMS level, plus energy in three bands (low 60–300 Hz, voice 300–3000 Hz, high 3–8 kHz).
-- Noise floor tracked as an exponential moving average of quiet frames.
-- Onset = frame > floor + 12 dB and rising fast.
+**On-node processing (as built, `node.ino` STEP 3, tested on N2 2026-11-07):**
+- **Policy: the node reports every sound and every movement with its strength. It does not decide what is a survivor; fusion does.**
+- 16 kHz DMA sampling in its own task; **10 ms frames**.
+- Level per frame = mean absolute deviation around a ~1 s running average, in dBFS (robust to the clipped bottom half of the waveform).
+- **Noise floor** follows quiet frames quickly and loud stretches slowly (~5 s). Sent as `floor_db` in every BEACON.
+- **Onset** = frame ≥ floor + 10 dB **and** ≥ 6 dB above the previous frame (100 ms refractory).
+- **No band energies** (clipping makes them meaningless).
+- **Blanking:** during HAIL the node ignores its mic and SW-420 from its first beep until 2.5 s after its last (and for 1.5 s after boot).
 
 ### Output A: `feat`, a 1 Hz summary (continuous)
 ```json
-{"type":"feat","src":3,"seq":121,"hops":1,"rssi_last":-58,"t_ms":51234,
- "rms_db":-40,"low_db":-50,"voice_db":-42,"high_db":-55,"peak_db":-30,"t_host":1762551234.512}
+{"type":"feat","src":2,"seq":121,"hops":1,"rssi_last":-58,"t_ms":51234,
+ "rms_db":-21,"low_db":-128,"voice_db":-128,"high_db":-128,"peak_db":-12,"t_host":1762551234.512}
 ```
 | Field | Meaning | Use |
 |---|---|---|
-| `rms_db` | Average level over the last 1 s | Background loudness map; noise monitoring |
-| `low_db` / `voice_db` / `high_db` | Average energy per band over 1 s | **Voice vs. machinery vs. tapping.** Speech: `voice_db` dominates. Taps: broadband, short. Generators and rumble: `low_db` |
-| `peak_db` | Loudest 50 ms frame in that second | Captures short sounds (taps) that the 1 s average smooths out |
+| `rms_db` | Average level over the last 1 s (dBFS) | Background loudness map; noise monitoring |
+| `low_db` / `voice_db` / `high_db` | **Always `-128` (not available)** on the Grove sound sensor | Ignore |
+| `peak_db` | Loudest **10 ms** frame in that second | Captures short sounds (taps) that the 1 s average smooths out |
 
 ### Output B: `event`, sent the moment something is detected
 ```json
-{"type":"event","src":3,"seq":122,"hops":2,"rssi_last":-70,"t_ms":51800,
- "kind":"TAP_PATTERN","peak_db":-20,"voice_db":-35,"count":3,"conf":80,"t_host":1762551235.101}
+{"type":"event","src":2,"seq":122,"hops":2,"rssi_last":-70,"t_ms":51800,
+ "kind":"TAP_PATTERN","peak_db":-11,"voice_db":-128,"count":5,"conf":80,"t_host":1762551235.101}
 ```
-| `kind` | Trigger | `count` | `conf` (0–100) |
-|---|---|---|---|
-| `LOUD` | A single onset (any loud transient) | 1 | Based on how far above the floor |
-| `TAP_PATTERN` | **2–5 onsets with 150–700 ms spacing within 3 s** (a human knocking rhythm) | number of taps | Higher if the spacing is regular **and/or the SW-420 also fired (§2)** |
-| `VOICE_LIKE` | `voice_db` above the floor for > 400 ms and dominating the other bands | 0 | Based on voice-band dominance |
+| `kind` | Trigger (as built) | `peak_db` | `voice_db` | `count` | `conf` (0–100) |
+|---|---|---|---|---|---|
+| `LOUD` | Any sound onset. Onsets within 250 ms merge into one event | Loudest 10 ms frame in the 250 ms | -128 | onsets merged | 4 × (peak − floor) dB |
+| `VOICE_LIKE` | **Any sustained sound**, not just voice: ≥ floor + 6 dB for ≥ 400 ms (gaps ≤ 150 ms allowed). Re-sent every 2 s while it lasts; `t_ms` stays the episode start | Loudest frame since the last report | **Average level** of the episode | **duration so far, in 100 ms units** (cap 255) | 5 × (average − floor) dB |
+| `VIBRATION` | **Every SW-420 burst** (see §2) | Mic level at that moment, **or the floor if not heard** | -128 | **SW-420 edges = strength** | 90 heard + felt, 60 felt only |
+| `TAP_PATTERN` | Any run of ≥ 2 taps with 150–1500 ms gaps. Taps = mic onsets (outside sustained sound) and SW-420 bursts, merged when within 120 ms. **Sent in addition to** the individual LOUD/VIBRATION events | Loudest tap as heard, **or the floor if none was heard** | -128 | taps | 30 + 10·min(taps, 5) + 20 if most were felt + 15 if regular; **≤ 50 if none was heard** |
 
+- **Expect many events.** On the noisy hackathon floor one node produced roughly one LOUD or VOICE_LIKE every 1–2 s from room chatter alone. **Weight events by `conf`, `peak_db` relative to `floor_db`, and agreement across nodes**; don't treat each event as a survivor.
+- Measured on N2: 5 firm knuckle taps 20–30 cm away → one `TAP_PATTERN count=5 conf=80` (3 also felt) plus the individual events; a mic-only knock pattern → `TAP_PATTERN count=2 conf=50`.
 - **`peak_db` in an event is the per-node loudness of *that* sound.** It's the input to localization, not FEAT.
 
 ### How to use it in fusion
@@ -82,7 +88,7 @@ These channels are **independent evidence**. Fuse them as `P = 1 − Π(1 − P_
 - **Answered (N2 bench test):** it is a waveform, but clipped at both ends at 3V3. **Band fields are always `-128` (= not available)**; `rms_db` and `peak_db` are valid (dBFS). `VOICE_LIKE` means any sustained sound. Field meanings as built: ARCHITECTURE.md §2.
 - **Radio interference:** the node's own transmissions can put a spike into the analog signal. The firmware blanks samples during its own transmit bursts.
 
-**Simulator:** a source at `p` with level `S`; each node reads `S − 20·log10(d) + g_i + N(0, 4 dB)`. Report an event only if above `floor_i + 12`. Use `g_i ~ U(−6, +6)` dB, a background floor of about −55 dBFS, and drop 5% of packets.
+**Simulator:** a source at `p` with level `S`; each node reads `S − 20·log10(d) + g_i + N(0, 4 dB)`, **clamped to ≤ −1 dBFS** (the sensor clips). Report an event only if above `floor_i + 10`. Emit FEAT band fields as `-128`. For realism on the hall floor use a floor around −22 dBFS and add background LOUD/VOICE_LIKE events at about 0.5–1 per second per node (conf 35–55); in the hallway use a lower floor and fewer background events (not yet measured). Use `g_i ~ U(−6, +6)` dB, a background floor of about −55 dBFS, and drop 5% of packets.
 
 ---
 
@@ -94,7 +100,9 @@ These channels are **independent evidence**. Fuse them as `P = 1 − Π(1 − P_
 - Detect **knocks on the structure**: a survivor hitting a pipe, slab or rebar. Rescuers already rely on this signal, and it travels through solid material better than through air.
 - **Confirm** acoustic taps: a tap heard by the mic *and* felt by the SW-420 is very unlikely to be speech or room noise.
 
-**Output (as built, 2026-11-07):** every burst is reported as an EVENT `VIBRATION` (`count` = edges ≈ strength, `peak_db` = mic level at that moment or the floor). It also feeds `TAP_PATTERN`:
+**Tuning:** the threshold knob decides everything. Set it with the node's USB serial open (921600): each felt tap prints `# EVENT VIBRATION ... count=N` within ~0.3 s. Target: a firm knuckle tap prints, and nothing prints for 10–20 s at rest. On N2, turning it the wrong way stopped all triggers.
+
+**Output (as built, 2026-11-07):** every burst (edges until 300 ms of silence) is reported as an EVENT `VIBRATION` (`count` = edges ≈ strength, `peak_db` = mic level at that moment or the floor). It also feeds `TAP_PATTERN`:
 - Its pulse timestamps are matched with mic onsets on the node.
 - If the SW-420 fires on most onsets of a pattern, **`conf` goes up**.
 - **Built:** if the SW-420 alone sees a tap rhythm while the mic sees nothing (deep in the structure), the node still sends `TAP_PATTERN` with `peak_db` at the mic floor and `conf` capped around 50. Read **`TAP_PATTERN` with `peak_db` ≈ the node's floor** as **"felt through the structure, not heard"**.
@@ -108,7 +116,7 @@ These channels are **independent evidence**. Fuse them as `P = 1 − Π(1 − P_
 - **Footsteps and dropped objects trigger it.** The rhythm requirement (2–5 regular taps) filters most of these.
 - The threshold knob differs per node, so nodes aren't comparable with each other.
 
-**Simulator:** for a source within about 1 m of a node, the SW-420 fires on each tap with p ≈ 0.8. Otherwise add rare false pulses (about 1 per minute) during "responder walking" periods.
+**Simulator:** for a firm tap within about 30 cm of a node, the SW-420 fires with p ≈ 0.5 (measured on a bare table; better once glued to the case floor), emitting one `VIBRATION` per tap with `count` 2–20 (hard hits or handling up to 255). Beyond ~1 m, ~0. Add rare false bursts (about 1 per minute) during "responder walking" periods, and none at rest.
 
 ---
 
@@ -193,7 +201,7 @@ Each `devs` entry is `[hash, kind, rssi_max, count]`:
 | Field | Use |
 |---|---|
 | `nbrs` `[[id, rssi_dBm], …]` | Who each node hears directly, and how strongly (smoothed). **Mesh graph, connectivity, weak signal-strength range hints** |
-| `floor_db` | Node's current audio noise floor in dBFS. Use it for **"why didn't this node hear it"** in the energy model. **Currently 0 = not implemented yet** 🟡 |
+| `floor_db` | Node's current audio noise floor in dBFS (✅ implemented; ≈ −22 on the hall floor). **0 = not available** (gateway, or the first second after boot). Use it for **"why didn't this node hear it"** in the energy model and to judge an event's `peak_db` |
 | `batt_mv` | Battery voltage in millivolts. **Currently 0 = not implemented yet** 🟡 |
 | `uptime_s` | Seconds since boot. **A drop means the node rebooted**, so its `t_ms` reset |
 
@@ -207,11 +215,11 @@ Each `devs` entry is `[hash, kind, rssi_max, count]`:
 - Expected σ is about 0.3 m. Discard results with `snr_db` < 10.
 - These are the **strongest node-to-node distance terms** for the node-position solver.
 - The same chirps give the **per-node gain offsets `g_i`** for §1: compare each node's received level against its distance.
-- **Depends on** the sound sensor giving a real waveform (§1 open question).
+- **Cut for the demo** (PLAN.md cut list): the sensor's output is clipped at both ends, so chirp onsets are unreliable. Nothing sends RANGE.
 
 ### Buzzer and LED (actuators, no data)
-- **HAIL:** every node buzzes, then listens for 10 s. TAP_PATTERN / VOICE_LIKE events in that window get **higher prior weight**: a reply to a call-out.
-- **BLINK_ID:** the LED blinks the node's ID for the overhead camera, giving position anchors in GPS-denied mode.
+- **HAIL (as built):** every node beeps 3 × 150 ms (2.3 kHz, ~0.9 s). **Each node ignores its own sensors from its first beep until 2.5 s after its last**, because other nodes can receive the command (and beep) up to ~2 s late during a BLE scan. So **the reply window effectively starts ~3.5 s after the command** and should run ~10 s from there; events in it get **higher prior weight**. Coach the demo "survivor" to answer after a beat, not instantly.
+- **BLINK_ID:** the XIAO's on-board LED blinks the node's ID (no external LED on demo nodes; too dim for the camera, so camera LED-ID is cut and anchors are hand-measured).
 - Commands appear in recordings as `{"type":"host_cmd","text":"CMD HAIL 0 255"}`, so you can mark the HAIL windows.
 
 ---
@@ -221,7 +229,7 @@ Each `devs` entry is `[hash, kind, rssi_max, count]`:
 | Sensor | Status | If fitted, what it would send | Role |
 |---|---|---|---|
 | **mmWave radar** (LD2410-class, one hero node, UART on D6/D7) | ⚪ | `event` `RADAR_PRESENCE`, with `conf` = presence confidence. Proposed: `count` = distance in decimetres. Confirm with William first | **Breathing / stationary-person** detection in line of sight (a void opening). Can't see through concrete |
-| **3-axis accelerometer** (Grove MMA7660, I2C D8/D9) | ⚪ reserved | `event` `VIBRATION` (`peak_db` = dB re 1 mg, `count` = jolts) and `MOVED` (`count` = orientation 0 up / 1 upside down / 2 side, `conf` = tilt change in degrees) | Node **landed mic-up?** If `MOVED` arrives, **re-localize that node and distrust its old position.** Too coarse for taps |
+| **3-axis accelerometer** (Grove MMA7660, I2C D8/D9) | ⚪ not fitted | Would add `MOVED` (kind 7, reserved). **Note: `VIBRATION` (kind 6) is now used by the SW-420.** If fitted, its jolts would also be `VIBRATION`, and `MOVED` (`count` = orientation 0 up / 1 upside down / 2 side, `conf` = tilt change in degrees) | Node **landed mic-up?** If `MOVED` arrives, **re-localize that node and distrust its old position.** Too coarse for taps |
 | **Gas sensor** (MQ-2 / Grove) | ⚪ | `event` `GAS` | Responder **hazard**, not people |
 | **PIR motion** | not used | — | Only sees warm bodies moving in line of sight; can't see into voids |
 | **Thermal camera HT-203U** | ⚪ low priority | Not on the mesh; drone/Pi imagery if it works as a webcam | Surface victims, night search. **Can't see through rubble** |

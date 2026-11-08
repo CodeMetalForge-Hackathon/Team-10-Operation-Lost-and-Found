@@ -30,7 +30,7 @@ Flash with `python tools/flash.py --port COMx --board c5|s3 --role node|gateway 
 | Gateway (S3 Plus) | `44:B1:76:B0:85:54` | gateway, settings rebroadcast every 15 s |
 | Drone bridge (S3 Plus #2) | — | not flashed yet |
 | N1 | `10:BD:A3:CF:B1:20` | node + BLE scan |
-| N2 | `10:BD:A3:CC:83:68` | node + BLE scan |
+| N2 | `10:BD:A3:CC:83:68` | node + BLE scan + **sensors (STEP 3)**, SW-420 tuned (2026-11-07 ~22:15) |
 | N3 | `10:BD:A3:CC:8D:74` | node + BLE scan |
 | N4 | `10:BD:A3:CB:DF:98` | node + BLE scan |
 | N5 | `10:BD:A3:CF:46:80` | node + BLE scan |
@@ -39,10 +39,10 @@ Flash with `python tools/flash.py --port COMx --board c5|s3 --role node|gateway 
 | Part | Purpose | Source to check first | ~Cost |
 |---|---|---|---|
 | ESP32-C5 / S3 board | MCU + radio | have | $5–8 |
-| **Grove Sound Sensor** (electret mic + amplifier, analog) | Audio: RMS, band energies, onsets, chirp ranging | Grove kit | have |
+| **Grove Sound Sensor** (electret mic + amplifier, analog) | Audio: loudness, onsets, sustained sound (no band energies or chirp ranging: output is clipped at 3V3) | Grove kit | have |
 | *Fallback:* Grove Loudness Sensor (analog loudness level only) | Energy-based localization only, no band energies or chirp ranging | Grove kit | have |
-| **Grove Vibration Sensor SW-420** (digital, threshold knob) | **Contact tap sensor**, replaces the piezo disc: tap timing and patterns, no amplitude | Grove kit | have |
-| **Grove Buzzer** | HAIL prompt + ranging chirp (fixed pitch, about 2.3 kHz) | Grove kit | have |
+| **Grove Vibration Sensor SW-420** (digital, threshold knob) | **Contact tap sensor**, replaces the piezo disc: one `VIBRATION` event per tap, edge count ≈ strength; feeds tap patterns | Grove kit | have |
+| **Grove Buzzer** | HAIL prompt: 3 × 150 ms beeps at 2.3 kHz (ranging chirps cut) | Grove kit | have |
 | *Dropped:* external bright LED | Optical ID for the drone camera. Only one found, so nodes use the on-board user LED; camera LED-ID is on the cut list (hand-measured anchors instead) | — | — |
 | *(built in)* ESP32 radio, BLE scan + Wi-Fi promiscuous mode | **Passive phone/wearable detection** (`DEVICE_SEEN`) | have | **$0** |
 | Power: USB power bank (demo) or 300–500 mAh LiPo (production) | 1–2 h runtime | Library "batteries" / Micro Center | $3–10 |
@@ -84,7 +84,7 @@ Grove cable colours: **black = GND, red = VCC, white = NC (unused on these modul
 | Signal | XIAO pin | GPIO | Notes |
 |---|---|---|---|
 | Grove **Sound Sensor** SIG (yellow) | **D0** | GPIO1 | The only pin Seeed's table clearly labels ADC. 12-bit ADC, 11 dB attenuation (0–3.3 V). Sample at 16 kHz with the ADC continuous driver, not an `analogRead()` loop |
-| Grove **Vibration SW-420** SIG (yellow) | **D1** | | Digital input, `attachInterrupt` on change. Check with a serial print which level means "vibration". Set the threshold knob on the board so a knuckle tap on the floor triggers but footsteps a metre away don't |
+| Grove **Vibration SW-420** SIG (yellow) | **D1** | | Digital input, `attachInterrupt` on change. Idle level reads 1. **Check the Grove plug is seated at the module** (N2's was not, and it silently read 1 with no edges). Tune the knob as in the bring-up checklist below |
 | Grove **Buzzer** SIG (yellow) | **D4** | | LEDC PWM. The module has its own driver transistor, so wire it directly. Resonance is about 2.3 kHz (verify by ear), so chirp at that pitch rather than 4 kHz |
 | All three Grove VCC (red) | **3V3** | | Not 5V: the 5V pin is dead on battery |
 | All three Grove GND (black) | **GND** | | |
@@ -109,6 +109,17 @@ Grove cable colours: **black = GND, red = VCC, white = NC (unused on these modul
 - **Avoid D2 (GPIO25) and D3 (GPIO7).** They may be strapping or boot pins, and sources disagree.
 - **Spare pins:** D6/D7 (UART TX/RX for an mmWave radar on a hero node) and D8–D10 (freed by dropping the I2S mic; D8/D9 reserved for an optional I2C accelerometer).
 - **Mounting:** the sound sensor's microphone must face up and out of the enclosure, unobstructed. The SW-420 should be screwed or glued firmly (not foam-taped) to the floor of the case so taps reach it through the ground.
+
+## Field node bring-up checklist (per node, ~10 min)
+1. Wire D0 sound, D1 SW-420, D4 buzzer, all reds to 3V3, blacks to GND (table above). **Push every Grove plug fully home at both ends.**
+2. Flash: `python tools/flash.py --port COMx --board c5 --role node --id N --ble`.
+3. Open the Serial Monitor at 921600 (or `python tools/serial_tail.py COMx --secs 30`). Every 5 s a node prints:
+   `# audio floor=-22.6 dBFS level=-18.1 | events loud=.. felt=.. sustained=.. patterns=.. adc_err=0 | sw_edges=.. sw_pin=1`
+   - `floor` should settle around −20 to −25 on the hall floor; `adc_err` must stay 0; `sw_pin` reads 1 at rest.
+   - `# AUDIO init FAILED` means the sound sensor is disabled: check D0 and reflash.
+4. **Buzzer:** type `H` in the Serial Monitor (local HAIL): 3 short beeps, and no events for ~3.5 s.
+5. **SW-420 knob:** tap firmly 20–30 cm away. Each felt tap prints `# EVENT VIBRATION ... count=N`. Turn the knob until firm taps print and nothing prints for 10–20 s at rest. If nothing ever prints, the knob is too far the wrong way, or the plug isn't seated (`sw_edges` stays constant).
+6. **Close the Serial Monitor** (it holds the COM port), and note the node in the registry above.
 
 ## Grove Sound Sensor: measured behaviour (N2 bench test, 2026-11-07, `firmware/sensor_test`)
 - **It outputs a real waveform, but clipped at both ends.** The output rests at or below 0 V, so 30–40% of samples read exactly 0 (the bottom half of each wave is lost). Loud sounds flatten at about 1900 counts (~1.5 V). Likely cause: the LM386 amplifier is specified for ≥ 4 V and we run it from 3V3.

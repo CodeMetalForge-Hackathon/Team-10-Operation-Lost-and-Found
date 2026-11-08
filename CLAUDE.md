@@ -22,7 +22,7 @@ Shared context for every teammate's Claude Code session. Read this first, then t
 
 ## Architecture in 30 seconds
 - **Node** (ESP32-S3 or ESP32-C5, plus Grove sound sensor (analog mic), Grove SW-420 vibration (tap) switch and Grove buzzer, about $15):
-  - runs on-board signal processing (noise floor, band energies, tap-pattern detection) and sends **small feature packets, never a raw audio stream**;
+  - runs on-board signal processing (noise floor, loudness, onsets, sustained sound, SW-420 taps, tap patterns) and **reports every sound and movement with its strength as small event packets, never a raw audio stream**; fusion decides what matters (field meanings: `docs/ARCHITECTURE.md` §2);
   - **also passively scans for phones and wearables** (BLE advertisements and Wi-Fi probe requests, receive only, hashed IDs) and reports them as `DEVICE_SEEN`.
 - **Mesh:** ESP-NOW broadcast with flooding (rebroadcast with a hop limit, de-duplicated). No router, no infrastructure.
 - **Gateway:** an ESP32 on USB serial to the fusion host. It prints JSON lines.

@@ -40,7 +40,7 @@
   - **Measured limits (N2 bench test):** the sensor output is clipped at both ends (bottom half of the wave lost, top flat at ~1.5 V), because its LM386 runs below spec at 3V3. We accept this and design around it:
     - Sample at **16 kHz**. Count samples at ≤ 8 or ≥ 1850 counts per frame as `clip`; a frame that is mostly clipped means "very loud, level unknown (at least this loud)".
     - Measure level as the mean absolute deviation from the slow average (robust to the missing bottom half) and convert to dB. Levels compress for close, loud sources, so keep demo sources ≥ 1 m from nodes.
-    - **Band energies are unreliable** (clipping creates false harmonics). Send them, but fusion must not depend on them; `VOICE_LIKE` falls back to "sustained energy above floor for > 400 ms without tap-like onsets".
+    - **Band energies are unreliable** (clipping creates false harmonics), so they are **not sent: FEAT band fields are always `-128`**; `VOICE_LIKE` falls back to "sustained energy above floor for > 400 ms without tap-like onsets".
     - **Blank all detection (mic onsets and SW-420) while this node's own buzzer is on, plus 50 ms after.**
   - Every 50 ms frame, compute RMS in dB and three band energies: low 60–300 Hz, voice 300–3000 Hz, high 3000–8000 Hz. Use cheap IIR band-pass filters or a 256-point FFT.
   - Track the noise floor as an exponential moving average of quiet frames.
@@ -107,9 +107,11 @@ Common header, 8 bytes:
 
 ### Gateway → host (one JSON object per line over USB serial, 921600 baud)
 ```json
-{"type":"beacon","src":3,"seq":120,"hops":1,"rssi_last":-58,"batt_mv":3950,"floor_db":-62,"nbrs":[[1,-55],[2,-71]]}
-{"type":"feat","src":3,"seq":121,"hops":1,"rssi_last":-58,"t_ms":51234,"rms_db":-40,"low_db":-50,"voice_db":-42,"high_db":-55,"peak_db":-30}
-{"type":"event","src":3,"seq":122,"hops":2,"rssi_last":-70,"t_ms":51800,"kind":"TAP_PATTERN","peak_db":-20,"voice_db":-35,"count":3,"conf":80}
+{"type":"beacon","src":3,"seq":120,"hops":1,"rssi_last":-58,"batt_mv":0,"floor_db":-22,"nbrs":[[1,-55],[2,-71]]}
+{"type":"feat","src":3,"seq":121,"hops":1,"rssi_last":-58,"t_ms":51234,"rms_db":-21,"low_db":-128,"voice_db":-128,"high_db":-128,"peak_db":-12}
+{"type":"event","src":3,"seq":122,"hops":2,"rssi_last":-70,"t_ms":51800,"kind":"TAP_PATTERN","peak_db":-11,"voice_db":-128,"count":5,"conf":80}
+{"type":"event","src":3,"seq":123,"hops":2,"rssi_last":-70,"t_ms":51790,"kind":"VIBRATION","peak_db":-11,"voice_db":-128,"count":14,"conf":90}
+{"type":"event","src":3,"seq":124,"hops":2,"rssi_last":-70,"t_ms":53000,"kind":"VOICE_LIKE","peak_db":-10,"voice_db":-14,"count":38,"conf":42}
 {"type":"range","src":2,"chirper":3,"delay_us":10450,"snr_db":18}
 {"type":"device_seen","src":4,"seq":88,"hops":1,"rssi_last":-61,"t_ms":60000,"devs":[["9f3a01c2","BLE_APPLE",-52,14],["07bb4e10","WIFI_PROBE",-70,2]]}
 ```
@@ -192,6 +194,6 @@ docs/                 these docs
 ```
 
 ## Bandwidth budget (deployability talking point)
-- Per node: BEACON about 30 B every 2 s, plus FEAT 16 B at 1 Hz, plus DEVICE_SEEN (about 13 + 7n B every 10 s, so about 8 B/s with 10 devices), plus occasional events. That's about **45 B/s per node**.
+- Per node: BEACON about 30 B every 2 s, plus FEAT 16 B at 1 Hz, plus DEVICE_SEEN (about 13 + 7n B every 10 s, so about 8 B/s with 10 devices), plus events (16 B each; measured ~0.5–1 per second per node on the noisy hall floor, because nodes report every sound: ≤ 16 B/s). That's about **45–60 B/s per node**.
 - Raw 16 kHz 16-bit audio (the reference paper's approach) is 32,000 B/s, about **700× more**.
 - Flooding multiplies traffic by the node count. 50 nodes × 45 B/s × 50 is about 110 kB/s, well within what ESP-NOW can carry. Larger fields use TTL limits and cluster heads.
