@@ -115,7 +115,7 @@ Common header, 8 bytes:
 {"type":"range","src":2,"chirper":3,"delay_us":10450,"snr_db":18}
 {"type":"device_seen","src":4,"seq":88,"hops":1,"rssi_last":-61,"t_ms":60000,"devs":[["9f3a01c2","BLE_APPLE",-52,14],["07bb4e10","WIFI_PROBE",-70,2]]}
 ```
-- The host adds `t_host`, its own arrival timestamp.
+- The host adds `t_host` as integer Unix milliseconds at ingestion. Recorder files store a different `t_host`, in Unix seconds. The host keeps that as `t_recorded_s` and does not use it for freshness. Field rules for the lines William's firmware and recorder actually emit are in `docs/TELEMETRY_CONTRACT.md`. This section is still the over-the-air and example contract; do not change it without the team.
 - Host → gateway commands go back over the same serial port as text, e.g. `CMD HAIL 0 255\n`.
 - **The simulator (`sim/`) must emit exactly these lines**, either to stdout or to a TCP socket. The ingest code accepts either a serial port or a simulator source.
 

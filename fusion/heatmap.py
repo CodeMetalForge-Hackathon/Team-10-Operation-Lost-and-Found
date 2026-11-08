@@ -7,6 +7,9 @@ Sources (pick one):
 Then open http://localhost:8000
 
 Node positions (metres, local frame) default to the 3-node test layout: N1 (0,0), N2 (3,0), N5 (0,3).
+Those positions are hand-entered. This page is an experimental search region, not a verified dig point.
+The operator dashboard does not read this process. Do not point it at a serial port the operator host already owns.
+``t_host`` in a recording is Unix seconds. Host-normalized lines use milliseconds; ``as_unix_seconds`` converts that case.
 Override with --pos 1=0,0 --pos 2=3,0 --pos 5=0,3 ...
 
 Model (docs/SENSORS.md section 1, field meanings in docs/ARCHITECTURE.md section 2):
@@ -33,6 +36,11 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import numpy as np
+
+try:
+    from fusion.time_contract import as_unix_seconds
+except ImportError:  # python fusion/heatmap.py puts this directory on sys.path
+    from time_contract import as_unix_seconds
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -99,7 +107,7 @@ class Fusion:
         return now - self.nodes[i]["last"] < ALIVE_S
 
     def ingest(self, m):
-        t = m.get("t_host", time.time())
+        t = as_unix_seconds(m.get("t_host"), time.time())
         typ = m.get("type")
         with self.lock:
             if typ == "host_cmd" and "HAIL" in m.get("text", ""):
