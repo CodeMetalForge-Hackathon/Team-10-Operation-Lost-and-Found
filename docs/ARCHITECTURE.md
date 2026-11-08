@@ -153,18 +153,18 @@ Common header, 8 bytes:
   - POST `/anchor` handles manual drag-to-place.
   - POST `/baseline` marks currently seen devices as friendly or background.
   - Static UI is in `ui/`.
-- **tak.py:** CoT over UDP multicast `239.2.3.1:6969` (the TAK multicast channel for sharing positions), using `pytak` or raw XML.
-  - **Local frame to latitude/longitude:**
-    - `lat = lat0 + dN/111_320`
-    - `lon = lon0 + dE/(111_320·cos(lat0))`
-    - `lat0` and `lon0` are the command post, entered by hand or taken from the drone's GPS.
-  - **Planned CoT mapping** (verify each `type` renders as intended in WinTAK):
-    - each node → sensor/equipment point (e.g. `a-f-G-E-S`), with the node ID and battery in the remarks;
-    - each live source estimate → point (e.g. `a-u-G`), with the label "Possible survivor: TAP x3, conf 0.8, ±1.5 m";
-    - a confirmed source → CASEVAC / medevac marker type;
-    - a candidate-survivor device → point (e.g. `a-u-G`), with the label "Device signal: BLE_FINDMY, −52 dBm near N3, stationary 4 min, ±3 m";
-    - heatmap hotspots → circle or polygon drawing shapes, coloured by likelihood;
-    - set `stale` short (about 30 s) so dead information ages out.
+- **tak.py (as built, branch `feat/tak-cot`; full notes in `docs/TAK.md`):** Cursor-on-Target XML over UDP, standard library only (no `pytak`, no TAK Server).
+  - Polls the fusion host's `/state` (today `fusion/heatmap.py`) every 2 s through one adapter function, and sends to `127.0.0.1:4242` (WinTAK on the same laptop) or, with `--multicast`, the SA channel `239.2.3.1:6969`.
+  - **Local frame to latitude/longitude:** origin (0, 0) = `--lat/--lon` (node N1 or the command post); `--heading` = true bearing of local +y. `east = x·cos h + y·sin h`, `north = −x·sin h + y·cos h`, then `lat = lat0 + north/111 320`, `lon = lon0 + east/(111 320·cos lat0)`.
+  - **CoT mapping (verified in WinTAK):**
+    - each node → `a-f-G-E-S`, callsign `T10 N<id>`, or `T10 N<id> LOST` when it stops reporting;
+    - heatmap peak → `a-u-G`, callsign **`T10 DIG HERE?`**, `ce` = uncertainty radius, remarks: "Possible survivor … ±r m, evidence strength, HAIL sent N s ago … Not a confirmed location".
+  - **Update policy:** one fixed uid per item; re-sent only on a real change (LOST/back; peak moves to another 0.3 m cell or uncertainty steps by 0.3 m) or every 20 s; stale 60 s; a source is cleared with a 1 s stale send when the map loses confidence. Why: WinTAK crashes if a marker is updated while its details pane is open.
+  - **Still planned:**
+    - candidate-survivor device → `a-u-G` "Device signal: BLE_FINDMY, −52 dBm near N3, stationary 4 min, ±3 m";
+    - confirmed source → CASEVAC;
+    - uncertainty circle (`u-d-c-c`), to be retested;
+    - battery in node remarks.
 
 ## 4. UI (`ui/`, a single static page)
 - Canvas showing a floor-plan or drone-mosaic background image, with a metre grid.
