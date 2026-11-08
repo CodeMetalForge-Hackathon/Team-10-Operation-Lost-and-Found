@@ -4,6 +4,9 @@ The /ws payload is the proposed v1 contract in docs/WS_CONTRACT.md.
 It is not a change to the gateway JSON lines in docs/ARCHITECTURE.md.
 
 Also served by this process (team decision 2026-11-08, one host instead of two):
+  GET  /                the ops dashboard (ui/ops.html: heatmap, node fleet, distance matrix, sensor graphs)
+  GET  /ops             its data, one JSON (build_ops)
+  GET  /review          the evidence review page (ui/index.html)
   GET  /heatmap         the experimental heatmap page (fusion/heatmap.py's model and page)
   GET  /heatmap/state   that model's snapshot
   POST /heatmap/reset   clear the heatmap
@@ -24,6 +27,8 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from fusion.history import History
+from fusion.people import WINDOW_S as PEOPLE_WINDOW_S, estimate as people_estimate
 from fusion.serial_ingest import accept_line, read_simulated
 from fusion.state import FusionState
 
@@ -69,6 +74,9 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None, heatmap=None, co
     app.state.fusion = fusion
     app.state.positions = pos
     tak_seen = {"last_poll_ms": None}
+    sensor_history = History()  # rolling per-node sensor series for the ops dashboard's graphs
+    fusion.observers.append(sensor_history.ingest)
+    fusion.reset_hooks.append(sensor_history.reset)
 
     def snapshot():
         now = _now(now_ms)
@@ -81,8 +89,20 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None, heatmap=None, co
         return snap
 
     @app.get("/")
-    def index():
+    def ops_page():
+        return FileResponse(page_dir / "ops.html")
+
+    @app.get("/review")
+    def review_page():
         return FileResponse(page_dir / "index.html")
+
+    @app.get("/ops")
+    def ops_state():
+        now = _now(now_ms)
+        snap = snapshot()
+        heat = heatmap.snapshot(now / 1000.0) if heatmap is not None else None
+        return build_ops(snap, heat, pos["now"], sensor_history.series(now / 1000.0), mosaic_url, now,
+                         devices=sensor_history.devices(now / 1000.0, PEOPLE_WINDOW_S))
 
     @app.get("/heatmap")
     def heatmap_index():
@@ -432,6 +452,67 @@ def main(argv=None):
         player.stop()
     stop.set()
     return 0
+
+
+HEAT_KEYS = ("bounds", "res", "nx", "ny", "heat", "peak", "sources", "people_est", "hail_age", "warmup")
+
+
+def build_ops(snap, heat, positions, series, mosaic_url, now_ms, devices=()):
+    """Everything the ops dashboard draws, in one JSON (polled at 1 Hz).
+
+    dropped = nodes with a position (camera drops or --pos); operational = dropped and reporting.
+    matrix: metres between positions (upper triangle on the page) and mesh link dBm, the mean of what
+    each node reports hearing from the other in its beacon (lower triangle); None = unknown / no link.
+    """
+    by_id = {n["id"]: n for n in snap["nodes"]}
+    ids = sorted(set(positions) | set(by_id))
+    nodes = []
+    for i in ids:
+        n = by_id.get(i, {})
+        x, y = positions.get(i, (None, None))
+        nodes.append({
+            "id": i, "x": x, "y": y, "dropped": i in positions,
+            "alive": n.get("status") == "active",
+            "age_s": round((now_ms - n["last_t_host"]) / 1000.0, 1) if n.get("last_t_host") else None,
+            "hops": n.get("hops"), "rssi": n.get("rssi_last"), "floor_db": n.get("floor_db"),
+            "uptime_s": n.get("uptime_s"),
+        })
+    heard = {}  # (a, b) -> [dBm a reports for b, ...]
+    for n in snap["nodes"]:
+        for other, dbm in n.get("nbrs") or []:
+            heard.setdefault(tuple(sorted((n["id"], other))), []).append(dbm)
+    metres, dbm = [], []
+    for a in ids:
+        metres.append([_dist(positions.get(a), positions.get(b)) for b in ids])
+        dbm.append([None if a == b else _mean(heard.get(tuple(sorted((a, b))))) for b in ids])
+    dropped = [i for i in ids if i in positions]
+    return {
+        "t": now_ms / 1000.0,
+        "source": snap.get("source"),
+        "link": snap.get("link"),
+        "tak": bool(snap.get("tak_bridge", {}).get("polling")),
+        "packets_per_s": snap["counts"]["packets_per_s"],
+        "bytes_per_s": snap["counts"]["bytes_per_s"],
+        "nodes": nodes,
+        "dropped": dropped,
+        "operational": [i for i in dropped if by_id.get(i, {}).get("status") == "active"],
+        "heard_not_dropped": [i for i in ids if i not in positions and by_id.get(i, {}).get("status") == "active"],
+        "matrix": {"ids": ids, "metres": metres, "dbm": dbm},
+        "heat": {k: heat.get(k) for k in HEAT_KEYS} if heat else None,
+        "history": {str(k): v for k, v in series.items()},
+        "people": people_estimate(heat.get("people_est") if heat else None, series, devices, positions, now_ms / 1000.0),
+        "mosaic_url": mosaic_url,
+    }
+
+
+def _dist(p, q):
+    if p is None or q is None:
+        return None
+    return round(((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2) ** 0.5, 2)
+
+
+def _mean(values):
+    return round(sum(values) / len(values)) if values else None
 
 
 class _NoHeatmap:  # drops still reach /tak when started with --no-heatmap
