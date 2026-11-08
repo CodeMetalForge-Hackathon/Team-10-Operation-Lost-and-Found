@@ -2,4 +2,6 @@
 __pycache__/
 *.pyc
 data/*.raw
+# raw camera frame folders from live_mosaic.py --record (hundreds of MB); commit the mosaics only
+data/camera/*/
 build/
