@@ -12,6 +12,8 @@ keyframes onto a canvas. Same code on the laptop (development) and the Raspberry
 
 Outputs <out>.png and <out>.json:
   {"width", "height", "m_per_px", "px_to_m": [[a,b,c],[d,e,f]], "aligned": bool, "keyframes", ...}
+  px_to_ref maps a mosaic pixel to the first frame's pixels, which never move as a live mosaic grows
+  (store alignments in those coordinates).
   px_to_m maps a mosaic pixel (u, v, 1) to heatmap metres (x, y). Before alignment it uses the camera
   height and field of view (x right, y up, origin at the first frame's centre); after --align with two
   known points (e.g. nodes N1 and N2) it is exact in position, rotation and scale.
@@ -212,7 +214,8 @@ def main():
         aligned = True
     cv2.imwrite(a.out + ".png", img)
     meta = {"width": img.shape[1], "height": img.shape[0], "m_per_px": round(float(m_per_px), 5),
-            "px_to_m": np.round(px_to_m, 6).tolist(), "aligned": aligned, "keyframes": len(m.keyframes),
+            "px_to_m": np.round(px_to_m, 6).tolist(), "px_to_ref": np.round(np.linalg.inv(M)[:2], 6).tolist(),
+            "aligned": aligned, "keyframes": len(m.keyframes),
             "source": a.video, "stats": m.stats, "hfov_deg": a.hfov, "height_m": a.height}
     with open(a.out + ".json", "w") as f:
         json.dump(meta, f, indent=1)
