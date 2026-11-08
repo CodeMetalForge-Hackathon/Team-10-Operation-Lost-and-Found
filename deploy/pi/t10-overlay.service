@@ -1,12 +1,13 @@
 [Unit]
-Description=T10 camera mosaic as a live TAK overlay (fusion/tak_overlay.py, :8099/link.kml)
+Description=T10 floor map as a TAK overlay, published by Scan done (fusion/tak_overlay.py, :8099/link.kml)
 After=network.target t10-camera.service
 
 [Service]
 User=t10pi
 WorkingDirectory=/home/t10pi/t10
 EnvironmentFile=/home/t10pi/t10/deploy/pi/t10.env
-ExecStart=/bin/bash -c 'exec python3 fusion/tak_overlay.py --mosaic :8080 --lat $$T10_LAT --lon $$T10_LON --heading $$T10_HEADING --serve 8099'
+# --source final: TAK shows the map frozen by "Scan done -> TAK" (camera page / ops dashboard); --source live: the growing mosaic
+ExecStart=/bin/bash -c 'exec python3 fusion/tak_overlay.py --mosaic :8080 --lat $$T10_LAT --lon $$T10_LON --heading $$T10_HEADING --serve 8099 --source final --refresh 5'
 Restart=always
 RestartSec=5
 

@@ -55,6 +55,13 @@ The fusion server (`python -m fusion.server`, on the Pi as `t10-heatmap`) serves
 ```
 When the merged fusion server replaces `heatmap.py`, add one adapter for its state and nothing else changes. The bridge keeps running if the fusion host restarts: markers go stale, then come back.
 
+## Floor map: SCAN DONE → TAK (2026-11-08)
+- Setup, once per WinTAK install: Import Manager → `http://10.42.0.1:8099/link.kml` (a KML NetworkLink, refresh 5 s).
+- In the field: scan the area, then press **SCAN DONE → TAK** on the ops dashboard (`/`) or the camera page (`:8080`). The camera (`drone/live_mosaic.py`, `POST /scan_done`) freezes its mosaic as the published map (`/final.png`, `/final.json`, also saved as `<out>_final.*` so a restart keeps it). `fusion/tak_overlay.py --source final` serves only that map, so WinTAK shows `T10 floor map (final HH:MM:SS)` within ~5 s. Press again to republish after more flying.
+- Before the first press the overlay answers 503, so TAK shows no map rather than a half scan. "New mosaic" (`/reset`) keeps the published map until the next press.
+- Not verified: how WinTAK treats a 503 on refresh (assumed: keeps what it has) and whether an imported link survives a WinTAK restart.
+- Next step (not built): push the link itself as a data package (CoT `b-f-t-r` file transfer) so even the one-time import goes away. Unverified on WinTAK, which may prompt the user to accept.
+
 ## Limits and next steps
 - **No drawn uncertainty circle yet.** Circles appeared to stack up in WinTAK, but that test was confounded by leftover bridge processes. Retest a single fixed-uid circle (`u-d-c-c`) with one bridge running before adding it back.
 - Not yet sent:

@@ -170,7 +170,7 @@ The heatmap model runs inside the fusion host. Every gateway line goes to both t
 - **Markers:** plain **Cursor-on-Target XML over UDP**, standard library only. There is no plugin, no TAK Server and no `pytak`.
   - Each node is a friendly ground sensor, `T10 N<id>`, or `T10 N<id> LOST` when it stops reporting. Its last cue and the time go in the marker's remarks.
   - The heatmap peak is an unknown contact, **`T10 LOOK HERE`**, with its uncertainty as the circular error and "Not a confirmed location" in the remarks.
-- **Floor map in TAK:** the camera mosaic becomes a KMZ GroundOverlay (black is made transparent), served behind a KML NetworkLink that TAK re-fetches every 15 s. **The map in WinTAK grows as the drone flies.** The overlay and the markers use the same local→lat/lon transform; the two were checked to agree within 0.06 cm.
+- **Floor map in TAK:** the camera mosaic becomes a KMZ GroundOverlay (black is made transparent), served behind a KML NetworkLink that TAK re-fetches every 5 s. **When the operator presses SCAN DONE → TAK** (ops dashboard or camera page), the Pi freezes the mosaic and WinTAK's background fills in with the finished room within ~5 s: no download, no upload, and never a half-built map. Pressing again after more flying republishes (`--source live` on the overlay follows the growing mosaic instead). The overlay and the markers use the same local→lat/lon transform; the two were checked to agree within 0.06 cm.
 - **Coordinate frame:** everything is computed in local metres, `(x, y)`, with the origin at the first drop. TAK needs only an origin `(lat0, lon0)` and a heading:
   - `east = x·cos h + y·sin h`, `north = −x·sin h + y·cos h`;
   - `lat = lat0 + north/111 320`, `lon = lon0 + east/(111 320·cos lat0)`.
@@ -323,7 +323,7 @@ After that, power it on. Join **T10-FIELD** and open:
 ```bash
 python fusion/tak.py --lat 42.35938882464616 --lon -71.05658046185967 --state-url http://10.42.0.1:8000/tak
 ```
-Then, in WinTAK's Import Manager, import the overlay link `http://10.42.0.1:8099/link.kml`. Demo rule: read a marker's details, then close the pane.
+Then, once per WinTAK install, import the overlay link `http://10.42.0.1:8099/link.kml` in WinTAK's Import Manager. After that the floor map appears in TAK by itself each time **SCAN DONE → TAK** is pressed. Demo rule: read a marker's details, then close the pane.
 
 **No hardware at all** (any laptop, Python 3.11+, `pip install -r requirements.txt`):
 ```bash

@@ -10,7 +10,10 @@ HTTP (any browser on the same network, e.g. http://<pi-ip>:8080/):
   GET  /frame.jpg     latest camera frame      GET /status        counters
   POST /drop[?id=N]   node N (default: the next in --drop-order) was dropped right under the camera now
   POST /undo          forget the last drop     GET  /drops        node positions in metres (for heatmap.py)
-  POST /reset         start a new mosaic (and forget the drops)
+  POST /reset         start a new mosaic (and forget the drops; the published TAK map is kept)
+  POST /scan_done     "the scan is finished": freeze the current mosaic as the map TAK shows (again = republish)
+  GET  /final.png     the published mosaic      GET /final.json   its metadata (+ final_version, published_at)
+                      (503 until the first Scan done; fusion/tak_overlay.py serves these to WinTAK)
 The heatmap page uses /mosaic.png + /mosaic.json as its background and /drops as the node positions.
 
 Metre frame: origin at the first dropped node, x right / y up in the camera's first frame, scale from the camera
@@ -36,10 +39,11 @@ PAGE = """<!doctype html><html><head><meta charset="utf-8"><title>T10 camera mos
 <style>body{margin:0;background:#111;color:#ddd;font:14px system-ui}header{padding:8px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 main{display:flex;flex-wrap:wrap;gap:8px;padding:0 8px}figure{margin:0}img{max-width:100%;background:#000}
 #m{max-height:80vh}#f{width:320px}button{background:#333;color:#ddd;border:1px solid #555;padding:4px 10px}
-#d{color:#fc6}</style></head>
+#d{color:#fc6}#sd{background:#264;border-color:#4a8}#tk{color:#8c8}</style></head>
 <body><header><b>T10 camera mosaic</b><span id="s">...</span>
 <button onclick="post('/drop')">Drop node (SPACE)</button><button onclick="post('/undo')">Undo drop</button>
-<button onclick="if(confirm('Start a new mosaic and forget all drops?'))post('/reset')">New mosaic</button><span id="d"></span></header>
+<button onclick="if(confirm('Start a new mosaic and forget all drops?'))post('/reset')">New mosaic</button><span id="d"></span>
+<button id="sd" onclick="post('/scan_done')" title="Freeze this mosaic as the floor map TAK shows">Scan done &rarr; TAK</button><span id="tk">TAK map: not published</span></header>
 <main><figure><img id="f"><figcaption>live frame (+ = where a dropped node lands)</figcaption></figure>
 <figure><img id="m"><figcaption>mosaic</figcaption></figure></main>
 <script>
@@ -48,7 +52,8 @@ document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preven
 function tick(){const t=Date.now();document.getElementById('f').src='/frame.jpg?'+t;
 fetch('/status').then(r=>r.json()).then(s=>{document.getElementById('s').textContent=
 `${s.state} | ${s.keyframes} keyframes | ${s.fps} fps | lost ${s.lost}/${s.frames}`;
-const m=document.getElementById('m');if(m.dataset.v!=s.version){m.dataset.v=s.version;m.src='/mosaic.png?'+s.version}}).catch(()=>{});
+const m=document.getElementById('m');if(m.dataset.v!=s.version){m.dataset.v=s.version;m.src='/mosaic.png?'+s.version}
+document.getElementById('tk').textContent=s.final_version?`TAK map: v${s.final_version}, ${new Date(s.final_t*1000).toLocaleTimeString()} (${s.final_keyframes} keyframes)`:'TAK map: not published'}).catch(()=>{});
 fetch('/drops').then(r=>r.json()).then(d=>{document.getElementById('d').textContent=
 (d.drops.length?'dropped: '+d.drops.map(x=>`N${x.id} (${x.x.toFixed(1)}, ${x.y.toFixed(1)}) m`).join(', '):'no nodes dropped')+
 (d.next_id!=null?` | next: N${d.next_id}`:' | all dropped')}).catch(()=>{})}
@@ -65,7 +70,12 @@ class Live:
         self.mosaic_png = b""
         self.meta = {}
         self.version = 0
-        self.status = {"state": "starting", "frames": 0, "lost": 0, "keyframes": 0, "fps": 0.0, "version": 0}
+        self.status = {"state": "starting", "frames": 0, "lost": 0, "keyframes": 0, "fps": 0.0, "version": 0,
+                       "final_version": 0, "final_t": None, "final_keyframes": 0}
+        self.publish_lock = threading.Lock()  # the camera loop and Scan done both render
+        # The published ("final") mosaic: what TAK shows. Changes only on Scan done; kept across /reset and restarts.
+        self.final_png, self.final_meta = b"", {}
+        self._load_final()
         self.m = self._new()
         self.drop_order = [int(v) for v in a.drop_order.split(",")]
         self.drops = []          # {"id", "ref": [u, v] first-frame px, "t"}
@@ -168,6 +178,10 @@ class Live:
             cam.stop()
 
     def publish(self):
+        with self.publish_lock:
+            self._publish()
+
+    def _publish(self):
         img, M = self.m.render(max_side=self.a.max_side)
         ok, png = cv2.imencode(".png", img)
         px_to_ref = np.linalg.inv(M)[:2]
@@ -188,10 +202,49 @@ class Live:
             self.mosaic_png, self.meta = png.tobytes(), dict(meta, version=self.version)
             self.status["version"] = self.version
         if self.a.out:
-            for path, data in ((self.a.out + ".png", png.tobytes()), (self.a.out + ".json", json.dumps(meta).encode())):
-                with open(path + ".tmp", "wb") as f:
-                    f.write(data)
-                os.replace(path + ".tmp", path)
+            _write_atomic(self.a.out + ".png", png.tobytes())
+            _write_atomic(self.a.out + ".json", json.dumps(meta).encode())
+
+    # ---- Scan done: the published map ----
+    def scan_done(self):
+        """Freeze a fresh render of the mosaic as the map TAK shows. Pressing again republishes."""
+        with self.lock:
+            empty = not self.m.keyframes
+        if empty:
+            return {"ok": False, "error": "no mosaic yet: fly (walk) the area first"}
+        self.publish()  # fresh render: includes keyframes added since the last periodic publish
+        with self.lock:
+            fv = int(self.final_meta.get("final_version", 0)) + 1
+            self.final_meta = dict(self.meta, final_version=fv, published_at=round(time.time(), 2))
+            self.final_png = self.mosaic_png
+            meta, png = self.final_meta, self.final_png
+            self._final_status()
+        if self.a.out:
+            _write_atomic(self.a.out + "_final.png", png)
+            _write_atomic(self.a.out + "_final.json", json.dumps(meta).encode())
+        return {"ok": True, "final_version": fv, "published_at": meta["published_at"],
+                "keyframes": meta.get("keyframes"), "drops": [d["id"] for d in meta.get("drops", [])]}
+
+    def _final_status(self):
+        m = self.final_meta
+        self.status.update(final_version=m.get("final_version", 0), final_t=m.get("published_at"),
+                           final_keyframes=m.get("keyframes", 0))
+
+    def _load_final(self):
+        """After a restart, keep serving the map TAK already has."""
+        if not self.a.out:
+            return
+        try:
+            with open(self.a.out + "_final.json") as f:
+                meta = json.load(f)
+            with open(self.a.out + "_final.png", "rb") as f:
+                png = f.read()
+        except (OSError, ValueError):
+            return
+        if meta.get("final_version") and png:
+            self.final_png, self.final_meta = png, meta
+            self._final_status()
+            print(f"# published TAK map v{meta['final_version']} restored from {self.a.out}_final.png", flush=True)
 
     def run(self):
         try:
@@ -249,6 +302,12 @@ class Live:
                 t_last_pub, dirty = now, False
 
 
+def _write_atomic(path, data):
+    with open(path + ".tmp", "wb") as f:
+        f.write(data)
+    os.replace(path + ".tmp", path)
+
+
 def make_handler(live):
     class H(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -273,12 +332,16 @@ def make_handler(live):
                     "/mosaic.json": (json.dumps(live.meta).encode(), "application/json"),
                     "/status": (json.dumps(live.status).encode(), "application/json"),
                     "/drops": (json.dumps(live.drops_info()).encode(), "application/json"),
+                    "/final.png": (live.final_png, "image/png"),
+                    "/final.json": (json.dumps(live.final_meta).encode() if live.final_meta else b"", "application/json"),
                 }
             if path not in routes:
                 return self._send(404, b"not found", "text/plain")
             body, ctype = routes[path]
             if not body and path in ("/frame.jpg", "/mosaic.png"):
                 return self._send(503, b"not ready", "text/plain")
+            if not body and path in ("/final.png", "/final.json"):
+                return self._send(503, b"not published: press Scan done", "text/plain")
             self._send(200, body, ctype)
 
         def do_POST(self):
@@ -286,6 +349,12 @@ def make_handler(live):
             if path == "/reset":
                 live.reset_flag = True
                 return self._send(200, b'{"ok":true}', "application/json")
+            if path == "/scan_done":
+                r = live.scan_done()
+                if r["ok"]:
+                    print(f"# scan done: TAK map v{r['final_version']}, {r['keyframes']} keyframes, "
+                          f"drops {r['drops']}", flush=True)
+                return self._send(200 if r["ok"] else 409, json.dumps(r).encode(), "application/json")
             if path in ("/drop", "/undo"):
                 q = self.path.split("id=")[1] if "id=" in self.path else ""
                 with live.lock:
