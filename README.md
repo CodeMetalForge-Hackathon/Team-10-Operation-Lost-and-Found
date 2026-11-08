@@ -145,8 +145,9 @@ The heatmap model runs inside the fusion host. Every gateway line goes to both t
 ![Ops dashboard](media/screenshots/ops_dashboard.png)
 
 - **Main panel, the map:** the camera mosaic, the evidence heat, nodes in their own colour with a green (up) or red (lost) ring, mesh links (brighter = stronger), a pulsing **LOOK HERE** ring with its ± radius, and a HAIL countdown while the network listens.
-- **Header:** data source, gateway and TAK links, **nodes operational / dropped** as a segmented bar (plus nodes heard but not dropped yet), packets and bytes per second, and **HAIL / PING / BLINK**.
-- **Node fleet:** one tile per node, with status, a 60 s audio-level sparkline, cue counts for the last 30 s (TAP, FELT, VOICE, LOUD, BLE devices), hops, link dBm and last-heard age.
+- **Header:** data source, gateway and TAK links, **nodes operational / dropped** as a segmented bar (plus nodes heard but not dropped yet), **EST. PEOPLE**, packets and bytes per second, and **HAIL / PING / BLINK**.
+- **EST. PEOPLE (rough):** the number of separate evidence hotspots on the map. A spot counts if it is a local maximum ≥ 50% of the main peak, ≥ 1.5 m from a stronger one, and with a valley between them. Secondary hotspots are drawn as small numbered rings. It is not shown during the 2 min background warm-up, and it is smoothed over 10 s. It is a hotspot count, not a headcount.
+- **Node fleet** (drag the handle between the fleet and the matrix to resize them): one tile per node, with status, a 60 s audio-level sparkline, cue counts for the last 30 s (TAP, FELT, VOICE, LOUD, BLE devices), hops, link dBm and last-heard age.
 - **Distance matrix:** metres between drop positions above the diagonal; mesh link strength in dBm (the mean of both directions) below it.
 - **Sensor graphs, last 5 min, all nodes:**
   - **Audio:** sound level per node, with tap / felt / sustained / loud markers.

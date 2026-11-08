@@ -35,7 +35,7 @@ Everything except the photos and the WinTAK screenshots is generated from the re
 |---|---|
 | `gifs/heatmap_drops_live.gif` | Heatmap page while nodes are dropped (SPACE): each node appears where the camera was, the camera map sits under the heat, no clicking |
 | `screenshots/heatmap_photo_and_drops.png` | The same, settled: evidence heat over the floor photo, nodes N1/N2/N5 at their drop points, estimate with uncertainty circle |
-| `screenshots/ops_dashboard.png` | **The ops dashboard** (`/`): map with heat, nodes and LOOK HERE; fleet tiles (3/3 up); distance matrix (m / dBm); audio graph. 3-node hall recording + walk 3 camera replay |
+| `screenshots/ops_dashboard.png` | **The ops dashboard, live on the Pi** (2026-11-08 ~08:37): 5/5 nodes dropped and up, EST. PEOPLE ≈ 1, LOOK HERE with ±3.7 m, fleet tiles, 5×5 distance matrix (m / dBm), audio graph |
 | `screenshots/camera_page.png` | The Pi camera page: live frame with drop crosshair, drop list, growing mosaic |
 | `screenshots/heatmap_real_3node_recording.png` | The heatmap on **real data**: the 3-node hall recording (`data/live_3node_test1.jsonl`) |
 | `screenshots/heatmap_simulator.png` | The built-in simulator (taps from a hidden source plus room chatter) |

@@ -67,6 +67,11 @@ ALIVE_S = 6.0
 KIND_W = {"TAP_PATTERN": 1.0, "VIBRATION": 1.0, "LOUD": 0.3, "VOICE_LIKE": 0.2}
 SNR_LO, SNR_HI = 8.0, 20.0     # mic-only weight ramps from 0.1 at 8 dB over floor to 1.0 at 20 dB
 OUTSIDE_SIGMA_M = 0.5          # prior: sources are inside the area the nodes were dropped around
+# Rough people count = separate evidence hotspots: local maxima (within LOCAL_M) at least HOT_FRAC of the main
+# peak, at least SEP_M from a stronger one, AND with a valley between them (the heat on the straight line between
+# the two dips below VALLEY_FRAC of the weaker one). A broad blob or a ridge counts once; two tappers ~1.5 m+
+# apart count twice. Not reported while the room background is still being learned (warm-up).
+LOCAL_M, HOT_FRAC, SEP_M, VALLEY_FRAC = 0.5, 0.5, 1.5, 0.6
 HAIL_REPLY = (3.5, 13.5)  # seconds after HAIL: node blanking ends ~3.5 s, listen ~10 s
 HAIL_BOOST = 2.0
 
@@ -241,6 +246,8 @@ class Fusion:
                 spread = float(np.sqrt(((self.gx[X] - self.gx[ix]) ** 2 + (self.gy[Y] - self.gy[iy]) ** 2).mean()))
                 peak = {"x": round(float(self.gx[ix]), 2), "y": round(float(self.gy[iy]), 2),
                         "strength": round(hmax, 2), "radius": round(max(spread, GRID_M), 2)}
+            warm = self.use_bg and (now - self.started) < BG_HALF_LIFE_S
+            sources = self._hotspots(h, hmax) if peak else []
             gain = self.gains()
             hail_age = (now - self.hail_t) if self.hail_t else None
             return {
@@ -248,6 +255,7 @@ class Fusion:
                 "nx": len(self.gx), "ny": len(self.gy),
                 "heat": np.round(h / hmax, 3).ravel().tolist() if hmax > 0 else [],
                 "hmax": round(hmax, 3), "peak": peak,
+                "sources": sources, "people_est": None if warm else len(sources),
                 "nodes": [{"id": i, "x": float(p[0]), "y": float(p[1]), "alive": self.alive(i, now),
                            "floor": self.nodes[i]["floor"], "gain": round(gain[i], 1),
                            "rssi": self.nodes[i]["rssi"], "hops": self.nodes[i]["hops"],
@@ -258,6 +266,32 @@ class Fusion:
                 "unknown": sorted(i for i, t in self.unknown.items() if now - t < ALIVE_S),  # heard, not placed
                 "warmup": round(max(0.0, BG_HALF_LIFE_S - (now - self.started))) if self.use_bg else 0,
             }
+
+    def _hotspots(self, h, hmax):
+        """Separate evidence hotspots, strongest first: [{"x", "y", "strength"}] (strength relative to the peak)."""
+        k = max(1, int(round(LOCAL_M / GRID_M)))
+        p = np.pad(h, k, constant_values=0.0)
+        local = np.zeros_like(h)
+        for dy in range(2 * k + 1):  # maximum filter by shifted copies (no scipy)
+            for dx in range(2 * k + 1):
+                np.maximum(local, p[dy:dy + h.shape[0], dx:dx + h.shape[1]], out=local)
+        Y, X = np.nonzero((h >= local) & (h >= HOT_FRAC * hmax))
+        picked = []  # (row, col)
+        for i in np.argsort(-h[Y, X]):
+            r, c = int(Y[i]), int(X[i])
+            if all(self._separate(h, (r, c), q) for q in picked):
+                picked.append((r, c))
+        return [{"x": round(float(self.gx[c]), 2), "y": round(float(self.gy[r]), 2),
+                 "strength": round(float(h[r, c] / hmax), 2)} for r, c in picked]
+
+    def _separate(self, h, a, b):
+        """Far enough apart, with a valley between: two hotspots, not one blob or ridge."""
+        if ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) * GRID_M ** 2 < SEP_M ** 2:
+            return False
+        n = max(abs(a[0] - b[0]), abs(a[1] - b[1])) + 1
+        rows = np.rint(np.linspace(a[0], b[0], n)).astype(int)
+        cols = np.rint(np.linspace(a[1], b[1], n)).astype(int)
+        return float(h[rows, cols].min()) < VALLEY_FRAC * min(float(h[a]), float(h[b]))
 
     def reset(self):
         with self.lock:

@@ -77,7 +77,39 @@ class OpsPictureTest(unittest.TestCase):
         d = client.get("/ops").json()
         self.assertEqual(d["operational"], [1])
         self.assertEqual(d["history"]["1"]["audio"][0][1], -20)
-        self.assertEqual(sorted(d["heat"]), sorted(["bounds", "res", "nx", "ny", "heat", "peak", "hail_age", "warmup"]))
+        self.assertEqual(sorted(d["heat"]), sorted(["bounds", "res", "nx", "ny", "heat", "peak", "sources", "people_est",
+                                                    "hail_age", "warmup"]))
+
+
+class PeopleEstimateTest(unittest.TestCase):
+    """EST. PEOPLE = separate evidence hotspots (rough): broad blobs count once, close or weak spots don't add."""
+
+    def heat(self, *blobs):
+        import numpy as np
+
+        from fusion.heatmap import Fusion
+
+        f = Fusion({1: (0, 0), 2: (4, 0), 3: (0, 4)}, use_bg=False)
+        X, Y = np.meshgrid(f.gx, f.gy)
+        f.heat = sum(a * np.exp(-((X - x) ** 2 + (Y - y) ** 2) / (2 * s * s)) for a, x, y, s in blobs)
+        return f.snapshot(0)
+
+    def test_counts(self):
+        two = self.heat((2.0, 1, 1, 0.6), (1.6, 3.5, 3, 0.6))
+        self.assertEqual(two["people_est"], 2)
+        self.assertEqual((two["sources"][0]["x"], two["sources"][0]["y"]), (two["peak"]["x"], two["peak"]["y"]))
+        self.assertEqual(self.heat((2.0, 1, 1, 1.5))["people_est"], 1)                     # one broad blob
+        self.assertEqual(self.heat((2.0, 1, 1, 0.6), (1.8, 1.8, 1, 0.6))["people_est"], 1)  # 0.8 m apart: one
+        self.assertEqual(self.heat((2.0, 1, 1, 0.6), (0.5, 3.5, 3, 0.6))["people_est"], 1)  # weak second
+        self.assertEqual(self.heat((0.0, 1, 1, 0.6))["people_est"], 0)                     # nothing
+        ridge = [(1.0 + 0.15 * (k % 2), 0, k * 0.5, 1.2) for k in range(9)]               # bumpy ridge (spread-out nodes)
+        self.assertEqual(self.heat(*ridge)["people_est"], 1)
+
+    def test_not_reported_while_learning_the_room(self):
+        from fusion.heatmap import Fusion
+
+        f = Fusion({1: (0, 0), 2: (4, 0)})
+        self.assertIsNone(f.snapshot(f.started + 5)["people_est"])
 
 
 class RoutesTest(unittest.TestCase):

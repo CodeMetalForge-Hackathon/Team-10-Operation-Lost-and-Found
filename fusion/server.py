@@ -452,7 +452,7 @@ def main(argv=None):
     return 0
 
 
-HEAT_KEYS = ("bounds", "res", "nx", "ny", "heat", "peak", "hail_age", "warmup")
+HEAT_KEYS = ("bounds", "res", "nx", "ny", "heat", "peak", "sources", "people_est", "hail_age", "warmup")
 
 
 def build_ops(snap, heat, positions, series, mosaic_url, now_ms):

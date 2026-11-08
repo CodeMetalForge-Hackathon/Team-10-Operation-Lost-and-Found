@@ -52,6 +52,13 @@
     $("n-bar").innerHTML = d.dropped.map(i =>
       `<i class="${d.operational.includes(i) ? "ok" : "bad"}" title="N${i} ${d.operational.includes(i) ? "up" : "lost"}"></i>`).join("");
     $("n-extra").textContent = d.heard_not_dropped.length ? `+${d.heard_not_dropped.length} not dropped` : "";
+    // null while the room background is being learned; shown as the median of the last 10 s so it doesn't flicker
+    const raw = d.heat ? d.heat.people_est : 0;
+    st.ppl = raw == null ? [] : (st.ppl || []).concat(raw).slice(-10);
+    const ppl = raw == null ? null : st.ppl.slice().sort((a, b) => a - b)[Math.floor(st.ppl.length / 2)];
+    st.pplShown = ppl;
+    $("ppl").textContent = ppl == null ? "…" : ppl;
+    $("people").classList.toggle("on", ppl > 0);
     $("pps").textContent = d.packets_per_s;
     $("bps").textContent = d.bytes_per_s;
     $("clock").textContent = new Date(d.t * 1000).toLocaleTimeString([], { hour12: false });
@@ -192,6 +199,15 @@
       ctx.beginPath(); ctx.moveTo(cx - 16 * dpr, cy); ctx.lineTo(cx + 16 * dpr, cy); ctx.moveTo(cx, cy - 16 * dpr); ctx.lineTo(cx, cy + 16 * dpr); ctx.stroke();
     }
 
+    // other hotspots (each counts toward EST. PEOPLE): smaller dashed rings
+    ((h && h.people_est && h.sources) || []).slice(1).forEach((q, k) => {
+      const cx = X(q.x), cy = Y(q.y);
+      ctx.strokeStyle = INK2; ctx.lineWidth = 1.5 * dpr; ctx.setLineDash([5 * dpr, 4 * dpr]);
+      ctx.beginPath(); ctx.arc(cx, cy, 13 * dpr, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = `700 ${11 * dpr}px system-ui, sans-serif`; ctx.fillStyle = INK2; ctx.textAlign = "center";
+      ctx.fillText(String(k + 2), cx, cy + 4 * dpr); ctx.textAlign = "start";
+    });
+
     // nodes: identity colour fill, status ring, flash ring on a fresh cue
     st.hit = [];
     const now = d.t;
@@ -219,7 +235,11 @@
 
     // overlay pills
     $("look").hidden = !pk;
-    if (pk) $("look").innerHTML = `<b>LOOK HERE</b>${pk.x.toFixed(1)}, ${pk.y.toFixed(1)} m<span class="unc">±${pk.radius.toFixed(1)} m</span>`;
+    if (pk) {
+      const n = st.pplShown;
+      $("look").innerHTML = `<b>LOOK HERE</b>${pk.x.toFixed(1)}, ${pk.y.toFixed(1)} m<span class="unc">±${pk.radius.toFixed(1)} m</span>` +
+        (n ? `<span class="ppl">≈ ${n} ${n === 1 ? "person" : "people"}</span>` : "");
+    }
     const ha = h && h.hail_age;
     $("hail").hidden = ha == null;
     if (ha != null) {
@@ -255,7 +275,7 @@
     if (box.dataset.key !== key) {
       box.dataset.key = key;
       box.innerHTML = order.map(n => `<div class="tile" data-id="${n.id}" style="--c:${colorOf(n.id)}">
-        <div class="t-head"><span class="id">N${n.id}</span><span class="st"></span></div>
+        <div class="t-head"><i class="sw"></i><span class="id">N${n.id}</span><span class="st"></span></div>
         <canvas class="spark"></canvas>
         <div class="cues"></div><div class="t-foot"></div></div>`).join("") ||
         `<p class="muted">No nodes heard yet.</p>`;
@@ -405,6 +425,28 @@
     $("tabnote").textContent = note;
     sx.setOption(opt, { notMerge: true });
   }
+
+  // ---------------------------------------------------------------- fleet / matrix splitter (remembered per browser)
+  const mainEl = document.querySelector("main"), fleetEl = $("fleet");
+  function setFleetH(px) {
+    if (px == null) { mainEl.style.removeProperty("--fleet-h"); mainEl.classList.remove("sized"); }
+    else { mainEl.style.setProperty("--fleet-h", px + "px"); mainEl.classList.add("sized"); }
+    mx.resize();
+  }
+  try { const v = +localStorage.getItem("t10_fleet_h"); if (v) setFleetH(v); } catch (e) { /* no storage */ }
+  $("split").addEventListener("pointerdown", e => {
+    e.preventDefault();
+    const top = fleetEl.getBoundingClientRect().top, mapB = $("map").getBoundingClientRect().bottom;
+    document.body.classList.add("dragging");
+    const move = ev => setFleetH(Math.round(Math.max(90, Math.min(ev.clientY - top, mapB - top - 160))));
+    const up = () => {
+      document.body.classList.remove("dragging");
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+      try { localStorage.setItem("t10_fleet_h", parseInt(mainEl.style.getPropertyValue("--fleet-h")) || ""); } catch (e) { /* ignore */ }
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+  });
+  $("split").addEventListener("dblclick", () => { setFleetH(null); try { localStorage.removeItem("t10_fleet_h"); } catch (e) { /* ignore */ } });
 
   window.addEventListener("resize", () => { mx.resize(); sx.resize(); drawMap(); if (st.d) tiles(st.d, true); });
 })();
