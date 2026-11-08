@@ -33,7 +33,7 @@ class DashboardSocketTest(unittest.TestCase):
         app = create_app(state, now_ms=lambda: 5_100)
 
         with TestClient(app) as client:
-            page = client.get("/")
+            page = client.get("/review")  # the evidence review page; / is the ops dashboard
             script = client.get("/assets/review.js")
             self.assertEqual(page.status_code, 200)
             self.assertIn("Operations overview", page.text)

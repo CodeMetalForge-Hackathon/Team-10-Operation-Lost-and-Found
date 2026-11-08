@@ -16,7 +16,7 @@ class OperatorPageTest(unittest.TestCase):
         app = create_app()
 
         with TestClient(app) as client:
-            page = client.get("/")
+            page = client.get("/review")  # the evidence review page; / is the ops dashboard
             script = client.get("/assets/review.js")
             chart = client.get("/assets/vendor/echarts.min.js")
 

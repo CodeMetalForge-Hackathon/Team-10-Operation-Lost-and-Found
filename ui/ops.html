@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>T10 Ops</title>
+  <link rel="icon" href="/assets/vendor/icons/ear.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/ops.css">
+</head>
+<body>
+  <header id="top">
+    <div class="brand">T10 <b>OPS</b></div>
+    <span class="chip" id="c-src" title="Data source"><i></i><span>—</span></span>
+    <span class="chip" id="c-gw" title="Gateway link"><i></i><span>GW</span></span>
+    <span class="chip" id="c-tak" title="TAK bridge polling /tak"><i></i><span>TAK</span></span>
+    <div class="fleetsum" title="Operational / dropped nodes">
+      <span class="lbl">NODES</span><b id="n-up">0</b><span class="of">/</span><span id="n-drop">0</span>
+      <div id="n-bar"></div><span id="n-extra" class="muted"></span>
+    </div>
+    <div class="kpi"><b id="pps">0</b><span>pkt/s</span></div>
+    <div class="kpi"><b id="bps">0</b><span>B/s</span></div>
+    <div class="cmds">
+      <button class="hail" data-cmd="HAIL" title="All nodes beep, then listen harder for 10 s">HAIL</button>
+      <button data-cmd="PING" title="Ask every node to report">PING</button>
+      <button data-cmd="BLINK" title="Nodes blink their ID">BLINK</button>
+    </div>
+    <div id="clock">--:--:--</div>
+    <a class="navl" href="/review" title="Evidence review (detail per observation)">Evidence ›</a>
+  </header>
+
+  <main>
+    <section id="map" class="panel">
+      <canvas id="cv"></canvas>
+      <div class="ovl tl">
+        <div id="look" class="pill look" hidden title="Strongest evidence. Not a confirmed survivor location."></div>
+        <div id="hail" class="pill hailp" hidden><span id="hail-txt"></span><div class="bar"><div id="hail-bar"></div></div></div>
+        <div id="warm" class="pill muted" hidden></div>
+      </div>
+      <div class="ovl bl legend">
+        <span><i class="dot ok"></i>UP</span><span><i class="dot bad"></i>LOST</span>
+        <span><i class="ring"></i>LOOK HERE</span><span><i class="heatkey"></i>evidence</span>
+        <span id="scale"></span>
+      </div>
+    </section>
+
+    <section id="fleet" class="panel">
+      <h2>NODE FLEET <span class="muted" id="fleet-sub"></span></h2>
+      <div id="tiles"></div>
+    </section>
+
+    <section id="matrix" class="panel">
+      <h2>DISTANCES <span class="muted"><b class="m">▲ metres</b> (drops) · <b class="d">▼ dBm</b> (mesh)</span></h2>
+      <div id="mx" class="chart"></div>
+    </section>
+
+    <section id="sensors" class="panel">
+      <div class="tabs" role="tablist">
+        <button data-tab="audio" class="on" role="tab">AUDIO</button>
+        <button data-tab="vib" role="tab">VIBRATION</button>
+        <button data-tab="ble" role="tab">BLE DEVICES</button>
+        <span class="muted tabnote" id="tabnote"></span>
+      </div>
+      <div id="sx" class="chart"></div>
+    </section>
+  </main>
+  <div id="toast" hidden></div>
+
+  <script src="/assets/vendor/echarts.min.js"></script>
+  <script src="/assets/ops.js"></script>
+</body>
+</html>

@@ -140,8 +140,25 @@ The heatmap model runs inside the fusion host. Every gateway line goes to both t
 ![Heatmap over the camera map, nodes placed by their drops](media/screenshots/heatmap_photo_and_drops.png)
 
 ### 3.7 Operator views (browser, served by the Pi)
-- **Heatmap page** (`:8000/heatmap`): the floor map, the heat over it, nodes at their drop points, the "Look here" estimate with its uncertainty circle, buttons for HAIL/PING/BLINK, and a log of every sound group showing which nodes heard it.
-- **Operations overview** (`:8000/`): an evidence dashboard. It shows the node roster and health, an evidence queue (taps, felt vibrations, sustained sound, phone/wearable sightings) with the full detail of each observation, a timeline by node, and SQLite history.
+**Ops dashboard** (`:8000/`): one screen for the operator, usable alongside or instead of WinTAK. It is graphics first: almost no text, short numbers.
+
+![Ops dashboard](media/screenshots/ops_dashboard.png)
+
+- **Main panel, the map:** the camera mosaic, the evidence heat, nodes in their own colour with a green (up) or red (lost) ring, mesh links (brighter = stronger), a pulsing **LOOK HERE** ring with its ± radius, and a HAIL countdown while the network listens.
+- **Header:** data source, gateway and TAK links, **nodes operational / dropped** as a segmented bar (plus nodes heard but not dropped yet), packets and bytes per second, and **HAIL / PING / BLINK**.
+- **Node fleet:** one tile per node, with status, a 60 s audio-level sparkline, cue counts for the last 30 s (TAP, FELT, VOICE, LOUD, BLE devices), hops, link dBm and last-heard age.
+- **Distance matrix:** metres between drop positions above the diagonal; mesh link strength in dBm (the mean of both directions) below it.
+- **Sensor graphs, last 5 min, all nodes:**
+  - **Audio:** sound level per node, with tap / felt / sustained / loud markers.
+  - **Vibration:** SW-420 events per node, dot size = strength (switch edges), plus tap patterns.
+  - **BLE:** phones and wearables heard per node per scan, with the strongest dBm and kinds on hover.
+
+  Click a node on the map or its tile to highlight it everywhere. `?tab=vib` or `?tab=ble` opens a screen on one tab.
+- Data: `GET /ops`, one JSON per second (`build_ops` in `fusion/server.py`; rolling series in `fusion/history.py`).
+
+**Heatmap page** (`:8000/heatmap`): the same map with drop control (**SPACE**), manual photo alignment, and a log of every sound group showing which nodes heard it.
+
+**Evidence review** (`:8000/review`): the full detail of each observation (raw event, timing, signal, sequence), a timeline by node, and SQLite history.
 
 ### 3.8 TAK integration (`fusion/tak.py`, `fusion/tak_overlay.py`)
 - **Markers:** plain **Cursor-on-Target XML over UDP**, standard library only. There is no plugin, no TAK Server and no `pytak`.
@@ -159,7 +176,7 @@ The heatmap model runs inside the fusion host. Every gateway line goes to both t
 - **It plugs into what responders already run.** Output is standard CoT into WinTAK, ATAK or iTAK: standard symbols, a standard overlay format (KML/KMZ), and the standard SA multicast channel. Responders learn nothing new, and every TAK user on the network can see the markers, share them and route to them. This follows the panel's advice: "don't bring a new widget, integrate."
 - **One documented data contract.** The gateway prints one JSON object per line ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2, host rules in [`docs/TELEMETRY_CONTRACT.md`](docs/TELEMETRY_CONTRACT.md)). Anything that can read a serial port, a TCP socket or a file can consume it. The same parser reads all three.
 - **The TAK bridge is one adapter function.** `tak.py` polls a JSON picture (`/tak`) and knows nothing about acoustics. A different estimator, another team's sensor or a different backend only has to produce `{"nodes": [...], "sources": [...]}`.
-- **Hardware-independent from the gateway down.** A simulator ([`sim/`](sim/)) and recorded runs ([`data/`](data/)) emit exactly the gateway's lines, so the fusion host, dashboard, heatmap and TAK all run with no boards. A dead board can't sink the demo. 77 automated tests cover parsing, state, recording, replay, commands, the TAK picture and the pages.
+- **Hardware-independent from the gateway down.** A simulator ([`sim/`](sim/)) and recorded runs ([`data/`](data/)) emit exactly the gateway's lines, so the fusion host, dashboard, heatmap and TAK all run with no boards. A dead board can't sink the demo. 81 automated tests cover parsing, state, recording, replay, commands, the TAK picture and the pages.
 - **Small, ordinary dependencies:** Python 3.11+, NumPy, OpenCV, FastAPI/uvicorn, pyserial; Arduino-ESP32 core ≥ 3.3 for the firmware. It runs the same on a Windows laptop, a Mac or the Pi.
 - **Any number of nodes.** Nodes join by being heard, and are placed by being dropped. The system builds a network of however many are deployed (the demo ran 4).
 
@@ -292,7 +309,7 @@ We built in thin, end-to-end slices: get one real signal all the way to TAK, the
 sudo bash ~/t10/deploy/pi/install.sh     # packages, 3 services, T10-FIELD hotspot; safe to re-run
 ```
 After that, power it on. Join **T10-FIELD** and open:
-- `http://10.42.0.1:8000` for the evidence dashboard;
+- `http://10.42.0.1:8000` for the **ops dashboard** (map, fleet, distances, sensor graphs, HAIL);
 - `http://10.42.0.1:8000/heatmap` for the heatmap + map (**SPACE** = drop a node);
 - `http://10.42.0.1:8080` for the camera.
 
@@ -308,7 +325,7 @@ python -m fusion.server --demo                                      # scripted g
 python -m fusion.server --recording data/live_3node_test1.jsonl     # a real 3-node run, replayed at recorded pace
 python fusion/heatmap.py --sim --mosaic data/camera/walk3_mosaic    # physics simulator over the walk 3 floor map
 python drone/live_mosaic.py --video "data/camera/walk3/%06d.jpg" --realtime   # replay a camera walk (frames not in git)
-python -m pytest tests                                             # 77 tests
+python -m pytest tests                                             # 81 tests
 ```
 
 **Firmware:** `python tools/flash.py --port COMx --board c5|s3 --role node|gateway --id N [--ble]`. Wiring and bring-up: [`docs/HARDWARE.md`](docs/HARDWARE.md). WinTAK and Bambu Studio poll COM ports and break flashing, so close them first.
@@ -321,14 +338,14 @@ firmware/node/      one Arduino sketch for every role (node, gateway, drone brid
 firmware/sensor_test/  sound sensor / SW-420 bench sketch
 hardware/enclosure/ parametric node case (CadQuery) + STLs
 drone/              live_mosaic.py (camera, mosaic, drops), mosaic.py (stitcher), fps_ramp.sh (power test)
-fusion/             server.py (the host), heatmap.py (model + page), state.py, serial_ingest.py,
+fusion/             server.py (the host), heatmap.py (model + page), history.py, state.py, serial_ingest.py,
                     tak.py (CoT), tak_picture.py, tak_overlay.py (map -> KMZ), recording.py, store.py
-ui/                 operations overview (static page; ECharts + Tabler, vendored with licences)
+ui/                 ops.html/js/css (ops dashboard at /), index.html + review.js (evidence review at /review); ECharts + Tabler vendored
 sim/                scripted gateway lines for the dashboard demo
 deploy/pi/          systemd services, installer, settings (t10.env)
 data/               recorded runs (replayable), camera mosaics, calibration data
 media/              photos, screenshots, GIFs, video, diagram (see media/README.md)
-tests/              77 tests (unittest/pytest)
+tests/              81 tests (unittest/pytest)
 tools/              flash.py, serial_tail.py, make_media.py
 docs/               architecture + message contract, sensors, hardware, TAK, decisions, demo guide
 ```
