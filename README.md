@@ -59,8 +59,6 @@ At the same time, **GPS does not work inside or under the structure, cell networ
 
 **Hardware per node:** a Seeed XIAO ESP32-C5, a Grove Sound Sensor (analog electret mic + amplifier) on D0, a Grove SW-420 vibration (tap) switch on D1, and a Grove Buzzer on D4, all powered from 3V3. The XIAO's 5V pin is dead on battery. Each node sits in a 3D-printed case: [`hardware/enclosure/node_case.py`](hardware/enclosure/node_case.py) is parametric CadQuery source, and the STLs are next to it. Every module lies flat in corner fences; the lid has openings over the mic and buzzer, a USB-C slot for charging, and an antenna recess away from the battery.
 
-![Node close-up](media/photos/node_closeup.jpg)
-
 **On-board signal processing.** One Arduino sketch builds all three roles (node, gateway, drone bridge) for both the C5 and the S3:
 - The sound sensor is sampled at **16 kHz by the ADC DMA driver**, in its own FreeRTOS task. The C5 is single-core, and the 2 s BLE scans would otherwise block the main loop.
 - **Level** per 10 ms frame is the mean absolute deviation around a ~1 s running average, in dBFS. This is robust to the sensor's clipping (see §7). The **noise floor** follows quiet frames quickly and loud stretches slowly (~5 s).
