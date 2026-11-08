@@ -2,6 +2,8 @@
 
 [Overview Slides](https://nam02.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcanva.link%2Fwfmanuplspyfn6p&data=05%7C02%7CWilliam.Goldman%40tufts.edu%7C5ddcfdffb58546c256d008df3db8b6af%7Cfbbf6c6003444c299459725685739b19%7C0%7C0%7C639297535687245680%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=vJw0FBjeG%2BdhmEbMlkCNGhlRY4ZCowy9PIrv9aTBQHA%3D&reserved=0)
 
+[Live dashboard operation video](https://drive.google.com/file/d/1vHLDzt6p8P7qkAEGmnXaSo0NZ8E4LLdO/edit)
+
 **Drop a handful of cheap acoustic sensor nodes onto a collapsed structure. They mesh with each other with no infrastructure, a drone camera maps the floor and records where each node landed, the nodes listen for trapped survivors (tapping, voices, phones), and a live "look here" picture appears in TAK, the map responders already use.**
 
 Code Metal Forge 2026, Team 10. Everything below was built between Sat Nov 7 10:00 and Sun Nov 8 12:00, except the open-source tools listed in [What existed before](#what-existed-before-this-weekend).
