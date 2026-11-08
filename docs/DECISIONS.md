@@ -31,12 +31,20 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 - 2026-11-07 (evening): **No accelerometer (IMU) on the nodes for now; sensors stay sound sensor + SW-420.** Why: the Grove ±1.5 g MMA7660FC is 6-bit at ≤ 120 samples/s, so it adds almost nothing to tap detection; its value (orientation, "node moved") isn't core to the demo and would cost wiring, firmware, sim, fusion and case time before the deadline. Stretch: one node on I2C D8/D9 if the core demo is solid.
 - 2026-11-07 (evening): EVENT kinds 6 = VIBRATION and 7 = MOVED stay in the contract as **reserved** (additive, unused), so an accelerometer can be added later without a format change.
 
-## What worked / didn't / unfinished
-- ✅ BLE phone detection on the C5 (2026-11-07 ~17:40): an iPhone touching a node in a quiet hallway read −33 to −39 dBm, against a background of −59 to −66 (+25–30 dB). The same hash was seen at a second node, more weakly. ❌ Near the crowded laptop area the phone was indistinguishable (dozens of Apple devices at about −40 to −45), so the demo places the victim node away from people. Gateway settings rebroadcast verified: a rebooted node re-learned its TX power within 19 s.
-- ✅ C5↔C5 ESP-NOW, C5→S3 gateway JSON, multi-hop forwarding (hops=1 observed), gateway→node commands.
+- 2026-11-07 evening: Mac proof of concept plays simulated gateway lines into fusion state and a proposed `/ws` v1 payload (`docs/WS_CONTRACT.md`). Positions are not estimated. The five gateway JSON types are unchanged. Why: the dashboard demo cannot wait on a live board, and the socket shape has to be visible before anyone treats it as frozen.
+- 2026-11-07 15:57: The operator page is an evidence roster, not a metre grid, and `--demo` can restart that script through ingest. Why: a presenter needs the cue, the reporting node, and the missing location without reading a debug log, and a replay must not reset a live gateway session.
+- 2026-11-07 17:09: The secondary page is an evidence-review screen. The timeline uses host-receipt time, not node `t_ms`, because node clocks are not synchronized. WebSocket messages stay snapshots. Why: a viewer has to see which sensor reported a cue, how old that cue is, and that the input is simulated, without treating a fresh node as a fresh cue.
 
 ## What existed before this weekend
 - Open-source: Arduino-ESP32 core, ESP-NOW, NumPy/SciPy/scikit-learn, FastAPI, pytak, TAK/WinTAK.
 - Pretrained models (if used): YAMNet (Google AudioSet).
 - Everything else in this repo was built during the event.
 
+## What worked / didn't / unfinished
+(keep this updated; it answers judge question #3)
+
+- ✅ BLE phone detection on the C5 (2026-11-07 ~17:40): an iPhone touching a node in a quiet hallway read −33 to −39 dBm, against a background of −59 to −66 (+25–30 dB). The same hash was seen at a second node, more weakly. ❌ Near the crowded laptop area the phone was indistinguishable (dozens of Apple devices at about −40 to −45), so the demo places the victim node away from people. Gateway settings rebroadcast verified: a rebooted node re-learned its TX power within 19 s.
+- ✅ C5↔C5 ESP-NOW, C5→S3 gateway JSON, multi-hop forwarding (hops=1 observed), gateway→node commands.
+- Worked, simulated only, 2026-11-07 evening: all five gateway JSON types reach fusion state, and the dashboard shows a node, a tap cue, a hashed `device_seen`, and a node going inactive. Not a hardware run. Not a location.
+- Worked, simulated only, 2026-11-07 15:57: the operations overview shows simulation vs live, one acoustic cue, the reporting node, stale evidence, and no position. Replay restarts `--demo` through ingest. Not a hardware run.
+- Not working yet: this host has not been run on a board. There is no localization or heatmap. Command buttons have no agreed body. `fusion/tak_hello.py` is not wired to fusion state, so the dashboard does not send CoT. Firmware is in `firmware/node/`; that sentence used to say it was absent, which is no longer true on this branch.
