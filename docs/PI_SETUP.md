@@ -25,7 +25,20 @@ On the Pi, bind the dashboard so the laptop can open it:
 python -m fusion.server --demo --host 0.0.0.0 --listen 8000
 ```
 
-There is still no TAK process and no systemd unit. The AI accelerator is not used.
+The same process also serves the experimental heatmap at `/heatmap` and the TAK picture at `/tak`. With the gateway on the Pi's USB:
+
+```bash
+python -m fusion.server --gateway /dev/serial/by-id/usb-PASTE-THE-SYMLINK-HERE --host 0.0.0.0 --listen 8000     --pos 1=0,0 --pos 2=3,0 --pos 5=0,3
+```
+
+Viewers join the Pi's own network (hotspot or cable; no venue Wi-Fi or internet is needed, both pages load nothing from the internet) and open `http://<pi-ip>:8000/` and `/heatmap`. HAIL is sent from the heatmap page.
+
+TAK, two ways:
+
+- On the Pi, to every TAK device on the Pi's network: `python fusion/tak.py --lat <lat0> --lon <lon0> --multicast --iface <pi-ip-on-that-network>`. `--iface` is needed when the Pi has no default route (hotspot only); without it, multicast fails with "Network unreachable".
+- On the laptop next to WinTAK: `python fusion/tak.py --lat <lat0> --lon <lon0> --state-url http://<pi-ip>:8000/tak`.
+
+There is still no systemd unit. The AI accelerator is not used.
 
 ## Packages
 

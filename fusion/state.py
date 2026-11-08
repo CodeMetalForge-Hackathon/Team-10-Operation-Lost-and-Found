@@ -63,16 +63,27 @@ class FusionState:
         self._rejected = 0
         self._unclassified = {}
         self._packet_total = 0
+        # Extra consumers of every accepted line (e.g. the heatmap estimator).
+        # Called after this state is updated, outside its lock. A failing
+        # observer is counted as a store error and never blocks ingest.
+        self.observers = []
+        self.reset_hooks = []
 
     def accept(self, observation):
+        self._accept(observation)
+        for observer in list(self.observers):
+            try:
+                observer(observation)
+            except Exception as exc:
+                self.note_store_error(f"observer {type(exc).__name__}: {exc}")
+
+    def _accept(self, observation):
         with self._lock:
             store_id = self._persist(observation)
             kind = observation.get("type")
             t_host = observation.get("t_host")
             if t_host is not None:
                 self._link["last_line_ms"] = t_host
-            if kind == "log" and observation.get("kind_status") == "unclassified":
-                self._count_unclassified(observation.get("kind"))
             if kind == "gw":
                 self._gateway = {
                     "id": observation.get("id"),
@@ -171,6 +182,10 @@ class FusionState:
             self._logs.clear()
             self._host_cmds.clear()
             self._packet_total = 0
+            self._rejected = 0
+            self._unclassified = {}
+        for hook in list(self.reset_hooks):
+            hook()
 
     def snapshot(self, now_ms):
         with self._lock:

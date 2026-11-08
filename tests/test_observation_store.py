@@ -36,6 +36,7 @@ class StoreRoundTripTest(unittest.TestCase):
             restarted = FusionState(store=ObservationStore(path))
             snap = restarted.snapshot(now_ms=1_700_000_006_000)
             rows = restarted.store.recent(limit=10)
+            restarted.store.close()  # Windows cannot delete an open SQLite file
 
         self.assertEqual(snap["nodes"], [])
         self.assertEqual(snap["source"], "live")

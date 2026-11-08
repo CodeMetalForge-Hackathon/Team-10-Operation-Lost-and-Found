@@ -58,7 +58,8 @@ class DashboardSocketTest(unittest.TestCase):
         self.assertNotIn("confirmed survivor", json.dumps(payload).lower())
 
         with TestClient(app) as client:
-            self.assertEqual(client.post("/cmd").status_code, 404)
+            # A simulated session has no gateway: HAIL is refused, never faked as sent.
+            self.assertEqual(client.post("/cmd?name=HAIL").status_code, 409)
 
 
 class CliGuardTest(unittest.TestCase):

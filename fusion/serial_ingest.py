@@ -18,7 +18,11 @@ class ListSink:
         self.items.append(observation)
 
 
-def run_port(open_port, sink, log, now_ms, sleep, stop, on_link=None):
+def run_port(open_port, sink, log, now_ms, sleep, stop, on_link=None, commands=None):
+    """Read gateway lines until stop(). ``commands`` is an optional queue of
+    text lines (e.g. ``CMD HAIL 0 255``) written to the gateway between reads.
+    Each written command is also fed to the sink as a ``host_cmd`` line, the
+    same record fusion/heatmap.py writes, so HAIL timing reaches the heatmap."""
     delay = 1.0
     while not stop():
         try:
@@ -34,6 +38,7 @@ def run_port(open_port, sink, log, now_ms, sleep, stop, on_link=None):
         _link(sink, on_link, transport="serial", connected=True, last_error=None)
         try:
             while not stop():
+                _send_commands(port, commands, sink, log, now_ms)
                 raw = port.readline()
                 if not raw:
                     continue
@@ -52,6 +57,20 @@ def run_port(open_port, sink, log, now_ms, sleep, stop, on_link=None):
         else:
             _close(port)
             _link(sink, on_link, transport="serial", connected=False, last_error="serial closed")
+
+
+def _send_commands(port, commands, sink, log, now_ms):
+    if commands is None:
+        return
+    import queue
+
+    while True:
+        try:
+            text = commands.get_nowait()
+        except queue.Empty:
+            return
+        port.write((text + "\n").encode("ascii"))
+        read_lines([json.dumps({"type": "host_cmd", "text": text})], sink, log, now_ms)
 
 
 def _link(sink, on_link, **fields):
@@ -297,11 +316,27 @@ def resolve_endpoint(port, baud, env):
     return chosen, chosen_baud
 
 
+READ_TIMEOUT_S = 0.1  # short, so queued host commands (HAIL) go out within ~0.1 s
+
+
 def open_serial(port, baud, serial_module=None):
+    """Open the gateway without resetting it.
+
+    pyserial asserts DTR/RTS when a port opens, which resets an ESP32 or holds
+    it in boot mode. Clear both before open(), as fusion/heatmap.py and
+    tools/serial_tail.py do. run_port retries a failed open with backoff.
+    """
     module = serial_module
     if module is None:
         import serial as module
-    return module.Serial(port, baudrate=baud, timeout=1)
+    port_obj = module.Serial()
+    port_obj.port = port
+    port_obj.baudrate = baud
+    port_obj.timeout = READ_TIMEOUT_S
+    port_obj.dtr = False
+    port_obj.rts = False
+    port_obj.open()
+    return port_obj
 
 
 def main(argv=None, stdout=None, stderr=None, now_ms=None, run=None, serial_module=None):

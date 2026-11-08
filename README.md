@@ -33,11 +33,12 @@ TAK is still the planned primary output. The page is the secondary dashboard. `f
 | Static page shell | Draft PR #7, replaced on this branch by the operations overview. |
 | Simulated gateway script | `python -m sim.demo`. Scripted lines, not a physics model, not a recording. |
 | Fusion state and WebSocket host | This branch. No localization math. |
-| Node positions, heatmap, source count | Not implemented. `localization_mode` is `UNLOCALIZED`. |
-| `POST /cmd`, `POST /anchor`, `POST /baseline` | Named in the architecture doc. Bodies are not agreed. Not implemented. They are explained in Diagnostics, not shown as buttons. |
+| Node positions, heatmap | Hand-entered `--pos`; the experimental heatmap (`fusion/heatmap.py`'s model) runs in the same process at `/heatmap`. The dashboard `/state` stays `UNLOCALIZED`. Source count: not implemented. |
+| `POST /cmd` | `?name=HAIL`, `PING` or `BLINK`, sent from the heatmap page. Only with `--gateway` (serial); otherwise refused with 409. |
+| `POST /anchor`, `POST /baseline` | Named in the architecture doc. Not implemented. |
 | Simulation replay | `POST /demo/replay` on a `--demo` process only. See `docs/DEMO_GUIDE.md`. |
 | ESP32 firmware | In `firmware/node/`. William owns it. This host has not been run on a board. |
-| `fusion/tak_hello.py` / WinTAK | Standalone hello script only. The server does not send CoT. |
+| TAK / WinTAK / ATAK | `fusion/tak.py`, a separate process, polls the server's `GET /tak` and sends node markers with short evidence text as CoT. No survivor point is sent. See `docs/TAK.md`. |
 | Drone, LED-ID, Hailo | Not in this iteration. The AI accelerator is not required. |
 
 ## Hardware

@@ -571,7 +571,7 @@
     else if (msg.localization_mode === "UNLOCALIZED") loc.textContent = "Unavailable";
     else loc.textContent = String(msg.localization_mode);
     var tak = doc.getElementById("tak");
-    if (tak) tak.textContent = "Not implemented";
+    if (tak) tak.textContent = msg.tak_bridge && msg.tak_bridge.polling ? "Bridge polling" : "No bridge";
     var counts = msg.counts || {};
     doc.getElementById("cue-count").textContent = msg.banner && Number.isFinite(msg.banner.possible_acoustic) ? String(msg.banner.possible_acoustic) : "Unknown";
     doc.getElementById("reporting").textContent = Number.isFinite(counts.nodes_active) && Number.isFinite(counts.nodes_seen)

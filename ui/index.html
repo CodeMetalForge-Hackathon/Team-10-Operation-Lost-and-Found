@@ -14,6 +14,7 @@
       <div>
         <p class="kicker">Operation Lost and Found</p>
         <h1>Operations overview</h1>
+        <p class="hint"><a href="/heatmap">Evidence heatmap &rarr;</a> (experimental; HAIL is sent from that page)</p>
       </div>
       <div class="status-row" aria-label="Source and connection">
         <div class="status-item">
@@ -30,7 +31,7 @@
         </div>
         <div class="status-item">
           <span class="status-label">TAK</span>
-          <span class="badge" id="tak">Not implemented</span>
+          <span class="badge" id="tak">Unknown</span>
         </div>
       </div>
     </header>
@@ -124,7 +125,7 @@
       <h2 class="section-gap">Stored history</h2>
       <p class="hint">Rows already written to the host database. Opening them does not make them a new live detection, and a restart does not put them back on the roster.</p>
       <div id="diag-history"><p class="empty">Not loaded</p></div>
-      <p class="hint">A connected browser is not a TAK connection. This build has no CoT sender. Charts and icons are files on this host. <a href="/assets/vendor/PROVENANCE.md">Asset provenance</a>.</p>
+      <p class="hint">A connected browser is not a TAK connection. CoT is sent by a separate process, <code>fusion/tak.py</code>, which polls <code>/tak</code>; the TAK badge only shows whether that bridge is polling, not whether a TAK device received anything. Charts and icons are files on this host. <a href="/assets/vendor/PROVENANCE.md">Asset provenance</a>.</p>
       <h2 class="section-gap">Neighbor reports</h2>
       <p class="hint">A reported neighbor link is signal strength, not distance.</p>
       <div id="diag-links"><p class="empty">Not reported</p></div>
@@ -132,7 +133,7 @@
       <p class="hint">A raw delay is not a calibrated distance.</p>
       <div id="diag-ranges"><p class="empty">Not reported</p></div>
       <h2 class="section-gap">Unavailable actions</h2>
-      <p>HAIL, BLINK IDs, RANGE, QUIET MODE, and BASELINE are not available. This host does not implement <code>POST /cmd</code>, <code>POST /anchor</code>, or <code>POST /baseline</code>. QUIET MODE has no agreed command byte. This page does not send a hardware command and does not invent a success response.</p>
+      <p>HAIL, PING, and BLINK are sent from the <a href="/heatmap">heatmap page</a> through <code>POST /cmd?name=HAIL</code>, and only when this host reads a gateway on serial (<code>--gateway</code>). RANGE, QUIET MODE, and BASELINE are not available: this host does not implement <code>POST /anchor</code> or <code>POST /baseline</code>, and QUIET MODE has no agreed command byte. This page itself does not send a hardware command.</p>
       <h2 class="section-gap">Latest socket message</h2>
       <p class="hint">Raw payload. A null position in this object is unmeasured. It is not zero and not the command post.</p>
       <pre id="diag-raw">No message yet</pre>

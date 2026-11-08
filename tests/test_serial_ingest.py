@@ -220,14 +220,16 @@ class CliTest(unittest.TestCase):
         seen = {}
 
         class Opened:
-            def __init__(self, port, baudrate, timeout):
-                self.port = port
-                self.baudrate = baudrate
-                self.timeout = timeout
+            """Records attribute values at the moment open() is called."""
+
+            port = baudrate = timeout = dtr = rts = None
+
+            def open(self):
+                self.at_open = {"dtr": self.dtr, "rts": self.rts}
 
         class FakeSerialModule:
-            def Serial(self, port, baudrate, timeout):
-                return Opened(port, baudrate, timeout)
+            def Serial(self):
+                return Opened()
 
         def fake_run(open_port, sink, log, now_ms, sleep, stop):
             seen["opened"] = open_port()
@@ -245,7 +247,9 @@ class CliTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(seen["opened"].port, "/dev/serial/by-id/usb-c5")
         self.assertEqual(seen["opened"].baudrate, 921600)
-        self.assertEqual(seen["opened"].timeout, 1)
+        self.assertEqual(seen["opened"].timeout, 0.1)
+        # DTR/RTS must be cleared before open(), or the ESP32 resets / sits in boot mode
+        self.assertEqual(seen["opened"].at_open, {"dtr": False, "rts": False})
         seen["sink"].accept({"type": "beacon"})
 
 

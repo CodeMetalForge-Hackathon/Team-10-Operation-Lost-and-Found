@@ -1,16 +1,24 @@
-"""Serve fusion state to the static dashboard.
+"""Serve fusion state to the static dashboard. This is the one fusion host process.
 
 The /ws payload is the proposed v1 contract in docs/WS_CONTRACT.md.
 It is not a change to the gateway JSON lines in docs/ARCHITECTURE.md.
-POST /cmd, POST /anchor, and POST /baseline are not implemented.
+
+Also served by this process (team decision 2026-11-08, one host instead of two):
+  GET  /heatmap         the experimental heatmap page (fusion/heatmap.py's model and page)
+  GET  /heatmap/state   that model's snapshot
+  POST /heatmap/reset   clear the heatmap
+  POST /cmd?name=HAIL   send HAIL / PING / BLINK to the gateway (serial input only)
+  GET  /tak             node markers + evidence text for fusion/tak.py (no survivor point)
+POST /anchor and POST /baseline are not implemented.
 """
 
 import asyncio
 import json
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from fusion.serial_ingest import accept_line, read_simulated
@@ -18,17 +26,106 @@ from fusion.state import FusionState
 
 UI_DIR = Path(__file__).resolve().parents[1] / "ui"
 PUSH_INTERVAL_S = 0.5
+DEFAULT_POSITIONS = {1: (0.0, 0.0), 2: (3.0, 0.0), 5: (0.0, 3.0)}  # same 3-node layout as heatmap.py
+GATEWAY_COMMANDS = ("HAIL", "PING", "BLINK")  # names firmware/node/node.ino accepts after "CMD "
+TAK_POLL_FRESH_MS = 10_000
 
 
-def create_app(state=None, now_ms=None, ui_dir=None, demo=None):
+def heatmap_page():
+    """fusion/heatmap.py's page, pointed at this server's routes.
+
+    Relabelled to match the team decision that the system shows evidence, not a dig point.
+    """
+    from fusion.heatmap import PAGE
+
+    return (
+        PAGE.replace("fetch('/state')", "fetch('/heatmap/state')")
+        .replace("fetch('/reset'", "fetch('/heatmap/reset'")
+        .replace(
+            "function cmd(n){fetch('/cmd?name='+n,{method:'POST'})}",
+            "function cmd(n){fetch('/cmd?name='+n,{method:'POST'}).then(r=>r.json())"
+            ".then(j=>{if(!j.ok)alert(j.error)}).catch(()=>alert('host not reachable'))}",
+        )
+        .replace("<title>Team 10 heatmap (test)</title>", "<title>Team 10 evidence heatmap</title>")
+        .replace(
+            '<div id="side"><h2>Team 10: where to dig (test heatmap)</h2>',
+            '<div id="side"><p><a href="/" style="color:#7fd">&larr; Operations overview</a></p>'
+            "<h2>Team 10: evidence heatmap (experimental)</h2>"
+            '<p class="muted">Where sound and vibration evidence is strongest, from hand-entered node '
+            "positions. Not a confirmed survivor location.</p>",
+        )
+        .replace("<b>Dig here:</b>", "<b>Strongest evidence:</b>")
+    )
+
+
+def create_app(state=None, now_ms=None, ui_dir=None, demo=None, heatmap=None, commands=None, positions=None):
     fusion = state if state is not None else FusionState()
     page_dir = Path(ui_dir) if ui_dir is not None else UI_DIR
+    node_positions = dict(DEFAULT_POSITIONS if positions is None else positions)
     app = FastAPI(title="Team 10 fusion host", docs_url=None, redoc_url=None)
     app.state.fusion = fusion
+    tak_seen = {"last_poll_ms": None}
+
+    def snapshot():
+        now = _now(now_ms)
+        snap = fusion.snapshot(now)
+        last = tak_seen["last_poll_ms"]
+        snap["tak_bridge"] = {
+            "last_poll_ms": last,
+            "polling": last is not None and now - last <= TAK_POLL_FRESH_MS,
+        }
+        return snap
 
     @app.get("/")
     def index():
         return FileResponse(page_dir / "index.html")
+
+    @app.get("/heatmap")
+    def heatmap_index():
+        if heatmap is None:
+            return HTMLResponse(
+                "<p>The heatmap is off in this process (started with --no-heatmap, or numpy is missing). "
+                '<a href="/">Back</a></p>',
+                status_code=404,
+            )
+        return HTMLResponse(heatmap_page())
+
+    @app.get("/heatmap/state")
+    def heatmap_state():
+        if heatmap is None:
+            return JSONResponse(status_code=404, content={"error": "heatmap is off"})
+        return heatmap.snapshot(_now(now_ms) / 1000.0)
+
+    @app.post("/heatmap/reset")
+    def heatmap_reset():
+        if heatmap is None:
+            return JSONResponse(status_code=404, content={"ok": False, "error": "heatmap is off"})
+        heatmap.reset()
+        return {"ok": True}
+
+    @app.post("/cmd")
+    def send_command(name: str = ""):
+        name = name.upper()
+        if name not in GATEWAY_COMMANDS:
+            return JSONResponse(
+                status_code=400,
+                content={"ok": False, "error": f"unknown command {name!r}; use one of {list(GATEWAY_COMMANDS)}"},
+            )
+        if commands is None:
+            return JSONResponse(
+                status_code=409,
+                content={"ok": False, "error": "No gateway serial port in this mode. Commands only go out with --gateway."},
+            )
+        commands.put(f"CMD {name} 0 255")
+        return {"ok": True, "sent": f"CMD {name} 0 255"}
+
+    @app.get("/tak")
+    def tak_picture():
+        from fusion.tak_picture import build_picture
+
+        now = _now(now_ms)
+        tak_seen["last_poll_ms"] = now
+        return build_picture(fusion.snapshot(now), node_positions, now)
 
     @app.get("/favicon.ico", include_in_schema=False)
     def favicon():
@@ -39,16 +136,16 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None):
 
     @app.get("/state")
     def state_now():
-        return fusion.snapshot(_now(now_ms))
+        return snapshot()
 
     @app.websocket("/ws")
     async def ws(socket: WebSocket):
         await socket.accept()
         try:
             while True:
-                await socket.send_json(fusion.snapshot(_now(now_ms)))
+                await socket.send_json(snapshot())
                 await asyncio.sleep(PUSH_INTERVAL_S)
-        except WebSocketDisconnect:
+        except (WebSocketDisconnect, RuntimeError, ConnectionError):
             return
 
     @app.get("/history")
@@ -154,7 +251,15 @@ def main(argv=None):
     parser.add_argument("--stale-ms", type=int, default=6000)
     parser.add_argument("--store", default="data/host.sqlite", help="SQLite history. Not the live node table.")
     parser.add_argument("--no-store", action="store_true", help="Keep observations in memory only.")
+    parser.add_argument("--pos", action="append", default=[],
+                        help="ID=x,y metres, hand-measured (default: 1=0,0 2=3,0 5=0,3). Used by /heatmap and /tak.")
+    parser.add_argument("--no-heatmap", action="store_true", help="Do not run the heatmap estimator (/heatmap).")
     args = parser.parse_args(argv)
+    try:
+        positions = parse_positions(args.pos)
+    except ValueError as exc:
+        sys.stderr.write(f"--pos: {exc}\n")
+        return 2
 
     selected = [name for name in ("demo", "simulate", "gateway", "recording") if getattr(args, name)]
     if len(selected) > 1:
@@ -187,6 +292,8 @@ def main(argv=None):
     def clock():
         return int(time.time() * 1000)
 
+    heatmap = None if args.no_heatmap else start_heatmap(state, positions, stop, log)
+    commands = None
     player = None
     if args.demo:
         from fusion.demo_player import DemoPlayer
@@ -225,6 +332,9 @@ def main(argv=None):
             except ValueError as exc:
                 log(exc)
                 return 2
+            import queue
+
+            commands = queue.Queue()
             threading.Thread(
                 target=run_port,
                 args=(
@@ -235,6 +345,7 @@ def main(argv=None):
                     time.sleep,
                     stop.is_set,
                 ),
+                kwargs={"commands": commands},
                 daemon=True,
             ).start()
         if args.tcp is not None:
@@ -249,10 +360,16 @@ def main(argv=None):
         state.source = "live"
         state.simulated = False
 
-    app = create_app(state, demo=player)
+    app = create_app(state, demo=player, heatmap=heatmap, commands=commands, positions=positions)
     sys.stderr.write(
         f"dashboard http://{args.host}:{args.listen}/  ws://{args.host}:{args.listen}/ws\n"
     )
+    sys.stderr.write(
+        f"heatmap   http://{args.host}:{args.listen}/heatmap   TAK picture http://{args.host}:{args.listen}/tak\n"
+        if heatmap is not None
+        else f"heatmap off. TAK picture http://{args.host}:{args.listen}/tak\n"
+    )
+    sys.stderr.write(f"node positions (hand-entered, metres): {positions}\n")
     if state.source == "recording":
         sys.stderr.write("input is a recording. It is not a live board and not the simulated script.\n")
     elif state.simulated or state.source == "simulation":
@@ -264,6 +381,45 @@ def main(argv=None):
         player.stop()
     stop.set()
     return 0
+
+
+def parse_positions(items):
+    """["1=0,0", "2=3,0"] -> {1: (0.0, 0.0), 2: (3.0, 0.0)}. Empty -> the default 3-node layout."""
+    if not items:
+        return dict(DEFAULT_POSITIONS)
+    positions = {}
+    for item in items:
+        try:
+            key, xy = item.split("=")
+            x, y = (float(v) for v in xy.split(","))
+            positions[int(key)] = (x, y)
+        except ValueError:
+            raise ValueError(f"expected ID=x,y, got {item!r}") from None
+    return positions
+
+
+def start_heatmap(state, positions, stop, log):
+    """Run fusion/heatmap.py's estimator in this process, fed by every accepted line.
+
+    Returns None (and the dashboard keeps working) if numpy is missing.
+    """
+    try:
+        from fusion.heatmap import Fusion
+    except ImportError as exc:
+        log(f"heatmap off: {exc} (pip install -r requirements.txt)")
+        return None
+    import threading
+
+    heatmap = Fusion(positions)
+    state.observers.append(heatmap.ingest)
+    state.reset_hooks.append(heatmap.reset)
+
+    def tick():
+        while not stop.wait(0.1):
+            heatmap.tick(time.time())
+
+    threading.Thread(target=tick, daemon=True, name="heatmap-tick").start()
+    return heatmap
 
 
 def _read_stdin(state, stop, log, clock):
