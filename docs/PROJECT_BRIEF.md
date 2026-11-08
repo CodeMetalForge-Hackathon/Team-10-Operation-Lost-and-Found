@@ -53,10 +53,10 @@ The **search and rescue team leader / drone operator** at a collapsed structure:
   - What we reuse: ESP32 + MEMS microphone nodes and the edge/cloud split.
   - How we differ: we have **no Wi-Fi infrastructure**, **do the processing on board and send only events (no raw audio streaming)**, **fuse many nodes to *locate* the source** rather than just label sounds at one microphone, and **the nodes locate themselves**.
 - **Commercial acoustic and seismic rubble-search devices:** a handful of sensors, placed by hand, expensive, operated by experts. Ours is cheap, dropped by drone, many nodes at once, and outputs to TAK.
-- **Existing systems used:** TAK / Cursor-on-Target (via `pytak`), ESP-NOW, and optionally a pretrained audio classifier (YAMNet). All open source and declared.
+- **Existing systems used:** TAK / Cursor-on-Target (plain CoT XML over UDP, standard library; works with WinTAK, ATAK and iTAK with no plugin or TAK Server), ESP-NOW, and optionally a pretrained audio classifier (YAMNet). All open source and declared.
 
 ## Speaker-feedback alignment (from the Friday panel)
-- "Don't bring a new widget, integrate": our output goes into **TAK**.
+- "Don't bring a new widget, integrate": our output goes into **TAK**, the map responders already have open. Standard CoT symbols (friendly sensor nodes, an unknown contact labelled "T10 DIG HERE?"), no plugin and no server, and it works over local multicast with no internet. Responders learn nothing new, and every TAK user on the network can see, share and route to the estimate. Details: `docs/TAK.md`.
 - "No batteries or cables on people": nothing goes on the victim or the operator.
 - "Primary, alternate, emergency plan": our localization stack *is* a PACE plan.
 - "Adapt to changing conditions": the mesh repairs itself, the system has GPS and GPS-denied modes, and the drone is optional.

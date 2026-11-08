@@ -37,13 +37,18 @@ One line per decision: date/time, decision, why. Newest at the bottom.
 - 2026-11-07 ~21:30: Audio runs in its own task with ADC DMA at 16 kHz and sends its own packets. Why: the C5 is single-core and BLE scans block `loop()` for 2 s.
 - 2026-11-07 ~21:30: HAIL = 3 beeps; nodes ignore their sensors until 2.5 s after their own last beep. Why: other nodes may receive the command up to ~2 s late (during a BLE scan) and their beeps would otherwise be reported as taps.
 
+- 2026-11-08 ~00:00: **TAK output = `fusion/tak.py`: plain CoT XML over UDP, standard library, polling the fusion host's `/state`** (branch `feat/tak-cot`). Why: it integrates with responders' existing tools (WinTAK/ATAK/iTAK) without a plugin, a server or internet. It's decoupled from the fusion code (one adapter function), so the parallel fusion refactor isn't blocked.
+- 2026-11-08: **CoT update policy: one fixed uid per item, re-sent only on a real change or every 20 s; source cleared when confidence drops.** Why: WinTAK crashes ("Must create DependencySource on same Thread…") when a marker is updated while its details pane is open (reproduced twice). Demo rule: read a marker's details, then close the pane.
+- 2026-11-08: **No drawn uncertainty circle for now**; uncertainty goes in the marker's `ce` and remarks. Why: circles appeared to stack in WinTAK, but the test was confounded by leftover bridge processes (stopping a background shell left Python running). Retest with one bridge before re-adding.
+
 ## What worked / didn't / unfinished
+- ✅ TAK integration (2026-11-08 ~00:15, simulator → heatmap → `tak.py` → WinTAK on the demo laptop): node markers, LOST state and "T10 DIG HERE?" render at the right place and scale, follow the heatmap peak after a HAIL, and clear when confidence drops.
 - ✅ STEP 3 sensor firmware on N2 (2026-11-07 ~21:20): 16 kHz DMA audio with zero ADC errors; LOUD / VOICE_LIKE / VIBRATION / TAP_PATTERN events; 5 firm taps → `TAP_PATTERN count=5 conf=80` (3 felt + heard, 2 heard only); HAIL beeps with self-blanking. SW-420 (after re-plugging and re-tuning) feels roughly half of firm knuckle taps at 20–30 cm on a bare table and stays silent at rest; a mic-only knock pattern still arrives as `TAP_PATTERN conf=50`.
 - ✅ BLE phone detection on the C5 (2026-11-07 ~17:40): an iPhone touching a node in a quiet hallway read −33 to −39 dBm, against a background of −59 to −66 (+25–30 dB). The same hash was seen at a second node, more weakly. ❌ Near the crowded laptop area the phone was indistinguishable (dozens of Apple devices at about −40 to −45), so the demo places the victim node away from people. Gateway settings rebroadcast verified: a rebooted node re-learned its TX power within 19 s.
 - ✅ C5↔C5 ESP-NOW, C5→S3 gateway JSON, multi-hop forwarding (hops=1 observed), gateway→node commands.
 
 ## What existed before this weekend
-- Open-source: Arduino-ESP32 core, ESP-NOW, NumPy/SciPy/scikit-learn, FastAPI, pytak, TAK/WinTAK.
+- Open-source / existing tools: Arduino-ESP32 core, ESP-NOW, NumPy/SciPy/scikit-learn, FastAPI, TAK/WinTAK and the Cursor-on-Target format (our `tak.py` writes CoT XML itself; `pytak` is not used).
 - Pretrained models (if used): YAMNet (Google AudioSet).
 - Everything else in this repo was built during the event.
 

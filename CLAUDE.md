@@ -52,3 +52,4 @@ Shared context for every teammate's Claude Code session. Read this first, then t
 | `docs/SENSORS.md` | **Every people-detecting sensor: physics, role, exact message output, how to fuse it, limits, simulator recipe** (for the data scientist) |
 | `docs/PLAN.md` | Timeline with clock times, owners, checkpoints, cut list |
 | `docs/DECISIONS.md` | Running decision log |
+| `docs/TAK.md` | TAK/CoT integration: why, what responders see, how to run, demo rules |
