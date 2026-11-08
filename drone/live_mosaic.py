@@ -153,8 +153,8 @@ class Live:
         # Camera Module 3 has autofocus. Lock focus at the floor (lens position is in dioptres = 1/metres):
         # continuous AF would hunt while walking, and an unset lens can sit anywhere, which blurs every frame.
         controls = {"AfMode": 0, "LensPosition": 1.0 / self.a.focus_m if self.a.focus_m else 1.0 / self.a.cam_height,
-                    # Cap the sensor frame rate: at walking/drone speed 5 fps is plenty, and full speed on all
-                    # cores draws current spikes that brown out a Pi 5 running from a power bank.
+                    # Cap the sensor frame rate (default 10). Measured with drone/fps_ramp.sh: up to 14 fps holds >= 4.74 V on the
+                    # team power bank; an early brownout happened at start-up with all cores. Re-check any new power bank.
                     "FrameDurationLimits": (int(1e6 / self.a.fps), int(1e6 / self.a.fps))}
         if self.a.shutter_us:
             controls.update({"ExposureTime": self.a.shutter_us, "AnalogueGain": self.a.gain})
@@ -307,7 +307,7 @@ def main():
     ap.add_argument("--out", default=None, help="also write <out>.png/.json on every update")
     ap.add_argument("--width", type=int, default=1280, help="camera frame width")
     ap.add_argument("--height-px", type=int, default=720, help="camera frame height")
-    ap.add_argument("--fps", type=float, default=5.0, help="camera frame rate (low = less power; Pi max ~14)")
+    ap.add_argument("--fps", type=float, default=10.0, help="camera frame rate (processing max ~14; see drone/fps_ramp.sh)")
     ap.add_argument("--threads", type=int, default=2, help="OpenCV worker threads (fewer = less peak power)")
     ap.add_argument("--gain", type=float, default=16.0, help="analogue gain with --shutter-us (imx708 max 16)")
     ap.add_argument("--shutter-us", type=int, default=None, help="fixed exposure (e.g. 4000) against motion blur")
