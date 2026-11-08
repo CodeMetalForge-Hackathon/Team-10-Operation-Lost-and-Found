@@ -1,5 +1,9 @@
 # Team 10: Operation Lost and Found
 
+[Overview Slides](https://nam02.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcanva.link%2Fwfmanuplspyfn6p&data=05%7C02%7CWilliam.Goldman%40tufts.edu%7C5ddcfdffb58546c256d008df3db8b6af%7Cfbbf6c6003444c299459725685739b19%7C0%7C0%7C639297535687245680%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=vJw0FBjeG%2BdhmEbMlkCNGhlRY4ZCowy9PIrv9aTBQHA%3D&reserved=0)
+
+[Live dashboard operation video](https://drive.google.com/file/d/1vHLDzt6p8P7qkAEGmnXaSo0NZ8E4LLdO/edit)
+
 **Drop a handful of cheap acoustic sensor nodes onto a collapsed structure. They mesh with each other with no infrastructure, a drone camera maps the floor and records where each node landed, the nodes listen for trapped survivors (tapping, voices, phones), and a live "look here" picture appears in TAK, the map responders already use.**
 
 Code Metal Forge 2026, Team 10. Everything below was built between Sat Nov 7 10:00 and Sun Nov 8 12:00, except the open-source tools listed in [What existed before](#what-existed-before-this-weekend).
@@ -58,8 +62,6 @@ At the same time, **GPS does not work inside or under the structure, cell networ
 ### 3.1 Sensor nodes (`firmware/node/`)
 
 **Hardware per node:** a Seeed XIAO ESP32-C5, a Grove Sound Sensor (analog electret mic + amplifier) on D0, a Grove SW-420 vibration (tap) switch on D1, and a Grove Buzzer on D4, all powered from 3V3. The XIAO's 5V pin is dead on battery. Each node sits in a 3D-printed case: [`hardware/enclosure/node_case.py`](hardware/enclosure/node_case.py) is parametric CadQuery source, and the STLs are next to it. Every module lies flat in corner fences; the lid has openings over the mic and buzzer, a USB-C slot for charging, and an antenna recess away from the battery.
-
-![Node close-up](media/photos/node_closeup.jpg)
 
 **On-board signal processing.** One Arduino sketch builds all three roles (node, gateway, drone bridge) for both the C5 and the S3:
 - The sound sensor is sampled at **16 kHz by the ADC DMA driver**, in its own FreeRTOS task. The C5 is single-core, and the 2 s BLE scans would otherwise block the main loop.
