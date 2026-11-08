@@ -77,7 +77,15 @@ def read_lines(lines, sink, log, now_ms):
     return accepted
 
 
-EVENT_KINDS = {"LOUD", "TAP_PATTERN", "VOICE_LIKE", "RADAR_PRESENCE", "GAS"}
+EVENT_KINDS = {
+    "LOUD",
+    "TAP_PATTERN",
+    "VOICE_LIKE",
+    "RADAR_PRESENCE",
+    "GAS",
+    "VIBRATION",
+    "MOVED",
+}
 DEVICE_KINDS = {"BLE_OTHER", "BLE_APPLE", "BLE_FINDMY", "BLE_GOOGLE", "WIFI_PROBE"}
 CONTRACT_BAUD = 921600
 
@@ -92,6 +100,8 @@ def accept_line(line, sink, log, now_ms):
         _require_int(message, "batt_mv", 0, 65535)
         _require_int(message, "floor_db", -128, 127)
         _pairs(message, "nbrs", 0, 255, -128, 127)
+        if "uptime_s" in message:
+            _require_int(message, "uptime_s", 0, 65535)
     elif kind == "feat":
         _radio(message)
         _require_int(message, "t_ms", 0, 2**32 - 1)
@@ -111,16 +121,61 @@ def accept_line(line, sink, log, now_ms):
         _require_int(message, "chirper", 0, 255)
         _require_int(message, "delay_us", 0, 2**32 - 1)
         _require_int(message, "snr_db", -128, 127)
+        if "hops" in message:
+            _require_int(message, "hops", 0, 255)
     elif kind == "device_seen":
         _radio(message)
         _require_int(message, "t_ms", 0, 2**32 - 1)
         _devices(message)
+    elif kind == "gw":
+        _require_int(message, "id", 0, 255)
+        _require_int(message, "t_ms", 0, 2**32 - 1)
+        _require_int(message, "rx_dropped", 0, 2**32 - 1)
+    elif kind in {"log", "host_cmd"}:
+        text = message.get("text")
+        if not isinstance(text, str) or not text:
+            raise ValueError(f"{kind} requires text")
     else:
         raise ValueError(f"unknown gateway type: {kind}")
-    observation = dict(message)
-    observation["t_host"] = now_ms
-    sink.accept(observation)
+    sink.accept(_stamp(message, now_ms))
     return 1
+
+
+def _stamp(message, now_ms):
+    """Keep a recorder timestamp, then stamp the host ingestion clock.
+
+    tools/record_gateway.py stores t_host as unix seconds. Freshness uses
+    unix milliseconds. The two must not be mixed.
+    """
+    observation = dict(message)
+    recorded = observation.get("t_host")
+    if recorded is not None:
+        observation["t_recorded"] = recorded
+        seconds = _recorded_seconds(recorded)
+        if seconds is not None:
+            observation["t_recorded_s"] = seconds
+    observation["t_host"] = int(now_ms)
+    return observation
+
+
+def _recorded_seconds(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    # Unix milliseconds are ~1e12. Recorder files are unix seconds, often fractional.
+    if isinstance(value, float) or value < 100_000_000_000:
+        return float(value)
+    return None
+
+
+def recorded_seconds_of(line):
+    """Return the recorder timestamp from a raw line, or None."""
+    try:
+        message = json.loads(line)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(message, dict):
+        return None
+    return _recorded_seconds(message.get("t_host"))
 
 
 def _radio(message):

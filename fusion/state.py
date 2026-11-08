@@ -7,32 +7,78 @@ STALE_AFTER_MS = 6000
 ACOUSTIC_KINDS = {"LOUD", "TAP_PATTERN", "VOICE_LIKE"}
 
 
+SENSOR_TYPES = {"beacon", "feat", "event", "range", "device_seen"}
+DIAGNOSTIC_TYPES = {"gw", "log", "host_cmd"}
+
+
+def measurement_status(value):
+    """Current node firmware hardcodes batt_mv and floor_db to 0 until measured.
+
+    Zero is that sentinel, not a reading. A non-zero value is reported as sent.
+    A future firmware that measures a true 0 dB floor must stop using this sentinel.
+    """
+    if value is None:
+        return "absent"
+    if value == 0:
+        return "unimplemented"
+    return "reported"
+
+
 class FusionState:
     def __init__(self, stale_after_ms=STALE_AFTER_MS):
         self.stale_after_ms = stale_after_ms
         self.simulated = False
+        self.source = "live"
+        self.playback = None
         self._lock = threading.Lock()
         self._nodes = {}
         self._devices = {}
         self._ranges = {}
         self._packets = []
+        self._gateway = None
+        self._logs = []
+        self._host_cmds = []
 
     def accept(self, observation):
         with self._lock:
             kind = observation.get("type")
             t_host = observation.get("t_host")
+            if kind == "gw":
+                self._gateway = {
+                    "id": observation.get("id"),
+                    "t_ms": observation.get("t_ms"),
+                    "rx_dropped": observation.get("rx_dropped"),
+                    "t_host": t_host,
+                    "t_recorded_s": observation.get("t_recorded_s"),
+                }
+                return
+            if kind == "log":
+                self._remember(self._logs, observation, t_host)
+                return
+            if kind == "host_cmd":
+                self._remember(self._host_cmds, observation, t_host)
+                return
             encoded = _nbytes(observation)
             self._packets.append((t_host, encoded))
             if kind == "range":
-                self._touch(observation["src"], t_host)
+                node = self._touch(observation["src"], t_host)
+                if "hops" in observation:
+                    node["hops"] = observation["hops"]
+                if "seq" in observation:
+                    node["seq"] = observation["seq"]
+                if "rssi_last" in observation:
+                    node["rssi_last"] = observation["rssi_last"]
                 key = (observation["src"], observation["chirper"])
-                self._ranges[key] = {
+                record = {
                     "src": observation["src"],
                     "chirper": observation["chirper"],
                     "delay_us": observation["delay_us"],
                     "snr_db": observation["snr_db"],
                     "t_host": t_host,
                 }
+                if "hops" in observation:
+                    record["hops"] = observation["hops"]
+                self._ranges[key] = record
                 return
             src = observation["src"]
             node = self._touch(src, t_host)
@@ -42,6 +88,7 @@ class FusionState:
             if kind == "beacon":
                 node["batt_mv"] = observation.get("batt_mv")
                 node["floor_db"] = observation.get("floor_db")
+                node["uptime_s"] = observation.get("uptime_s", node.get("uptime_s"))
                 node["nbrs"] = observation.get("nbrs") or []
             elif kind == "feat":
                 node["latest_feat"] = {
@@ -81,12 +128,15 @@ class FusionState:
                     }
 
     def reset(self):
-        """Drop retained observations. Keep the simulated flag and stale window."""
+        """Drop retained observations. Keep the source flag and stale window."""
         with self._lock:
             self._nodes.clear()
             self._devices.clear()
             self._ranges.clear()
             self._packets.clear()
+            self._gateway = None
+            self._logs.clear()
+            self._host_cmds.clear()
 
     def snapshot(self, now_ms):
         with self._lock:
@@ -104,7 +154,10 @@ class FusionState:
                         "hops": node["hops"],
                         "rssi_last": node["rssi_last"],
                         "batt_mv": node["batt_mv"],
+                        "batt_mv_status": measurement_status(node["batt_mv"]),
                         "floor_db": node["floor_db"],
+                        "floor_db_status": measurement_status(node["floor_db"]),
+                        "uptime_s": node["uptime_s"],
                         "nbrs": node["nbrs"],
                         "latest_feat": node["latest_feat"],
                         "evidence": list(node["evidence"]),
@@ -124,9 +177,19 @@ class FusionState:
                 banner = (
                     f"{acoustic} possible acoustic {noun} — not a confirmed location"
                 )
+            source = self.source
+            if self.simulated and source == "live":
+                source = "simulation"
             return {
                 "v": 1,
-                "simulated": self.simulated,
+                "simulated": source == "simulation",
+                "source": source,
+                "playback": self.playback,
+                "gateway": self._gateway,
+                "diagnostics": {
+                    "logs": list(self._logs),
+                    "host_cmds": list(self._host_cmds),
+                },
                 "t_host": now_ms,
                 "localization_mode": "UNLOCALIZED",
                 "stale_after_ms": self.stale_after_ms,
@@ -163,6 +226,7 @@ class FusionState:
                 "rssi_last": None,
                 "batt_mv": None,
                 "floor_db": None,
+                "uptime_s": None,
                 "nbrs": [],
                 "latest_feat": None,
                 "evidence": [],
@@ -172,6 +236,17 @@ class FusionState:
         if t_host >= node["last_t_host"]:
             node["last_t_host"] = t_host
         return node
+
+
+    def _remember(self, bucket, observation, t_host):
+        bucket.append(
+            {
+                "text": observation.get("text"),
+                "t_host": t_host,
+                "t_recorded_s": observation.get("t_recorded_s"),
+            }
+        )
+        del bucket[:-20]
 
 
 def _links(nodes):

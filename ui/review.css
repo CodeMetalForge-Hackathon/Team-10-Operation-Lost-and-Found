@@ -102,6 +102,7 @@ h2 {
   letter-spacing: 0.01em;
 }
 #source[data-mode="simulation"] { color: #1c1404; background: var(--review); }
+#source[data-mode="recording"] { color: #041424; background: #93c5fd; }
 #source[data-mode="live"] { color: #04281c; background: var(--ok); }
 #source[data-mode="unknown"] { color: var(--ink); background: var(--raised); }
 #conn[data-state="connected"] { color: #04281c; background: var(--ok); }

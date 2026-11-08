@@ -258,15 +258,18 @@
     return { label: String(status), tone: "stale" };
   }
 
+  function provenanceMode(msg) {
+    if (!msg || (msg.simulated !== true && msg.simulated !== false)) return null;
+    if (msg.source === "recording" || msg.source === "simulation" || msg.source === "live") return msg.source;
+    return msg.simulated ? "simulation" : "live";
+  }
+
   function sourceLabel(msg, socketState) {
-    if (!msg || (msg.simulated !== true && msg.simulated !== false)) {
-      return { text: "Unknown", mode: "unknown" };
-    }
-    var base = msg.simulated ? "SIMULATION" : "LIVE";
-    if (socketState !== "connected") {
-      return { text: base + " · last snapshot", mode: msg.simulated ? "simulation" : "live" };
-    }
-    return { text: base, mode: msg.simulated ? "simulation" : "live" };
+    var mode = provenanceMode(msg);
+    if (!mode) return { text: "Unknown", mode: "unknown" };
+    var text = mode === "recording" ? "RECORDING" : mode === "simulation" ? "SIMULATION" : "LIVE";
+    if (socketState !== "connected") text += " · last snapshot";
+    return { text: text, mode: mode };
   }
 
   function sensorSummary(msg, socketState) {
@@ -288,6 +291,12 @@
     if (state.replayWatch) return "Restart requested. These rows are still the previous demo run.";
     if (state.cleared) return "Current demo run. The host cleared the previous retained observations. Waiting for the scripted baseline.";
     if (!msg) return "No snapshot yet.";
+    if (msg.source === "recording") {
+      var ended = msg.playback && msg.playback.status === "ended";
+      return ended
+        ? "Recording ended. These rows are captured gateway lines, not a live board."
+        : "Recording playback. These rows are captured gateway lines, not a live board and not the simulated script.";
+    }
     if (msg.simulated === false) {
       return "Live gateway session. Replay will not clear this history.";
     }
@@ -786,6 +795,12 @@
     doc.getElementById("diag-mode").textContent = msg.localization_mode || "Unknown";
     doc.getElementById("diag-banner").textContent = msg.banner && msg.banner.text ? msg.banner.text : "Unknown";
     doc.getElementById("diag-ignored").textContent = state.ignoredVersion ? String(state.ignoredVersion) : "None";
+    var gw = doc.getElementById("diag-gw");
+    if (gw) {
+      gw.textContent = msg.gateway && Number.isFinite(msg.gateway.rx_dropped)
+        ? String(msg.gateway.rx_dropped) + " dropped, gateway " + shown(msg.gateway.id)
+        : "Not reported";
+    }
     doc.getElementById("diag-raw").textContent = JSON.stringify(msg, null, 2);
     var links = doc.getElementById("diag-links");
     links.replaceChildren();
@@ -900,6 +915,7 @@
     sensorAgeMs: sensorAgeMs,
     cueKey: cueKey,
     deviceKey: deviceKey,
+    sourceLabel: sourceLabel,
     start: start
   };
 });

@@ -95,4 +95,10 @@ assert.strictEqual(
   "a growing packet count is not a replay reset"
 );
 
+assert.strictEqual(Review.sourceLabel({ simulated: false, source: "live" }, "connected").text, "LIVE");
+assert.strictEqual(Review.sourceLabel({ simulated: true, source: "simulation" }, "connected").text, "SIMULATION");
+assert.strictEqual(Review.sourceLabel({ simulated: false, source: "recording" }, "connected").text, "RECORDING");
+assert.strictEqual(Review.sourceLabel({ simulated: false }, "connected").text, "LIVE");
+assert.strictEqual(Review.sourceLabel({ simulated: false, source: "recording" }, "disconnected").mode, "recording");
+
 console.log("review policy ok");

@@ -113,23 +113,36 @@ def main(argv=None):
 
     parser = argparse.ArgumentParser(
         prog="fusion.server",
-        description="Serve the dashboard from gateway lines. One of --demo, --simulate, or --gateway is required.",
+        description="Serve the dashboard from gateway lines. Choose one input, or --gateway with --tcp.",
     )
     parser.add_argument("--demo", action="store_true", help="Play the built-in simulated gateway script.")
-    parser.add_argument("--simulate", default=None, help="Read this gateway JSON file, or - for stdin.")
+    parser.add_argument("--simulate", default=None, help="Read this gateway JSON file immediately. This is not a hardware recording.")
+    parser.add_argument("--recording", default=None, help="Play a recorded gateway JSONL, keeping its intervals.")
+    parser.add_argument("--speed", type=float, default=1.0, help="Recording speed. 1 keeps the recorded intervals.")
     parser.add_argument("--gateway", default=None, help="Serial device. Prefer /dev/serial/by-id/...")
     parser.add_argument("--baud", type=int, default=None)
+    parser.add_argument("--tcp", type=int, default=None, help="Listen for newline JSON. Do not use 8765 or 8775.")
+    parser.add_argument("--tcp-bind", default="127.0.0.1", help="Bind address for --tcp.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--listen", type=int, default=8000)
     parser.add_argument("--stale-ms", type=int, default=6000)
     args = parser.parse_args(argv)
 
-    selected = [name for name in ("demo", "simulate", "gateway") if getattr(args, name)]
+    selected = [name for name in ("demo", "simulate", "gateway", "recording") if getattr(args, name)]
     if len(selected) > 1:
-        sys.stderr.write("choose only one of --demo, --simulate, --gateway\n")
+        sys.stderr.write("choose only one of --demo, --simulate, --recording, --gateway\n")
         return 2
-    if not selected and not os.environ.get("GATEWAY_PORT"):
-        sys.stderr.write("choose --demo, --simulate FILE, or --gateway PORT\n")
+    if args.tcp is not None and selected and selected != ["gateway"]:
+        sys.stderr.write("--tcp is a live input; combine it only with --gateway\n")
+        return 2
+    if args.listen in (8765, 8775) or args.tcp in (8765, 8775):
+        sys.stderr.write("8765 and 8775 are already used by demo services; pick another port\n")
+        return 2
+    if not selected and args.tcp is None and not os.environ.get("GATEWAY_PORT"):
+        sys.stderr.write("choose --demo, --simulate FILE, --recording FILE, --gateway PORT, or --tcp PORT\n")
+        return 2
+    if args.recording and args.speed <= 0:
+        sys.stderr.write("speed must be positive\n")
         return 2
 
     state = FusionState(stale_after_ms=args.stale_ms)
@@ -146,40 +159,70 @@ def main(argv=None):
         from fusion.demo_player import DemoPlayer
         from sim.demo import SCRIPT, keepalive_line
 
+        state.source = "simulation"
         state.simulated = True
         player = DemoPlayer(state, log, clock, SCRIPT, keepalive_line)
         player.start()
     elif args.simulate:
+        state.source = "simulation"
         state.simulated = True
         if args.simulate == "-":
             threading.Thread(target=_read_stdin, args=(state, stop, log, clock), daemon=True).start()
         else:
             load_simulated(args.simulate, state, log, clock)
+    elif args.recording:
+        from pathlib import Path
+
+        from fusion.recording import RecordingPlayer
+
+        path = Path(args.recording)
+        lines = path.read_text(encoding="utf-8").splitlines()
+        state.source = "recording"
+        state.simulated = False
+        player = RecordingPlayer(state, log, clock, lines, speed=args.speed, path=path)
+        threading.Thread(target=player.play, daemon=True, name="recording-player").start()
     else:
-        try:
-            port, baud = resolve_endpoint(args.gateway, args.baud, os.environ)
-        except ValueError as exc:
-            log(exc)
-            return 2
-        threading.Thread(
-            target=run_port,
-            args=(
-                lambda: open_serial(port, baud),
-                state,
-                log,
-                clock,
-                time.sleep,
-                stop.is_set,
-            ),
-            daemon=True,
-        ).start()
+        serial_requested = bool(args.gateway or os.environ.get("GATEWAY_PORT"))
+        if serial_requested:
+            try:
+                port, baud = resolve_endpoint(args.gateway, args.baud, os.environ)
+            except ValueError as exc:
+                log(exc)
+                return 2
+            threading.Thread(
+                target=run_port,
+                args=(
+                    lambda: open_serial(port, baud),
+                    state,
+                    log,
+                    clock,
+                    time.sleep,
+                    stop.is_set,
+                ),
+                daemon=True,
+            ).start()
+        if args.tcp is not None:
+            from fusion.net_ingest import run_tcp
+
+            threading.Thread(
+                target=run_tcp,
+                args=("127.0.0.1" if args.tcp_bind is None else args.tcp_bind, args.tcp, state, log, clock, stop.is_set),
+                daemon=True,
+                name="tcp-ingest",
+            ).start()
+        state.source = "live"
+        state.simulated = False
 
     app = create_app(state, demo=player)
     sys.stderr.write(
         f"dashboard http://{args.host}:{args.listen}/  ws://{args.host}:{args.listen}/ws\n"
     )
-    if state.simulated:
+    if state.source == "recording":
+        sys.stderr.write("input is a recording. It is not a live board and not the simulated script.\n")
+    elif state.simulated or state.source == "simulation":
         sys.stderr.write("input is simulated. It is not a hardware recording.\n")
+    else:
+        sys.stderr.write("input is live. USB and TCP use the same parser. This process has not verified a Pi.\n")
     uvicorn.run(app, host=args.host, port=args.listen, log_level="warning")
     if player is not None:
         player.stop()
