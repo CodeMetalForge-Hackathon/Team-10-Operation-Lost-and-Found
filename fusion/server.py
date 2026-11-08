@@ -51,6 +51,17 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None):
         except WebSocketDisconnect:
             return
 
+    @app.get("/history")
+    def history(limit: int = 50, source: str = None, src: int = None, msg_type: str = None):
+        store = getattr(fusion, "store", None)
+        if store is None:
+            return {"v": 1, "persistent": False, "observations": []}
+        return {
+            "v": 1,
+            "persistent": True,
+            "observations": store.recent(limit=limit, source=source, src=src, msg_type=msg_type),
+        }
+
     @app.get("/demo")
     def demo_status():
         simulated = bool(fusion.simulated)
@@ -126,6 +137,8 @@ def main(argv=None):
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--listen", type=int, default=8000)
     parser.add_argument("--stale-ms", type=int, default=6000)
+    parser.add_argument("--store", default="data/host.sqlite", help="SQLite history. Not the live node table.")
+    parser.add_argument("--no-store", action="store_true", help="Keep observations in memory only.")
     args = parser.parse_args(argv)
 
     selected = [name for name in ("demo", "simulate", "gateway", "recording") if getattr(args, name)]
@@ -145,7 +158,12 @@ def main(argv=None):
         sys.stderr.write("speed must be positive\n")
         return 2
 
-    state = FusionState(stale_after_ms=args.stale_ms)
+    store = None
+    if not args.no_store:
+        from fusion.store import ObservationStore
+
+        store = ObservationStore(args.store)
+    state = FusionState(stale_after_ms=args.stale_ms, store=store)
     stop = threading.Event()
 
     def log(message):

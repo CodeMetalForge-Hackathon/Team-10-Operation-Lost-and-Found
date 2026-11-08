@@ -14,5 +14,8 @@ build/
 .pio/
 *.elf
 *.bin
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 .idea/
 .vscode/

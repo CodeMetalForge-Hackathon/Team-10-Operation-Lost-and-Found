@@ -18,17 +18,17 @@ Confirm the commit on GitHub before the demo. A local hash in a chat message goe
 
 ## 2. Radio topology that is actually implemented
 
-ESP-NOW broadcast flood on 2.4 GHz channel 1 (`ESPNOW_CHANNEL`).
+Checked again against `firmware/node/node.ino` at `153bab1` / `c69393f`.
+
+ESP-NOW broadcast flood on 2.4 GHz channel 1 (`ESPNOW_CHANNEL`). That did not change.
 
 - Field nodes send beacons and, when built with `ENABLE_BLE_SCAN`, `device_seen`.
-- Nodes and the drone-bridge role may rebroadcast with a hop limit. The gateway does not rebroadcast uplink packets; it prints them.
-- The gateway rebroadcasts command packets and, after a setting has been sent, TX power / scan / salt every 15 s.
-- There is no Wi-Fi access point in the firmware. `WiFi.mode(WIFI_STA)` is only there so ESP-NOW has a radio.
-- C5 builds lock the band to 2.4 GHz. Do not move the mesh to 5 GHz. The S3 cannot hear it.
+- `ROLE_NODE` now also sends `feat` and `event` from the sensor task. Band energies are `-128`. `VIBRATION` is an SW-420 burst, not an accelerometer.
+- Nodes may rebroadcast. The gateway prints and does not rebroadcast uplink packets.
+- There is still no `WiFi.begin()` and no TCP client. `WiFi.mode(WIFI_STA)` is only there so ESP-NOW has a radio.
+- C5 builds still lock the band to 2.4 GHz.
 
-Recorded evidence of forwarding: 9 lines with `hops` 1, described in the `beacons_line_2nodes` meta note. Direct `hops` 0 is the common case.
-
-Not implemented in the node sketch: audio `feat` / `event`, chirp `range`, Wi-Fi probe capture in the recordings, battery sense, noise floor, localization.
+Recorded `hops` 1 evidence is unchanged. No new capture file was added with the sensor firmware.
 
 ## 3. Which board is the gateway
 
@@ -69,14 +69,14 @@ On the Mac, do not guess `tty.usbmodem*`. Unplug, `ls /dev/cu.*`, plug in, see w
 Target path, not yet seen on hardware:
 
 ```text
-ESP32 field node --ESP-NOW ch 1--> ESP32-S3 gateway --Wi-Fi STA--> Pi AP --TCP--> fusion host
+ESP32 field node --ESP-NOW ch 1--> optional relay --ESP-NOW ch 1--> ESP32-S3 gateway --Wi-Fi STA--> Pi AP "Team 10 Field" --TCP--> fusion host
 ```
 
-The Pi hosts a local WPA2 network and does not need an upstream route. The host listens for newline-delimited JSON. The bytes are the same objects the gateway already prints on USB. No extra envelope.
+Sebastian reports that the `Team 10 Field` hotspot is already up and that the dashboard has been opened from it. This session did not join that network, did not read its channel, and did not change the Pi. Do not reset it.
 
-Suggested listen port is 9100. Do not use 8765 or 8775. Those ports were already serving demo processes on this Mac, and the server refuses them.
+The host can bind the TCP listener on a LAN address (`--tcp-bind 0.0.0.0`). A unit test bound `0.0.0.0` and accepted a line via `127.0.0.1`. That is not a test that an ESP32 joined `Team 10 Field`.
 
-Mac check that was actually run: unit tests bind `127.0.0.1` on an ephemeral port, send a split `gw` line, a bad line, and a recorded-shaped beacon, and compare the snapshot with `accept_line`. That is not a Pi test and not a radio test.
+If the Pi AP is not on channel 1, the gateway cannot keep ESP-NOW on channel 1 and join that AP. Confirm the channel on the Pi before flashing the gateway. Do not retune the field nodes to match a 5 GHz or channel-6 AP.
 
 ## 7. Message format, with a real payload
 
@@ -130,7 +130,7 @@ In `ROLE_GATEWAY` only, after ESP-NOW is up on channel 1:
 3. Open a TCP client to the host port (9100 unless Seb says otherwise).
 4. On every JSON line already sent to `Serial`, write the same bytes plus `\n` to the TCP client when it is connected.
 5. If Wi-Fi or TCP drops, keep ESP-NOW receive and USB printing. Reconnect in the background. Do not block the mesh. `Serial.setTxTimeoutMs(0)` already exists so a quiet USB host cannot stall the radio; the TCP write needs the same property (short timeout, drop the line, do not wait).
-6. Do not add a new JSON schema. Do not remove `uptime_s`. Do not stop sending the zero battery and floor fields until those sensors are actually read. If you do read them, a measured zero floor must not use 0 as the only signal, or the host will still call it unimplemented.
+6. Do not add a new JSON schema. Keep `uptime_s`. `batt_mv` is still 0; leave it until the battery pin is actually read. `floor_db` may now be a real dBFS value after warm-up. Do not force it back to 0. Band fields stay `-128` until a sensor can produce them. A measured zero floor must not be the only signal that a floor exists, or the host will still call 0 unimplemented.
 7. Do not enable `ENABLE_BLE_SCAN` on the gateway for this path.
 8. Leave `firmware/sensor_test` as a bench sketch. Do not replace `firmware/node` with it.
 
@@ -177,8 +177,12 @@ python -m fusion.server --gateway /dev/cu.usbmodemXXXX --host 127.0.0.1 --listen
 TCP on this Mac, for a gateway that can already open a socket. This does not prove the Pi.
 
 ```bash
-python -m fusion.server --tcp 9100 --tcp-bind 127.0.0.1 --host 127.0.0.1 --listen 8000
+python -m fusion.server --tcp 9100 --tcp-bind 0.0.0.0 --host 0.0.0.0 --listen 8000
 ```
+
+`--tcp-bind 0.0.0.0` is what a gateway on `Team 10 Field` needs. On a laptop with no gateway, prefer `127.0.0.1`. Do not bind 8765 or 8775.
+
+The process writes `data/host.sqlite` unless you pass `--no-store`. That file is history. It is not loaded back into the live roster on restart. `GET /history` returns it, marked historical.
 
 USB and TCP together, still one live state:
 
@@ -186,7 +190,7 @@ USB and TCP together, still one live state:
 python -m fusion.server --gateway /dev/cu.usbmodemXXXX --tcp 9100 --tcp-bind 0.0.0.0 --host 0.0.0.0 --listen 8000
 ```
 
-`--tcp-bind 0.0.0.0` is for the Pi LAN only. On a laptop, prefer `127.0.0.1` until the AP exists.
+`--tcp-bind 0.0.0.0` is for the Pi LAN. On a laptop with no gateway attached, prefer `127.0.0.1`. Do not reset the existing `Team 10 Field` AP to find out.
 
 `--demo` and `--simulate` are SIMULATION. They are not the hardware recording.
 

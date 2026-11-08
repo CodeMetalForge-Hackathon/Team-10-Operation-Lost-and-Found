@@ -68,6 +68,38 @@ class TcpMatchesSerialTest(unittest.TestCase):
         self.assertEqual(tcp_state.snapshot(4_000)["source"], "live")
         self.assertFalse(tcp_state.snapshot(4_000)["simulated"])
 
+    def test_tcp_can_bind_a_lan_address(self):
+        state = FusionState()
+        stop = threading.Event()
+        ready = threading.Event()
+        bound = {}
+
+        def serve():
+            run_tcp(
+                "0.0.0.0",
+                0,
+                state,
+                lambda _error: None,
+                now_ms=lambda: 1,
+                stop=stop.is_set,
+                ready=lambda port: bound.__setitem__("port", port) or ready.set(),
+            )
+
+        thread = threading.Thread(target=serve, daemon=True)
+        thread.start()
+        self.assertTrue(ready.wait(2))
+        try:
+            with socket.create_connection(("127.0.0.1", bound["port"]), timeout=2) as conn:
+                conn.sendall(LINE.encode())
+            deadline = time.time() + 2
+            while time.time() < deadline and not state.snapshot(1)["nodes"]:
+                time.sleep(0.01)
+        finally:
+            stop.set()
+            thread.join(2)
+        self.assertEqual(state.snapshot(1)["nodes"][0]["id"], 2)
+        self.assertEqual(state.snapshot(1)["source"], "live")
+
     def test_reserved_demo_ports_are_refused(self):
         for port in (8765, 8775):
             with self.assertRaises(ValueError):

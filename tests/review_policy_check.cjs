@@ -101,4 +101,9 @@ assert.strictEqual(Review.sourceLabel({ simulated: false, source: "recording" },
 assert.strictEqual(Review.sourceLabel({ simulated: false }, "connected").text, "LIVE");
 assert.strictEqual(Review.sourceLabel({ simulated: false, source: "recording" }, "disconnected").mode, "recording");
 
+assert.strictEqual(Review.readableKind("VIBRATION"), "Felt vibration");
+assert.strictEqual(Review.collectObservations({
+  nodes: [{ id: 2, evidence: [{ kind: "VIBRATION", t_ms: 1, t_host: 2, count: 4, conf: 60 }] }]
+})[0].family, "acoustic");
+
 console.log("review policy ok");

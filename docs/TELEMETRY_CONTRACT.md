@@ -107,11 +107,28 @@ Recorder type only. Required: non-empty `text`, such as `CMD BLINK 0 255`. Store
 
 Over-the-air `CHIRP` and `CMD` packets are not printed as JSON. The gateway accepts text commands on USB: `CMD HAIL 0 255`. This host still does not send them.
 
-## Zeros
+## Firmware after `153bab1` (not a new capture file)
 
-`firmware/node/node.ino` `sendBeacon()` sets `batt_mv = 0` and `floor_db = 0` with TODO comments. Those zeros are unimplemented, not a dead battery and not a 0 dB noise floor.
+William's node sketch now generates `feat` and `event` on `ROLE_NODE`. The JSON object shape did not change. No new JSONL file was added. His written N2 bench note is in `docs/DECISIONS.md`. This host has not replayed a capture of those events.
 
-The host keeps the raw integers. In `/state`, `batt_mv_status` and `floor_db_status` are `unimplemented` when the value is 0, `reported` when it is non-zero, and `absent` when the field never arrived.
+| Field | Current firmware | Host reading |
+|---|---|---|
+| `batt_mv` | Still hardcoded 0. | Raw 0, status `unimplemented`. |
+| `floor_db` | `lround(audioFloorDb)`. Starts at 0 until the audio task runs. Gateway stays 0. After warm-up it is dBFS re 2048 counts, usually negative. | 0 stays `unimplemented`. Any other value is `reported`. A true 0 dBFS floor would be mislabeled; current firmware uses 0 only before warm-up and on the gateway. |
+| FEAT `low_db`, `voice_db`, `high_db` | Always `-128` on the Grove sensor. | Raw `-128`, status `unavailable`. Not a measurement. |
+| FEAT `rms_db`, `peak_db` | Computed dBFS, clamped to -127..0. | `reported` unless the value is `-128`. |
+| EVENT `voice_db` | `-128` except `VOICE_LIKE`, where it is the average level, not a voice-band energy. | `-128` is `unavailable`. A non-sentinel value is `reported`. |
+| `VIBRATION` | SW-420 burst. `count` is edge count. Not the parked accelerometer. | Accepted. Raises search priority as a contact cue. Not a location. |
+| `MOVED` | Still reserved. Nothing sends it. | Accepted if it arrives. Does not raise search priority. |
+| `VOICE_LIKE` | Any sustained sound, not a voice classifier. | Same event kind. The page label is "Sustained sound". |
+
+ESP-NOW is still channel 1. The new sketch does not call `WiFi.begin()` and does not open TCP. USB JSON printing is unchanged. The mesh still de-duplicates by `(src, seq)` before a forward. This host does not drop a repeated line; the database keeps both deliveries so two events are not collapsed.
+
+Old `data/*.jsonl` files still parse. Their `floor_db` 0 remains unimplemented.
+
+`sendBeacon()` still sets `batt_mv = 0`. `floor_db` is 0 only until the audio task has a floor, and always 0 on the gateway. After warm-up a field node sends a real dBFS floor. The host still treats 0 as unimplemented so the old recordings and the gateway stay honest.
+
+The host keeps the raw integers. In `/state`, `batt_mv_status` and `floor_db_status` are `unimplemented` when the value is 0, `reported` when it is non-zero, and `absent` when the field never arrived. A dB field of `-128` is `unavailable`, which is a different sentinel from 0.
 
 A later firmware that measures a true 0 dB floor must stop using 0 as the sentinel, or the host will mislabel it. 0 mV is not a plausible cell voltage.
 

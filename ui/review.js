@@ -6,11 +6,12 @@
   if (typeof module === "object" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.Review = api;
 })(function () {
-  var ACOUSTIC = { LOUD: true, TAP_PATTERN: true, VOICE_LIKE: true };
+  var ACOUSTIC = { LOUD: true, TAP_PATTERN: true, VOICE_LIKE: true, VIBRATION: true };
   var LABELS = {
     TAP_PATTERN: "Tap pattern",
     LOUD: "Loud sound",
-    VOICE_LIKE: "Voice-like",
+    VOICE_LIKE: "Sustained sound",
+    VIBRATION: "Felt vibration",
     RADAR_PRESENCE: "Radar presence",
     GAS: "Gas",
     BLE_APPLE: "Apple BLE advertisement",
@@ -345,6 +346,7 @@
     var socketNode = doc.getElementById("diag-socket");
     if (socketNode) socketNode.textContent = socketUrl() || "Unknown";
     refreshReplay(doc, state);
+    refreshHistory(doc);
     if (typeof location !== "undefined" && location.protocol === "file:") {
       setSocket(doc, state, "disconnected");
       setRun(doc, "Open this page from the fusion host. A file URL has no server.");
@@ -813,6 +815,41 @@
     if (!(msg.ranges || []).length) ranges.append(el(doc, "p", "empty", "Not reported"));
     else (msg.ranges || []).forEach(function (range) {
       ranges.append(el(doc, "p", "", "Node " + shown(range.src) + " heard chirper " + shown(range.chirper) + ", delay " + shown(range.delay_us, " µs. Not a calibrated distance.")));
+    });
+  }
+
+  function refreshHistory(doc) {
+    var box = doc.getElementById("diag-history");
+    if (!box || typeof fetch !== "function") return;
+    fetch("/history?limit=8").then(function (response) {
+      if (!response.ok) throw new Error("history unavailable");
+      return response.json();
+    }).then(function (body) {
+      var rows = (body && body.observations) || [];
+      box.replaceChildren();
+      if (!body || body.persistent === false) {
+        box.append(el(doc, "p", "empty", "This process is not writing a database."));
+        return;
+      }
+      if (!rows.length) {
+        box.append(el(doc, "p", "empty", "No stored rows yet."));
+        return;
+      }
+      rows.forEach(function (row) {
+        box.append(el(
+          doc,
+          "p",
+          "",
+          String(row.source || "unknown").toUpperCase()
+            + " · " + shown(row.msg_type)
+            + " · node " + shown(row.src)
+            + " · stored evidence, not a new live detection"
+        ));
+      });
+    }).catch(function () {
+      if (box.textContent === "Not loaded") {
+        box.replaceChildren(el(doc, "p", "empty", "History was not loaded."));
+      }
     });
   }
 

@@ -4,11 +4,20 @@ import threading
 
 
 STALE_AFTER_MS = 6000
-ACOUSTIC_KINDS = {"LOUD", "TAP_PATTERN", "VOICE_LIKE"}
+ACOUSTIC_KINDS = {"LOUD", "TAP_PATTERN", "VOICE_LIKE", "VIBRATION"}
 
 
 SENSOR_TYPES = {"beacon", "feat", "event", "range", "device_seen"}
 DIAGNOSTIC_TYPES = {"gw", "log", "host_cmd"}
+
+
+def db_status(value):
+    """-128 is the firmware sentinel for a dB field that was not computed."""
+    if value is None:
+        return "absent"
+    if value == -128:
+        return "unavailable"
+    return "reported"
 
 
 def measurement_status(value):
@@ -25,11 +34,12 @@ def measurement_status(value):
 
 
 class FusionState:
-    def __init__(self, stale_after_ms=STALE_AFTER_MS):
+    def __init__(self, stale_after_ms=STALE_AFTER_MS, store=None):
         self.stale_after_ms = stale_after_ms
         self.simulated = False
         self.source = "live"
         self.playback = None
+        self.store = store
         self._lock = threading.Lock()
         self._nodes = {}
         self._devices = {}
@@ -41,6 +51,8 @@ class FusionState:
 
     def accept(self, observation):
         with self._lock:
+            if self.store is not None:
+                self.store.append(observation, source=self._provenance())
             kind = observation.get("type")
             t_host = observation.get("t_host")
             if kind == "gw":
@@ -91,22 +103,16 @@ class FusionState:
                 node["uptime_s"] = observation.get("uptime_s", node.get("uptime_s"))
                 node["nbrs"] = observation.get("nbrs") or []
             elif kind == "feat":
-                node["latest_feat"] = {
-                    "t_ms": observation.get("t_ms"),
-                    "t_host": t_host,
-                    "rms_db": observation.get("rms_db"),
-                    "low_db": observation.get("low_db"),
-                    "voice_db": observation.get("voice_db"),
-                    "high_db": observation.get("high_db"),
-                    "peak_db": observation.get("peak_db"),
-                }
+                node["latest_feat"] = _feat(observation, t_host)
             elif kind == "event":
                 evidence = {
                     "kind": observation.get("kind"),
                     "t_ms": observation.get("t_ms"),
                     "t_host": t_host,
                     "peak_db": observation.get("peak_db"),
+                    "peak_db_status": db_status(observation.get("peak_db")),
                     "voice_db": observation.get("voice_db"),
+                    "voice_db_status": db_status(observation.get("voice_db")),
                     "count": observation.get("count"),
                     "conf": observation.get("conf"),
                 }
@@ -237,6 +243,10 @@ class FusionState:
             node["last_t_host"] = t_host
         return node
 
+    def _provenance(self):
+        if self.simulated and self.source == "live":
+            return "simulation"
+        return self.source
 
     def _remember(self, bucket, observation, t_host):
         bucket.append(
@@ -247,6 +257,21 @@ class FusionState:
             }
         )
         del bucket[:-20]
+
+
+def _feat(observation, t_host):
+    feat = {
+        "t_ms": observation.get("t_ms"),
+        "t_host": t_host,
+        "rms_db": observation.get("rms_db"),
+        "low_db": observation.get("low_db"),
+        "voice_db": observation.get("voice_db"),
+        "high_db": observation.get("high_db"),
+        "peak_db": observation.get("peak_db"),
+    }
+    for key in ("rms_db", "low_db", "voice_db", "high_db", "peak_db"):
+        feat[key + "_status"] = db_status(feat[key])
+    return feat
 
 
 def _links(nodes):
