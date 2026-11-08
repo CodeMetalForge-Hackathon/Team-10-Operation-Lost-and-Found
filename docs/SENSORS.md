@@ -79,7 +79,7 @@ These channels are **independent evidence**. Fuse them as `P = 1 − Π(1 − P_
 ### Limits and failure modes
 - **Reflections indoors** blur the energy map. Expect about 1–2 m accuracy with 4–5 nodes and a quiet room.
 - **The hackathon floor is noisy.** The adaptive floor helps; run the demo in the hallway.
-- **Hardware question still open:** if the Grove Sound Sensor's output turns out to be a **loudness envelope** rather than a waveform (being checked on a scope), band energies and chirp ranging won't work. `rms_db` and `peak_db` would still be valid. **Proposed:** band fields = `-128` means "not available". Confirm with William before relying on that.
+- **Answered (N2 bench test):** it is a waveform, but clipped at both ends at 3V3. **Band fields are always `-128` (= not available)**; `rms_db` and `peak_db` are valid (dBFS). `VOICE_LIKE` means any sustained sound. Field meanings as built: ARCHITECTURE.md §2.
 - **Radio interference:** the node's own transmissions can put a spike into the analog signal. The firmware blanks samples during its own transmit bursts.
 
 **Simulator:** a source at `p` with level `S`; each node reads `S − 20·log10(d) + g_i + N(0, 4 dB)`. Report an event only if above `floor_i + 12`. Use `g_i ~ U(−6, +6)` dB, a background floor of about −55 dBFS, and drop 5% of packets.
@@ -94,10 +94,10 @@ These channels are **independent evidence**. Fuse them as `P = 1 − Π(1 − P_
 - Detect **knocks on the structure**: a survivor hitting a pipe, slab or rebar. Rescuers already rely on this signal, and it travels through solid material better than through air.
 - **Confirm** acoustic taps: a tap heard by the mic *and* felt by the SW-420 is very unlikely to be speech or room noise.
 
-**Output:** no message type of its own (by design, to save bandwidth). It feeds `TAP_PATTERN`:
+**Output (as built, 2026-11-07):** every burst is reported as an EVENT `VIBRATION` (`count` = edges ≈ strength, `peak_db` = mic level at that moment or the floor). It also feeds `TAP_PATTERN`:
 - Its pulse timestamps are matched with mic onsets on the node.
 - If the SW-420 fires on most onsets of a pattern, **`conf` goes up**.
-- **Planned (🟡):** if the SW-420 alone sees a tap rhythm while the mic sees nothing (deep in the structure), the node still sends `TAP_PATTERN` with `peak_db` at the mic floor and `conf` capped around 50. Read **`TAP_PATTERN` with `peak_db` ≈ the node's floor** as **"felt through the structure, not heard"**.
+- **Built:** if the SW-420 alone sees a tap rhythm while the mic sees nothing (deep in the structure), the node still sends `TAP_PATTERN` with `peak_db` at the mic floor and `conf` capped around 50. Read **`TAP_PATTERN` with `peak_db` ≈ the node's floor** as **"felt through the structure, not heard"**.
 
 **How to use it:**
 - It has no amplitude, so it **can't help with energy localization.**
