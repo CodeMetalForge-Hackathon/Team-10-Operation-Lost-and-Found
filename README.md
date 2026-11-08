@@ -22,7 +22,7 @@ fusion/server.py            GET /, GET /ws, and simulation replay
 ui/index.html               operations overview, not a floor-plan fix
 ```
 
-TAK is still the planned primary output. The page is the secondary dashboard. Nothing in this repo sends Cursor-on-Target yet.
+TAK is still the planned primary output. The page is the secondary dashboard. `fusion/tak_hello.py` can send hardcoded CoT markers. The dashboard server does not.
 
 ## Implemented and planned
 
@@ -36,17 +36,19 @@ TAK is still the planned primary output. The page is the secondary dashboard. No
 | Node positions, heatmap, source count | Not implemented. `localization_mode` is `UNLOCALIZED`. |
 | `POST /cmd`, `POST /anchor`, `POST /baseline` | Named in the architecture doc. Bodies are not agreed. Not implemented. They are explained in Diagnostics, not shown as buttons. |
 | Simulation replay | `POST /demo/replay` on a `--demo` process only. See `docs/DEMO_GUIDE.md`. |
-| ESP32 firmware | Not in this repo. William owns it. |
-| `tak.py` / WinTAK | Not implemented. See below. |
+| ESP32 firmware | In `firmware/node/`. William owns it. This host has not been run on a board. |
+| `fusion/tak_hello.py` / WinTAK | Standalone hello script only. The server does not send CoT. |
 | Drone, LED-ID, Hailo | Not in this iteration. The AI accelerator is not required. |
 
 ## Hardware
 
-William's `docs/HARDWARE.md` (`3b45ff0`, `5935993`) says:
+William's earlier `docs/HARDWARE.md` (`3b45ff0`, `5935993`) said:
 
 - 2× Seeed XIAO ESP32-S3 Plus — gateway and drone bridge
 - 5× Seeed XIAO ESP32-C5 — field nodes, each with an Adafruit ICS-43434
 - Raspberry Pi 5, 16 GB, with the 26 TOPS AI HAT, carried by hand for the drone role
+
+The `docs/HARDWARE.md` in this tree is later than that. It switches the field-node sensors to Grove modules. This README does not edit that file.
 
 Sebastian's check on 2026-11-07 did not confirm an S3 in hand. That disagreement is open on issue #5. This README does not change his counts.
 
@@ -132,7 +134,7 @@ A node is `inactive` when no accepted line from that `src` has arrived for 6000 
 
 To show the same tap on WinTAK, someone still has to:
 
-1. Add `fusion/tak.py`. It is not in this repo. `pytak` is not installed.
+1. Wire CoT to fusion state. `fusion/tak_hello.py` sends hardcoded markers and is not that path. `fusion/tak.py` is not in this repo. `pytak` is not installed.
 2. Pick a command-post origin (`lat0`, `lon0`) by hand. There is no GPS fix in this demo, and there is no node position to convert. Do not invent one.
 3. Send CoT to UDP multicast `239.2.3.1:6969`, as `docs/ARCHITECTURE.md` already plans.
 4. For this cue, a single unknown-affiliation point is the honest marker, with remarks like `Possible acoustic cue: TAP_PATTERN x3, conf 80, node 3, no position`. Set `stale` to about 30 s.
