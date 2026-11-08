@@ -56,7 +56,7 @@ The **search and rescue team leader / drone operator** at a collapsed structure:
 - **Existing systems used:** TAK / Cursor-on-Target (plain CoT XML over UDP, standard library; works with WinTAK, ATAK and iTAK with no plugin or TAK Server), ESP-NOW, and optionally a pretrained audio classifier (YAMNet). All open source and declared.
 
 ## Speaker-feedback alignment (from the Friday panel)
-- "Don't bring a new widget, integrate": our output goes into **TAK**, the map responders already have open. Standard CoT symbols (friendly sensor nodes, an unknown contact labelled "T10 DIG HERE?"), no plugin and no server, and it works over local multicast with no internet. Responders learn nothing new, and every TAK user on the network can see, share and route to the estimate. Details: `docs/TAK.md`.
+- "Don't bring a new widget, integrate": our output goes into **TAK**, the map responders already have open. Standard CoT symbols (friendly sensor nodes, an unknown contact labelled "T10 LOOK HERE"), no plugin and no server, and it works over local multicast with no internet. Responders learn nothing new, and every TAK user on the network can see, share and route to the estimate. Details: `docs/TAK.md`.
 - "No batteries or cables on people": nothing goes on the victim or the operator.
 - "Primary, alternate, emergency plan": our localization stack *is* a PACE plan.
 - "Adapt to changing conditions": the mesh repairs itself, the system has GPS and GPS-denied modes, and the drone is optional.

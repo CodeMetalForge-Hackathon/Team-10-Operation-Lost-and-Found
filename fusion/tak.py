@@ -2,7 +2,7 @@
 
 What responders see in TAK:
   * one marker per sensor node    (friendly ground sensor; "LOST" in the callsign when it stops reporting)
-  * "DIG HERE?" marker at the heatmap peak, with its uncertainty as the marker's circular error (ce)
+  * "LOOK HERE" marker at the heatmap peak, with its uncertainty as the marker's circular error (ce)
 Each item has one fixed uid and is re-sent only when it really changes, or every 20 s, so markers clear
 themselves when the fusion host stops confirming them. Keep updates rare: WinTAK crashes if a marker is
 updated while its details pane is open (close the pane after reading it).
@@ -78,7 +78,7 @@ def node_cot(frame, node, stale_s):
 def source_cot(frame, src, stale_s, idx=1):
     """src: {"x", "y", "radius" (m), "strength", optional "remarks"} -> 'possible survivor' point."""
     lat, lon = frame.to_latlon(src["x"], src["y"])
-    callsign = "T10 DIG HERE?" if idx == 1 else f"T10 DIG HERE? #{idx}"
+    callsign = "T10 LOOK HERE" if idx == 1 else f"T10 LOOK HERE #{idx}"
     rem = src.get("remarks") or (
         f"Possible survivor (acoustic/vibration fusion). Uncertainty +/-{src['radius']:.1f} m, "
         f"evidence strength {src.get('strength', 0):.2f}. Not a confirmed location."
@@ -200,7 +200,7 @@ def main():
                 last_err = None
             src = pic["sources"][0] if pic["sources"] else None
             print(f"# sent {n} CoT | nodes alive {[x['id'] for x in pic['nodes'] if x['alive']]} | "
-                  f"dig-here {'(%.1f, %.1f) +/-%.1f m' % (src['x'], src['y'], src['radius']) if src else 'none'}",
+                  f"look-here {'(%.1f, %.1f) +/-%.1f m' % (src['x'], src['y'], src['radius']) if src else 'none'}",
                   flush=True)
         except Exception as e:  # keep running: fusion host may restart; markers simply go stale meanwhile
             if str(e) != last_err:

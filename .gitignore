@@ -5,3 +5,5 @@ data/*.raw
 # raw camera frame folders from live_mosaic.py --record (hundreds of MB); commit the mosaics only
 data/camera/*/
 build/
+# generated TAK overlays (rebuild with fusion/tak_overlay.py)
+data/tak/

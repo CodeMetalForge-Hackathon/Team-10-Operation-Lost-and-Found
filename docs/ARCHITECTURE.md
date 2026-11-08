@@ -158,7 +158,7 @@ Common header, 8 bytes:
   - **Local frame to latitude/longitude:** origin (0, 0) = `--lat/--lon` (node N1 or the command post); `--heading` = true bearing of local +y. `east = x·cos h + y·sin h`, `north = −x·sin h + y·cos h`, then `lat = lat0 + north/111 320`, `lon = lon0 + east/(111 320·cos lat0)`.
   - **CoT mapping (verified in WinTAK):**
     - each node → `a-f-G-E-S`, callsign `T10 N<id>`, or `T10 N<id> LOST` when it stops reporting;
-    - heatmap peak → `a-u-G`, callsign **`T10 DIG HERE?`**, `ce` = uncertainty radius, remarks: "Possible survivor … ±r m, evidence strength, HAIL sent N s ago … Not a confirmed location".
+    - heatmap peak → `a-u-G`, callsign **`T10 LOOK HERE`**, `ce` = uncertainty radius, remarks: "Possible survivor … ±r m, evidence strength, HAIL sent N s ago … Not a confirmed location".
   - **Update policy:** one fixed uid per item; re-sent only on a real change (LOST/back; peak moves to another 0.3 m cell or uncertainty steps by 0.3 m) or every 20 s; stale 60 s; a source is cleared with a 1 s stale send when the map loses confidence. Why: WinTAK crashes if a marker is updated while its details pane is open.
   - **Still planned:**
     - candidate-survivor device → `a-u-G` "Device signal: BLE_FINDMY, −52 dBm near N3, stationary 4 min, ±3 m";
