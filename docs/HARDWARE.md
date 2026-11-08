@@ -29,11 +29,11 @@ Flash with `python tools/flash.py --port COMx --board c5|s3 --role node|gateway 
 |---|---|---|
 | Gateway (S3 Plus) | `44:B1:76:B0:85:54` | gateway, settings rebroadcast every 15 s |
 | Drone bridge (S3 Plus #2) | — | not flashed yet |
-| N1 | `10:BD:A3:CF:B1:20` | node + BLE scan |
-| N2 | `10:BD:A3:CC:83:68` | node + BLE scan + **sensors (STEP 3)**, SW-420 tuned (2026-11-07 ~22:15) |
+| N1 | `10:BD:A3:CF:B1:20` | node + BLE scan + **sensors (STEP 3)**, audio OK, SW-420 knob not yet tuned (2026-11-07 ~21:40) |
+| N2 | `10:BD:A3:CC:83:68` | node + BLE scan + **sensors (STEP 3)**, SW-420 tuned (2026-11-07 ~21:20) |
 | N3 | `10:BD:A3:CC:8D:74` | node + BLE scan |
 | N4 | `10:BD:A3:CB:DF:98` | node + BLE scan |
-| N5 | `10:BD:A3:CF:46:80` | node + BLE scan |
+| N5 | `10:BD:A3:CF:46:80` | node + BLE scan + **sensors (STEP 3)**, audio OK, SW-420 knob not yet tuned (2026-11-07 ~21:40) |
 
 ## Per-node parts
 | Part | Purpose | Source to check first | ~Cost |

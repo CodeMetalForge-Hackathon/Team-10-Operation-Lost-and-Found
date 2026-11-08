@@ -1,0 +1,21 @@
+{
+ "name": "live_3node_test1",
+ "port": "COM13",
+ "start": "2026-11-07T22:08:20",
+ "positions_m": {
+  "1": [
+   0.0,
+   0.0
+  ],
+  "2": [
+   3.0,
+   0.0
+  ],
+  "5": [
+   0.0,
+   3.0
+  ]
+ },
+ "note": "3-node test: N1 (0,0) N2 (3,0) N5 (0,3), hall floor",
+ "tool": "fusion/heatmap.py"
+}

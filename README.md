@@ -135,7 +135,8 @@ Gateway → host, one JSON object per line at 921600 baud, or the same line over
 - `beacon` (observed)
 - `device_seen` (observed)
 - `gw` (observed diagnostic, not a node)
-- `feat`, `event`, `range` (printable, not in the committed recordings)
+- `feat`, `event` (in `data/live_3node_test1.jsonl`; the host must not drop an unknown `event.kind`)
+- `range` (printable, not in the committed recordings)
 - `log` and `host_cmd` (recorder or text echo, not sensors)
 
 The host ingestion clock is integer Unix milliseconds. Recorder files store Unix seconds in `t_host`; the host keeps that as `t_recorded_s`. See `docs/TELEMETRY_CONTRACT.md`.
@@ -177,7 +178,7 @@ sudo apt install -y python3 python3-venv python3-pip git
 git clone https://github.com/CodeMetalForge-Hackathon/Team-10.git
 cd Team-10
 git fetch origin
-git checkout feat/sim-ws-dashboard
+git checkout feat/demo-integration
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
@@ -196,3 +197,5 @@ python -m fusion.server --gateway /dev/serial/by-id/usb-PASTE-THE-SYMLINK-HERE -
 ```
 
 No systemd unit. No Hailo runtime. Raspberry Pi OS 64-bit and a normal Python 3.11+ virtualenv are enough.
+
+`fusion/heatmap.py` came in from `main`. It is a separate experimental estimator. It is not this dashboard, and this page does not show its output as a dig point. See `docs/TELEMETRY_CONTRACT.md`.
