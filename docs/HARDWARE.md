@@ -32,7 +32,7 @@ Flash with `python tools/flash.py --port COMx --board c5|s3 --role node|gateway 
 | N1 | `10:BD:A3:CF:B1:20` | node + BLE scan + **sensors (STEP 3)**, audio OK, SW-420 knob not yet tuned (2026-11-07 ~21:40) |
 | N2 | `10:BD:A3:CC:83:68` | node + BLE scan + **sensors (STEP 3)**, SW-420 tuned (2026-11-07 ~21:20) |
 | N3 | `10:BD:A3:CC:8D:74` | node + BLE scan |
-| N4 | `10:BD:A3:CB:DF:98` | node + BLE scan |
+| N4 | `38:44:BE:A7:D1:00` (replacement board, 2026-11-08 ~08:00; old `10:BD:A3:CB:DF:98` retired) | node + BLE scan + **sensors (STEP 3)**: audio OK (floor −25 dBFS, adc_err 0), hears N1/N2/N3/N5; SW-420 not yet tap-tested |
 | N5 | `10:BD:A3:CF:46:80` | node + BLE scan + **sensors (STEP 3)**, audio OK, SW-420 knob not yet tuned (2026-11-07 ~21:40) |
 
 ## Per-node parts
