@@ -116,3 +116,9 @@ Opening `ui/index.html` as a file still shows nothing from the gateway. Use the 
 `POST /cmd`, `POST /anchor`, and `POST /baseline` are still unnamed bodies. This server does not send HAIL, BLINK, RANGE, QUIET MODE, or BASELINE. The buttons stay disabled.
 
 PR #7 is the page shell. This branch renders version 1 on that page. It does not parse gateway JSON in the browser.
+
+## Planned local Wi-Fi, not applied
+
+`docs/INTEGRATION_HANDOFF.md` is the proposal: Pi access point on 2.4 GHz channel 1, no upstream internet, gateway TCP to port 9100. Do not configure that remotely from a laptop that cannot already get back in.
+
+On 2026-11-08 this Mac resolved `raspberrypi.local` to `10.1.200.253` and the ping was rejected (`Communication prohibited by filter`). That is not a verified host. No Pi networking change was made.

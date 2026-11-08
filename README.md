@@ -7,19 +7,19 @@ This checkout is a Mac proof of concept. It does not estimate a location, and it
 ## Data flow
 
 ```
-sim/demo.py  or  USB gateway JSON lines
+sim/demo.py  or  USB gateway JSON  or  TCP newline JSON  or  data/*.jsonl
         │
         ▼
-fusion/serial_ingest.py     one parser, five published types
-        │  ObservationSink.accept(observation + t_host)
+fusion/serial_ingest.py     one parser for serial, TCP, and recordings
+        │  ObservationSink.accept(observation + ingestion t_host)
         ▼
-fusion/state.py             nodes, evidence, device hashes
+fusion/state.py             nodes, evidence, device hashes, gateway diagnostics
         │  no positions
         ▼
-fusion/server.py            GET /, GET /ws, and simulation replay
+fusion/server.py            GET /, GET /ws
         │
         ▼
-ui/index.html               operations overview, not a floor-plan fix
+ui/index.html               LIVE, RECORDING, or SIMULATION
 ```
 
 TAK is still the planned primary output. The page is the secondary dashboard. `fusion/tak_hello.py` can send hardcoded CoT markers. The dashboard server does not.
@@ -28,8 +28,8 @@ TAK is still the planned primary output. The page is the secondary dashboard. `f
 
 | Piece | Status |
 |---|---|
-| Gateway JSON contract, including `device_seen` | Written by William in `docs/ARCHITECTURE.md`. This branch does not change it. |
-| Serial reader (`python -m fusion.serial_ingest`) | Draft PR #8. Accepts the five JSON types from a port or a file. |
+| Gateway JSON contract, including `device_seen` | Written by William in `docs/ARCHITECTURE.md`. Host field rules for his recordings are in `docs/TELEMETRY_CONTRACT.md`. |
+| Serial reader and TCP listener | Same parser. TCP was checked on this Mac only. Not on a Pi. |
 | Static page shell | Draft PR #7, replaced on this branch by the operations overview. |
 | Simulated gateway script | `python -m sim.demo`. Scripted lines, not a physics model, not a recording. |
 | Fusion state and WebSocket host | This branch. No localization math. |
@@ -100,6 +100,20 @@ A file of the five contract examples, loaded at once rather than paced:
 python -m fusion.server --simulate tests/fixtures/sample_gateway.txt
 ```
 
+A committed hardware recording, paced, and labeled RECORDING. This is not `--simulate`.
+
+```bash
+python -m fusion.server --recording data/beacons_line_2nodes.jsonl --speed 8 --listen 8000
+```
+
+TCP newline JSON, same parser as USB. Use a free port. Do not bind 8765 or 8775. This command does not mean a Pi was reached.
+
+```bash
+python -m fusion.server --tcp 9100 --tcp-bind 127.0.0.1 --listen 8000
+```
+
+The bench checklist is [`docs/INTEGRATION_HANDOFF.md`](docs/INTEGRATION_HANDOFF.md).
+
 Serial, when a board is actually plugged in. This does not guess a device name.
 
 ```bash
@@ -116,15 +130,15 @@ It speaks only proposed `/ws` version 1. Sensors are listed, not plotted, so a m
 
 ## Interfaces
 
-Gateway → host, unchanged, one JSON object per line at 921600 baud:
+Gateway → host, one JSON object per line at 921600 baud, or the same line over TCP:
 
-- `beacon`
-- `feat`
-- `event`
-- `range`
-- `device_seen`
+- `beacon` (observed)
+- `device_seen` (observed)
+- `gw` (observed diagnostic, not a node)
+- `feat`, `event`, `range` (printable, not in the committed recordings)
+- `log` and `host_cmd` (recorder or text echo, not sensors)
 
-The host adds `t_host` as integer Unix milliseconds. That type is still a local choice; the architecture doc does not specify it.
+The host ingestion clock is integer Unix milliseconds. Recorder files store Unix seconds in `t_host`; the host keeps that as `t_recorded_s`. See `docs/TELEMETRY_CONTRACT.md`.
 
 `/ws` version 1 is proposed in `docs/WS_CONTRACT.md`. It is not in `docs/ARCHITECTURE.md` yet. William has not signed it. `GET /state` returns the same object for debugging.
 

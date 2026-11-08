@@ -80,7 +80,15 @@ Status: proposed on `feat/sim-ws-dashboard` so the dashboard can run. This is no
 }
 ```
 
-`simulated` is true only when the process was started with `--demo` or `--simulate`. A serial session leaves it false. That flag does not mean the numbers were checked against a tape measure.
+`simulated` is true only for `--demo` and `--simulate`. A serial or TCP session leaves it false. A recording leaves it false and sets `source` to `recording`. That flag does not mean the numbers were checked against a tape measure.
+
+`source` is `live`, `recording`, or `simulation`. The page badge uses it. A recording is not live hardware. TCP and USB are both `live`; this host has not verified a Pi.
+
+`gateway` is the latest `gw` diagnostic, or null. It is not a sensor node. `diagnostics.logs` and `diagnostics.host_cmds` are recorder or serial text, not observations.
+
+`batt_mv_status` and `floor_db_status` are `unimplemented` when the raw value is 0, because current node firmware hardcodes both to 0. The raw integers stay in `batt_mv` and `floor_db`. A non-zero value is `reported`.
+
+`playback.status` is `playing` or `ended` during `--recording`, otherwise null.
 
 ## Rules this host actually applies
 
