@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Team 10 Technical Deck</title>
+<!-- Source of media/Team10_tech_deck.pdf. Re-print: see media/README.md (headless Edge, --print-to-pdf). -->
+<style>
+@page { size: 1280px 720px; margin: 0; }
+:root {
+  --bg: #fbfaf7; --ink: #16191d; --ink2: #3d4550; --mute: #6b7480; --line: #d9dde3; --card: #ffffff;
+  --heat: #d9480f; --heat-l: #fff0e6; --mesh: #1c6dd0; --mesh-l: #e8f1fc; --tak: #2b8a3e; --tak-l: #e9f6ec;
+  --cam: #7048e8; --cam-l: #f1edfd;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #888; }
+body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.slide { width: 1280px; height: 720px; background: var(--bg); position: relative; overflow: hidden;
+  padding: 40px 52px 44px; page-break-after: always; break-after: page; margin: 0 auto; }
+@media screen { .slide { margin: 20px auto; box-shadow: 0 4px 24px #0004; } }
+h1 { font-size: 30px; font-weight: 700; letter-spacing: -.3px; line-height: 1.15; }
+h1 .k { color: var(--heat); }
+.kicker { font: 600 12px/1 "Segoe UI"; letter-spacing: 1.6px; text-transform: uppercase; color: var(--mute); margin-bottom: 8px; }
+.sub { font-size: 15px; color: var(--ink2); margin-top: 6px; max-width: 1080px; }
+.foot { position: absolute; left: 52px; right: 52px; bottom: 16px; display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--mute); border-top: 1px solid var(--line); padding-top: 6px; }
+code, .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: .92em; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.card h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.card p, .card li { font-size: 13.5px; line-height: 1.45; color: var(--ink2); }
+.card ul { padding-left: 16px; }
+.tag { display: inline-block; font: 600 10.5px/1 "Segoe UI"; padding: 3px 6px; border-radius: 4px; letter-spacing: .3px; }
+.t-heat { background: var(--heat-l); color: var(--heat); } .t-mesh { background: var(--mesh-l); color: var(--mesh); }
+.t-tak { background: var(--tak-l); color: var(--tak); } .t-cam { background: var(--cam-l); color: var(--cam); }
+img.shot { display: block; border: 1px solid var(--line); border-radius: 6px; object-fit: cover; }
+.cap { font-size: 11px; color: var(--mute); margin-top: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-weight: 600; color: var(--mute); font-size: 10.5px; letter-spacing: .6px; text-transform: uppercase;
+  padding: 4px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 6px 8px; border-bottom: 1px solid #eceef1; color: var(--ink2); vertical-align: top; }
+td b { color: var(--ink); }
+.grid { display: grid; gap: 14px; }
+
+/* slide 1 */
+.s1 { display: grid; grid-template-columns: 1fr 520px; gap: 36px; height: 100%; }
+.s1 h1 { font-size: 38px; margin-top: 18px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 26px; }
+.stat { border-left: 0; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.stat b { display: block; font-size: 26px; font-weight: 700; letter-spacing: -.5px; }
+.stat span { font-size: 12.5px; color: var(--ink2); }
+.steps { display: flex; gap: 6px; margin-top: 22px; flex-wrap: wrap; }
+.steps span { font-size: 12.5px; padding: 6px 10px; border-radius: 16px; background: #eef0f3; color: var(--ink2); }
+.steps span b { color: var(--heat); margin-right: 4px; }
+
+/* slide 2 flow */
+.flow { display: grid; grid-template-columns: 200px 1fr 140px 1fr 310px 1fr 196px; align-items: stretch; margin-top: 18px; gap: 0; min-height: 300px; }
+.blk { background: var(--card); border: 1.5px solid var(--line); border-radius: 8px; padding: 12px 13px; font-size: 13px; color: var(--ink2); line-height: 1.45; }
+.blk h4 { font-size: 14.5px; color: var(--ink); margin-bottom: 4px; }
+.blk.node { border-color: var(--heat); box-shadow: 4px 4px 0 -1px var(--bg), 4px 4px 0 0 var(--heat), 8px 8px 0 -1px var(--bg), 8px 8px 0 0 var(--heat); }
+.blk.gw { border-color: var(--mesh); display: flex; flex-direction: column; justify-content: center; }
+.pi { border: 1.5px dashed var(--ink2); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; background: #f3f2ee; }
+.pi .ttl { font: 700 12px "Segoe UI"; color: var(--ink); }
+.pi .blk { padding: 9px 11px; font-size: 12.5px !important; }
+.outs { display: flex; flex-direction: column; gap: 10px; justify-content: space-between; }
+.blk.tak { border-color: var(--tak); } .blk.web { border-color: var(--ink2); } .blk.cam { border-color: var(--cam); }
+.link { display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 0 8px; }
+.link.split { justify-content: space-around; }
+.arrow { position: relative; font-size: 11.5px; line-height: 1.35; color: var(--ink2); text-align: center; padding-bottom: 8px; }
+.arrow::after { content: ""; position: absolute; left: 0; right: 8px; bottom: 0; height: 2px; background: currentColor; }
+.arrow::before { content: ""; position: absolute; right: 0; bottom: -4px; border: 5px solid transparent; border-left: 9px solid currentColor; border-right: 0; }
+.arrow.back::after { left: 8px; right: 0; }
+.arrow.back::before { left: 0; right: auto; border-left: 0; border-right: 9px solid currentColor; }
+.arrow b { display: block; font-size: 12px; }
+.arrow.mesh { color: var(--mesh); } .arrow.tak { color: var(--tak); } .arrow.cam { color: var(--cam); }
+.arrow span { color: var(--ink2); }
+.msgs { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; margin-top: 18px; }
+.msgs td, .msgs th { padding: 4px 8px; white-space: nowrap; } .msgs td:nth-child(2) { white-space: normal; }
+
+/* slide 3 sensors */
+.sens { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+.sens .card { display: flex; flex-direction: column; }
+.sens .out { margin-top: 8px; border-top: 1px solid #eceef1; padding-top: 6px; }
+.sens .out div { font-size: 12.5px; color: var(--ink2); line-height: 1.4; margin-bottom: 3px; }
+.sens .out code { color: var(--ink); font-weight: 600; }
+.lim { margin-top: auto; padding-top: 8px; font-size: 12px !important; color: var(--mute) !important; font-style: italic; }
+.policy { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+pre.json { background: #1d2127; color: #e6e9ee; border-radius: 8px; padding: 12px 14px; font: 12px/1.55 Consolas, monospace; white-space: pre; overflow: hidden; }
+pre.json .k { color: #8cc4ff; } pre.json .s { color: #ffc28a; } pre.json .c { color: #7f8a96; }
+
+/* slide 4 fusion */
+.s4 { display: grid; grid-template-columns: 560px 1fr; gap: 22px; margin-top: 16px; }
+.pipe { display: flex; flex-direction: column; gap: 7px; }
+.pstep { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
+.pstep i { font-style: normal; width: 24px; height: 24px; border-radius: 50%; background: var(--heat); color: #fff; font: 700 12px/24px "Segoe UI"; text-align: center; }
+.pstep div { font-size: 13.5px; color: var(--ink2); line-height: 1.4; }
+.pstep b { color: var(--ink); }
+.eq { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font: 15px Consolas, monospace; margin: 2px 0 4px 36px; }
+
+/* slide 5 */
+.s5 { display: grid; grid-template-columns: 1fr 420px; gap: 22px; margin-top: 16px; }
+
+/* slide 6 */
+.s6 { display: grid; grid-template-columns: 540px 1fr; gap: 22px; margin-top: 16px; }
+
+/* slide 7 */
+.s7 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
+.big { font-size: 20px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- 1 ─────────────────────────────── -->
+<section class="slide">
+  <div class="s1">
+    <div>
+      <div class="kicker">Team 10 · Code Metal Forge 2026 · Technical overview</div>
+      <h1>Operation Lost and Found: a disposable acoustic mesh that tells responders <span class="k">where to look</span></h1>
+      <p class="sub" style="margin-top:14px">Drop cheap sensor nodes onto a collapsed structure. They mesh without infrastructure, are placed by the drone camera that drops them, listen for tapping, voices and phones, and push a live evidence map into the TAK screens responders already use.</p>
+      <div class="stats">
+        <div class="stat"><b>~$12</b><span>per node in bulk (ESP32-C5, mic, tap switch, buzzer, LiPo): expendable by design</span></div>
+        <div class="stat"><b>0</b><span>infrastructure: no GPS, cell, router or internet; the Pi field box brings its own network</span></div>
+        <div class="stat"><b>~50 B/s</b><span>per node: events, never raw audio (≈700× less than streaming 16 kHz audio)</span></div>
+        <div class="stat"><b>&lt; 1 s</b><span>tap → evidence on the map: ~10 ms over the air, grouped and fitted within 0.6 s</span></div>
+      </div>
+      <div class="steps">
+        <span><b>1</b>Drop</span><span><b>2</b>Map</span><span><b>3</b>Mesh</span><span><b>4</b>Listen</span><span><b>5</b>Hail</span><span><b>6</b>Fuse</span><span><b>7</b>Deliver to TAK</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;justify-content:center">
+      <img class="shot" src="../screenshots/wintak_mosaic_overlay.png" style="width:520px;height:300px;object-position:0 30%">
+      <div class="cap">WinTAK, live run: drone-camera floor map, nodes T10 N1–N5 at their drop points, T10 LOOK HERE at the evidence peak.</div>
+      <img class="shot" src="../photos/hardware_top.jpg" style="width:520px;height:210px;object-position:center 45%">
+      <div class="cap">The prototype: ESP32-C5 nodes with Grove sensors, XIAO S3 gateway, Pi 5 + downward camera, printed cases.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Team 10 · Operation Lost and Found</span><span>1 / 7</span></div>
+</section>
+
+<!-- 2 ─────────────────────────────── -->
+<section class="slide">
+  <div class="kicker">System architecture</div>
+  <h1>Data flow and protocols: small events in, standard formats out</h1>
+  <div class="flow">
+    <div class="blk node">
+      <h4>Sensor node ×N</h4>
+      XIAO ESP32-C5<br>
+      · sound sensor, 16 kHz ADC DMA<br>
+      · SW-420 tap switch<br>
+      · BLE + Wi-Fi probe receiver<br>
+      · buzzer (HAIL)<br>
+      <b style="color:var(--heat)">On-node DSP →</b> events with strength
+    </div>
+    <div class="link">
+      <div class="arrow mesh"><b>ESP-NOW broadcast</b><span>2.4 GHz ch 1 · packed binary ≤ 250 B · flooded, TTL 4, de-dup on (src, seq)</span></div>
+      <div class="arrow mesh back"><b>Commands, flooded 3×</b><span>HAIL · PING · BLINK · tx power · scan rate</span></div>
+    </div>
+    <div class="blk gw">
+      <h4>Gateway</h4>
+      XIAO ESP32-S3<br>binary ↔ JSON<br>re-broadcasts node settings every 15 s
+    </div>
+    <div class="link">
+      <div class="arrow"><b>USB serial 921600</b><span>one JSON object per line (the contract)</span></div>
+      <div class="arrow back"><b>Text commands</b><span><code>CMD HAIL 0 255</code></span></div>
+    </div>
+    <div class="pi">
+      <div class="ttl">Raspberry Pi 5 field box (systemd)</div>
+      <div class="blk cam" style="font-size:11.5px"><b style="color:var(--cam)">Downward camera</b> → <code>live_mosaic.py</code> :8080<br>SIFT + RANSAC floor map · drop positions</div>
+      <div class="arrow cam back" style="margin:0 40px;font-size:10px;padding-bottom:6px"><span>drops (x, y m) · HTTP</span></div>
+      <div class="blk" style="font-size:11.5px;border-color:var(--heat)"><b style="color:var(--heat)">fusion/server.py</b> :8000 (FastAPI)<br>state · evidence heatmap · people estimate · per-node history · records every line to <code>.jsonl</code></div>
+      <div class="blk" style="font-size:11.5px;border-color:var(--tak)"><b style="color:var(--tak)">tak_overlay.py</b> :8099 · floor map as KMZ, frozen on SCAN DONE</div>
+    </div>
+    <div class="link split">
+      <div class="arrow"><b>HTTP JSON</b><span><code>/ops</code> polled 1 Hz</span></div>
+      <div class="arrow tak"><b>CoT XML / UDP</b><span>:4242 or SA multicast 239.2.3.1:6969 (via <code>tak.py</code>, polls <code>/tak</code> every 2 s)</span></div>
+      <div class="arrow tak"><b>KML NetworkLink</b><span>re-fetched every 5 s</span></div>
+    </div>
+    <div class="outs">
+      <div class="blk web"><h4>Ops dashboard</h4>any browser on the field Wi-Fi: map, fleet, distances, sensor graphs, HAIL</div>
+      <div class="blk tak" style="flex:1"><h4 style="color:var(--tak)">WinTAK · ATAK · iTAK</h4>node markers <code>a-f-G-E-S</code><br>LOOK HERE <code>a-u-G</code> ± ce<br>floor map ground overlay<br><span style="color:var(--mute)">no plugin, no TAK Server</span></div>
+    </div>
+  </div>
+  <div class="msgs">
+    <div class="card" style="padding:8px 12px">
+      <table>
+        <tr><th>Over-the-air message</th><th>Payload</th><th>Rate</th><th>Size</th></tr>
+        <tr><td><b>BEACON</b></td><td>health + neighbour RSSI (mesh graph)</td><td>2 s</td><td>~30 B</td></tr>
+        <tr><td><b>FEAT</b></td><td>1 s summary: rms / peak dBFS</td><td>1 Hz</td><td>16 B</td></tr>
+        <tr><td><b>EVENT</b></td><td>kind, peak dB, count, confidence</td><td>on detection</td><td>16 B</td></tr>
+        <tr><td><b>DEVICE_SEEN</b></td><td>hashed device IDs, kind, RSSI</td><td>10 s</td><td>13 + 7n B</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Network design</h3>
+      <ul>
+        <li>Header <code>magic · type · src · ttl · hops · seq</code> (8 B): the mesh needs no routing table and repairs itself around dead nodes.</li>
+        <li>Mesh on 2.4 GHz ch 1; the Pi's own <b>T10-FIELD</b> Wi-Fi on ch 11 serves laptops, phones and TAK devices.</li>
+        <li>No venue network or internet anywhere in the path.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Team 10 · Operation Lost and Found</span><span>2 / 7</span></div>
+</section>
+
+<!-- 3 ─────────────────────────────── -->
+<section class="slide">
+  <div class="kicker">Sensing</div>
+  <h1>What each node senses, and the event it sends</h1>
+  <div class="sens">
+    <div class="card">
+      <h3><span class="tag t-heat">AUDIO</span>Sound sensor</h3>
+      <p>Electret mic + amp, sampled at 16 kHz by ADC DMA in its own FreeRTOS task. Level per 10 ms frame (mean absolute deviation, dBFS) against an adaptive noise floor.</p>
+      <div class="out">
+        <div><code>FEAT</code> 1 Hz rms / peak level</div>
+        <div><code>LOUD</code> onset ≥ floor + 10 dB</div>
+        <div><code>VOICE_LIKE</code> sustained ≥ floor + 6 dB for ≥ 400 ms</div>
+        <div><code>TAP_PATTERN</code> ≥ 2 taps, 150–1500 ms gaps</div>
+      </div>
+      <p class="lim">Clips at 3V3: designed around it (level by deviation, clip = "very loud").</p>
+    </div>
+    <div class="card">
+      <h3><span class="tag t-heat">VIBRATION</span>SW-420 switch</h3>
+      <p>Glued to the case floor, so it feels taps through rubble within ~0.5–1 m. Immune to airborne noise: the primary tap sensor in loud environments.</p>
+      <div class="out">
+        <div><code>VIBRATION</code> one per burst; edge count = strength (light tap 2–6, hard hit 50–255)</div>
+        <div>conf 90 if the mic heard it too, else 60 ("felt, not heard")</div>
+      </div>
+      <p class="lim">Range is short, so it localises to its own node.</p>
+    </div>
+    <div class="card">
+      <h3><span class="tag t-mesh">RF</span>Phones &amp; wearables</h3>
+      <p>Receive-only scan: BLE adverts (2 s of every 10 s) and Wi-Fi probe requests. Find victims who are unconscious or too weak to tap, at $0 extra hardware.</p>
+      <div class="out">
+        <div><code>DEVICE_SEEN</code> kind: Apple · Find My · Google · other · probe</div>
+        <div>ID = FNV-1a(MAC + deployment salt); a raw MAC never leaves the node</div>
+      </div>
+      <p class="lim">Phone touching node −33 to −39 dBm vs −59 to −66 dBm background.</p>
+    </div>
+    <div class="card">
+      <h3><span class="tag t-cam">POSITION</span>Mesh RSSI + camera</h3>
+      <p>BEACON neighbour lists give the live mesh graph (link dBm). The drone's downward camera places each node where it was dropped.</p>
+      <div class="out">
+        <div><code>BEACON</code> neighbours + RSSI, every 2 s</div>
+        <div>camera: drop (x, y) in metres on the stitched floor map</div>
+      </div>
+      <p class="lim">Measured −40 dBm at 1 m, −44 at 8 m: RSSI gives proximity, not range.</p>
+    </div>
+  </div>
+  <div class="policy">
+    <div class="card">
+      <h3>Design policy: report everything, let fusion decide</h3>
+      <ul>
+        <li>No classifier gates on the node: in a collapse any sound matters, and only fusion sees all nodes at once.</li>
+        <li><b>HAIL</b> (actuator): 3 × 150 ms beeps at 2.3 kHz ("tap if you can hear this"). Each node blanks its own sensors until 2.5 s after the last beep, so beeps are never reported as taps.</li>
+        <li>Reserved event kinds (<code>RADAR_PRESENCE</code>, <code>GAS</code>, <code>MOVED</code>) let a new sensor plug in with no format change.</li>
+      </ul>
+    </div>
+    <pre class="json"><span class="c"># gateway → host, one line per event (docs/ARCHITECTURE.md §2)</span>
+{<span class="k">"type"</span>:<span class="s">"event"</span>,<span class="k">"src"</span>:3,<span class="k">"seq"</span>:122,<span class="k">"hops"</span>:2,<span class="k">"rssi_last"</span>:-70,
+ <span class="k">"kind"</span>:<span class="s">"TAP_PATTERN"</span>,<span class="k">"peak_db"</span>:-11,<span class="k">"count"</span>:5,<span class="k">"conf"</span>:80}
+{<span class="k">"type"</span>:<span class="s">"event"</span>,<span class="k">"src"</span>:3,<span class="k">"seq"</span>:123,<span class="k">"hops"</span>:2,
+ <span class="k">"kind"</span>:<span class="s">"VIBRATION"</span>,<span class="k">"peak_db"</span>:-11,<span class="k">"count"</span>:14,<span class="k">"conf"</span>:90}
+{<span class="k">"type"</span>:<span class="s">"device_seen"</span>,<span class="k">"src"</span>:4,<span class="k">"devs"</span>:[[<span class="s">"9f3a01c2"</span>,<span class="s">"BLE_APPLE"</span>,-52,14]]}</pre>
+  </div>
+  <div class="foot"><span>Team 10 · Operation Lost and Found</span><span>3 / 7</span></div>
+</section>
+
+<!-- 4 ─────────────────────────────── -->
+<section class="slide">
+  <div class="kicker">Fusion</div>
+  <h1>From scattered events to one "look here"</h1>
+  <div class="s4">
+    <div class="pipe">
+      <div class="pstep"><i>1</i><div><b>Group.</b> Events of one kind from different nodes within 0.15 s are one sound (sound crosses the floor in ~10 ms, plus mesh jitter).</div></div>
+      <div class="pstep"><i>2</i><div><b>Fit every cell of a 0.1 m grid.</b> If the source were at cell p, node i should hear:</div></div>
+      <div class="eq">level<sub>i</sub> = S − 20·log<sub>10</sub>(max(d<sub>i</sub>, 0.3 m)) + g<sub>i</sub></div>
+      <div class="pstep"><i style="visibility:hidden"></i><div style="margin-top:-4px">S solved in closed form, g<sub>i</sub> a per-node gain learned online, misfit σ = 5 dB. <b>Silence is evidence:</b> live nodes that heard nothing must be predicted below their floor + 10 dB. A clipped reading is only a lower bound. A felt-only tap adds a ~0.7 m term at its node.</div></div>
+      <div class="pstep"><i>3</i><div><b>Weight and decay.</b> Tap pattern / felt vibration 1.0, loud 0.3, sustained 0.2; 20 s half-life.</div></div>
+      <div class="pstep"><i>4</i><div><b>Change detection.</b> Subtract a 120 s background: a machine that runs all the time fades out, new knocking stands out.</div></div>
+      <div class="pstep"><i>5</i><div><b>HAIL boost.</b> Events 3.5–13.5 s after a HAIL (the reply window) count 2×: the call-out-and-listen drill, automated.</div></div>
+      <div class="pstep"><i>6</i><div><b>Peak + uncertainty → LOOK HERE</b>, published only while confident; clears itself when evidence fades.</div></div>
+      <div class="pstep"><i>7</i><div><b>EST. PEOPLE</b> (planning number, not a headcount) = max of separate sound hotspots (≥ 50% of peak, ≥ 1.5 m apart, valley between), felt-tap clusters, nearby personal devices ÷ 1.5.</div></div>
+    </div>
+    <div>
+      <img class="shot" src="../screenshots/ops_dashboard.png" style="width:100%;height:342px;object-position:left top">
+      <div class="cap">Ops dashboard, live on the Pi with 5 nodes: evidence heat over the camera map, LOOK HERE ring, fleet health, distance matrix (metres ▲ / mesh dBm ▼), per-sensor history.</div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px;gap:10px">
+        <img class="shot" src="tab_vibration.png" style="width:100%;height:110px">
+        <img class="shot" src="tab_ble.png" style="width:100%;height:110px">
+      </div>
+      <div class="cap">Vibration tab (dot size = SW-420 strength) and BLE tab (devices per node per scan), last 5 min.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Team 10 · Operation Lost and Found</span><span>4 / 7</span></div>
+</section>
+
+<!-- 5 ─────────────────────────────── -->
+<section class="slide">
+  <div class="kicker">Localization · adaptability</div>
+  <h1>GPS is optional: everything runs in local metres from the camera</h1>
+  <div class="s5">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <h3><span class="tag t-cam">CAMERA</span>The drone that drops the nodes also places them</h3>
+        <ul>
+          <li>Downward Pi Camera 3 Wide: CLAHE → SIFT (1500 features) → ratio test → RANSAC rotation + shift, <b>fixed scale</b> (constant height). Re-localises against the last 8 keyframes when tracking is lost.</li>
+          <li>Each drop = the camera's centre point on the map; scale from height and the 102° field of view. Nodes and floor map share one frame, with no manual alignment.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>GPS only ever supplies three numbers: lat₀, lon₀, heading h</h3>
+        <p class="mono" style="font-size:12.5px;color:var(--ink);margin:4px 0 6px">east = x·cos h + y·sin h &nbsp;&nbsp; north = −x·sin h + y·cos h<br>lat = lat₀ + north / 111 320 &nbsp;&nbsp; lon = lon₀ + east / (111 320·cos lat₀)</p>
+        <table>
+          <tr><th></th><th>GPS-denied (the demo)</th><th>With GPS</th></tr>
+          <tr><td><b>Relative</b></td><td>camera drops (~10 cm in synthetic test)</td><td>same</td></tr>
+          <tr><td><b>Absolute</b></td><td>operator sets origin: command post or a known point</td><td>drone fix at first drop (~3 m)</td></tr>
+          <tr><td><b>TAK picture</b></td><td colspan="2">identical: same pipeline, no code change</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Node localization PACE plan</h3>
+        <table>
+          <tr><td><b>P</b> camera drops <span class="tag t-tak">built</span></td><td><b>A</b> acoustic ranging (CHIRP/RANGE, in the contract)</td><td><b>C</b> RSSI + neighbour graph (proximity)</td><td><b>E</b> hand-measured <code>--pos</code> <span class="tag t-tak">built</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <img class="shot" src="../mosaic/walk3_with_drops.png" style="width:420px;height:236px;object-position:left center">
+      <div class="cap">Walk 3: live camera with drop crosshair; stitched map with N1, N2, N5 where they fell (372 frames, 5 lost).</div>
+      <img class="shot" src="../../hardware/drone_concept/renders/01_iso_front.png" style="width:420px;height:206px;margin-top:10px;object-fit:contain;background:#fff">
+      <div class="cap">Deployment concept (CAD): X500 quad with Pi 5, ESP32 mesh bridge, downward camera and a six-chamber revolver that drops one 40 mm node per 60° step.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Team 10 · Operation Lost and Found</span><span>5 / 7</span></div>
+</section>
+
+<!-- 6 ─────────────────────────────── -->
+<section class="slide">
+  <div class="kicker">Integration</div>
+  <h1>Plugs into what responders already run, through narrow interfaces</h1>
+  <div class="s6">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <h3><span class="tag t-tak">TAK</span>Standard CoT, standard symbols</h3>
+        <table>
+          <tr><th>Item</th><th>CoT</th><th>Behaviour</th></tr>
+          <tr><td style="white-space:nowrap"><b>T10 N3</b> (+ LOST)</td><td><code>a-f-G-E-S</code></td><td>fixed uid + callsign; last cue in remarks</td></tr>
+          <tr><td><b>T10 LOOK HERE</b></td><td><code>a-u-G</code></td><td>uncertainty as <code>ce</code>; self-clears</td></tr>
+          <tr><td><b>Floor map</b></td><td>KMZ</td><td>GroundOverlay via KML NetworkLink</td></tr>
+        </table>
+        <p style="margin-top:6px">Sent only on real change or every 20 s: WinTAK crashes if a marker updates under an open details pane.</p>
+      </div>
+      <div class="card">
+        <h3><span class="tag t-tak">NEW</span>SCAN DONE → TAK</h3>
+        <p>Area covered → operator presses <b>SCAN DONE → TAK</b>. The camera freezes its mosaic (<code>POST /scan_done</code> → <code>/final.png</code>); <code>tak_overlay.py</code> serves only that map, and WinTAK shows the finished room within ~5 s. Never a half scan; press again to republish.</p>
+      </div>
+      <div class="card">
+        <h3>Swap any layer through one adapter</h3>
+        <p><code>tak.py</code> knows nothing about acoustics; any estimator or another team's sensor only has to serve:</p>
+        <pre class="json" style="margin-top:6px;font-size:11.5px">{<span class="k">"nodes"</span>:[{<span class="k">"id"</span>:1,<span class="k">"x"</span>:0.0,<span class="k">"y"</span>:0.0,<span class="k">"alive"</span>:true}],
+ <span class="k">"sources"</span>:[{<span class="k">"x"</span>:2.0,<span class="k">"y"</span>:0.8,<span class="k">"radius"</span>:0.8,<span class="k">"strength"</span>:1.5}]}</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <img class="shot" src="../screenshots/wintak_mosaic_overlay.png" style="width:100%;height:250px;object-position:0 35%">
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card">
+          <h3>Hardware-independent downstream</h3>
+          <ul>
+            <li>Simulator and recorded runs emit exactly the gateway's JSON lines (serial, TCP or file)</li>
+            <li>Every live run is recorded and replayable</li>
+            <li>92 automated tests: parsing, replay, commands, TAK, pages</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Adapts by parameters, not code</h3>
+          <ul>
+            <li><b>Mine / tunnel:</b> no GPS ever; longer chains via TTL</li>
+            <li><b>Avalanche:</b> phone detection leads; GPS anchor outdoors</li>
+            <li><b>Wide area:</b> SA multicast to every searcher's ATAK</li>
+            <li><b>Perimeter:</b> same event mesh, HAIL off</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Team 10 · Operation Lost and Found</span><span>6 / 7</span></div>
+</section>
+
+<!-- 7 ─────────────────────────────── -->
+<section class="slide">
+  <div class="kicker">Systems engineering · deployability</div>
+  <h1>Budgets, failure modes and the path off the laptop</h1>
+  <div class="s7" style="margin-top:20px">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <h3>Budgets</h3>
+        <table>
+          <tr><td><span class="big">~$12</span></td><td><b>Cost / node (bulk):</b> C5 module $3, mic $1, buzzer + tap switch $0.50, 400 mAh LiPo $2, shell $2, PCB + assembly $3</td></tr>
+          <tr><td><span class="big">4 → 20 h</span></td><td><b>Node power (datasheet estimate):</b> 80–100 mA radio always on; ~20 mA with the radio duty-cycled 10%, mic always on</td></tr>
+          <tr><td><span class="big">45–60 B/s</span></td><td><b>Bandwidth / node.</b> 50 nodes flooding ≈ 110 kB/s, inside ESP-NOW capacity; raw audio would be 32 kB/s per node</td></tr>
+          <tr><td><span class="big">≈ 0.6 s</span></td><td><b>Latency:</b> ~10 ms air (+ ≤ 2 s if mid-BLE-scan), grouped in 0.6 s; TAK polled at 2 s</td></tr>
+          <tr><td><span class="big">10 fps</span></td><td><b>Pi on a power bank:</b> brown-out at 4.63 V at full speed; measured fps/thread ramp, 10 fps × 2 threads keeps margin</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Reliability mechanisms</h3>
+        <ul>
+          <li>Commands sent 3× with one sequence number (weak-link delivery raised to 9/10); de-duplicated mesh</li>
+          <li>HAIL refused while the gateway is unplugged, never beeping minutes late</li>
+          <li>Stale TAK markers expire; services restart themselves; every run recorded</li>
+        </ul>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <h3>Every layer has a fallback</h3>
+        <table>
+          <tr><th>If this fails…</th><th>…the system still works</th></tr>
+          <tr><td><b>A node</b></td><td>mesh floods around it; TAK shows <code>LOST</code>; its silence still counts as evidence</td></tr>
+          <tr><td><b>Drone camera</b></td><td>hand-measured positions; heatmap and TAK unchanged</td></tr>
+          <tr><td><b>The Pi</b></td><td>a laptop runs the identical command</td></tr>
+          <tr><td><b>TAK</b></td><td>the browser dashboard shows everything</td></tr>
+          <tr><td><b>All hardware</b></td><td>simulator or a recording drives the full pipeline</td></tr>
+          <tr><td><b>Network / internet</b></td><td>never used: the Pi brings its own Wi-Fi</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Path to production</h3>
+        <ul>
+          <li>Drone release mechanism (CAD concept done) and a moulded self-righting node shell</li>
+          <li>Better mic front end → acoustic ranging (already in the contract)</li>
+          <li>LoRa backhaul for larger sites; encrypted, low-probability-of-intercept links</li>
+          <li>TAK Server (TLS) beyond the local network, or an ATAK plugin heatmap layer</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Team 10 · Operation Lost and Found</span><span>7 / 7</span></div>
+</section>
+
+</body>
+</html>

@@ -196,7 +196,7 @@ The heatmap model runs inside the fusion host. Every gateway line goes to both t
 - **It plugs into what responders already run.** Output is standard CoT into WinTAK, ATAK or iTAK: standard symbols, a standard overlay format (KML/KMZ), and the standard SA multicast channel. Responders learn nothing new, and every TAK user on the network can see the markers, share them and route to them. This follows the panel's advice: "don't bring a new widget, integrate."
 - **One documented data contract.** The gateway prints one JSON object per line ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2, host rules in [`docs/TELEMETRY_CONTRACT.md`](docs/TELEMETRY_CONTRACT.md)). Anything that can read a serial port, a TCP socket or a file can consume it. The same parser reads all three.
 - **The TAK bridge is one adapter function.** `tak.py` polls a JSON picture (`/tak`) and knows nothing about acoustics. A different estimator, another team's sensor or a different backend only has to produce `{"nodes": [...], "sources": [...]}`.
-- **Hardware-independent from the gateway down.** A simulator ([`sim/`](sim/)) and recorded runs ([`data/`](data/)) emit exactly the gateway's lines, so the fusion host, dashboard, heatmap and TAK all run with no boards. A dead board can't sink the demo. 85 automated tests cover parsing, state, recording, replay, commands, the TAK picture and the pages.
+- **Hardware-independent from the gateway down.** A simulator ([`sim/`](sim/)) and recorded runs ([`data/`](data/)) emit exactly the gateway's lines, so the fusion host, dashboard, heatmap and TAK all run with no boards. A dead board can't sink the demo. 92 automated tests cover parsing, state, recording, replay, commands, the TAK picture and the pages.
 - **Small, ordinary dependencies:** Python 3.11+, NumPy, OpenCV, FastAPI/uvicorn, pyserial; Arduino-ESP32 core ≥ 3.3 for the firmware. It runs the same on a Windows laptop, a Mac or the Pi.
 - **Any number of nodes.** Nodes join by being heard, and are placed by being dropped. The system builds a network of however many are deployed (the demo ran 4).
 
@@ -348,7 +348,7 @@ python -m fusion.server --demo                                      # scripted g
 python -m fusion.server --recording data/live_3node_test1.jsonl     # a real 3-node run, replayed at recorded pace
 python fusion/heatmap.py --sim --mosaic data/camera/walk3_mosaic    # physics simulator over the walk 3 floor map
 python drone/live_mosaic.py --video "data/camera/walk3/%06d.jpg" --realtime   # replay a camera walk (frames not in git)
-python -m pytest tests                                             # 85 tests
+python -m pytest tests                                             # 92 tests
 ```
 
 **Firmware:** `python tools/flash.py --port COMx --board c5|s3 --role node|gateway --id N [--ble]`. Wiring and bring-up: [`docs/HARDWARE.md`](docs/HARDWARE.md). WinTAK and Bambu Studio poll COM ports and break flashing, so close them first.
@@ -369,7 +369,7 @@ sim/                scripted gateway lines for the dashboard demo
 deploy/pi/          systemd services, installer, settings (t10.env)
 data/               recorded runs (replayable), camera mosaics, calibration data
 media/              photos, screenshots, GIFs, video, diagram (see media/README.md)
-tests/              85 tests (unittest/pytest)
+tests/              92 tests (unittest/pytest)
 tools/              flash.py, serial_tail.py, make_media.py, make_concept_gifs.py
 docs/               architecture + message contract, sensors, hardware, TAK, decisions, demo guide
 ```
