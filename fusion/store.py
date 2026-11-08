@@ -65,6 +65,7 @@ class ObservationStore:
                 ),
             )
             self._conn.commit()
+            return self._conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
     def recent(self, limit=50, source=None, src=None, msg_type=None):
         limit = max(1, min(int(limit), 200))
@@ -81,6 +82,20 @@ class ObservationStore:
                 (source, source, src, src, msg_type, msg_type, limit),
             ).fetchall()
         return [_row(row) for row in rows]
+
+    def get(self, row_id):
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT * FROM observations WHERE id = ?",
+                (int(row_id),),
+            ).fetchone()
+        if row is None:
+            return None
+        return _row(row)
+
+    def count(self):
+        with self._lock:
+            return self._conn.execute("SELECT COUNT(*) FROM observations").fetchone()[0]
 
     def close(self):
         with self._lock:

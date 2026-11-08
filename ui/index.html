@@ -39,11 +39,12 @@
       <div><dt>Sensors with cues</dt><dd id="cue-count">—</dd></div>
       <div><dt>Reporting</dt><dd id="reporting">—</dd></div>
       <div><dt>Newest line</dt><dd id="latest-age">—</dd></div>
-      <div><dt>Retained events</dt><dd id="event-count">—</dd></div>
+      <div><dt>On screen</dt><dd id="event-count">—</dd></div>
+      <div><dt>Stored</dt><dd id="stored-count">—</dd></div>
       <div><dt>Localization</dt><dd id="loc">Unknown</dd></div>
     </dl>
     <p class="note" id="limit">Acoustic cues require verification. Positions are not available.</p>
-    <p class="hint metric-note">Sensors with cues counts nodes with elevated priority. It is not an event count, a survivor count, or unreviewed work. Retained events is the stored detector rows.</p>
+    <p class="hint metric-note">Sensors with cues counts nodes with a fresh acoustic cue. It is not a survivor count. On screen is the last 8 detector events per sensor. Stored is the database count and is not live.</p>
 
     <div class="workspace">
       <section class="panel roster" aria-label="Sensor roster">
@@ -117,7 +118,8 @@
         <dt>Localization mode</dt><dd id="diag-mode">Unknown</dd>
         <dt>Host banner</dt><dd id="diag-banner">Unknown</dd>
         <dt>Ignored messages</dt><dd id="diag-ignored">None</dd>
-        <dt>Gateway drops</dt><dd id="diag-gw">Not reported</dd>
+        <dt>Gateway link</dt><dd id="diag-link">Not reported</dd>
+        <dt>Store errors</dt><dd id="diag-store">None</dd>
       </dl>
       <h2 class="section-gap">Stored history</h2>
       <p class="hint">Rows already written to the host database. Opening them does not make them a new live detection, and a restart does not put them back on the roster.</p>

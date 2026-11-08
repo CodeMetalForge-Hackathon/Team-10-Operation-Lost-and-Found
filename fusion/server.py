@@ -59,8 +59,23 @@ def create_app(state=None, now_ms=None, ui_dir=None, demo=None):
         return {
             "v": 1,
             "persistent": True,
+            "historical": True,
+            "count": store.count(),
             "observations": store.recent(limit=limit, source=source, src=src, msg_type=msg_type),
         }
+
+    @app.get("/history/{row_id}")
+    def history_one(row_id: int):
+        store = getattr(fusion, "store", None)
+        if store is None:
+            return JSONResponse(status_code=404, content={"persistent": False, "historical": True})
+        row = store.get(row_id)
+        if row is None:
+            return JSONResponse(
+                status_code=404,
+                content={"persistent": True, "historical": True, "error": "not found"},
+            )
+        return row
 
     @app.get("/demo")
     def demo_status():
@@ -179,11 +194,13 @@ def main(argv=None):
 
         state.source = "simulation"
         state.simulated = True
+        state.note_link(transport="simulation", connected=True, last_error=None)
         player = DemoPlayer(state, log, clock, SCRIPT, keepalive_line)
         player.start()
     elif args.simulate:
         state.source = "simulation"
         state.simulated = True
+        state.note_link(transport="file", connected=True, last_error=None)
         if args.simulate == "-":
             threading.Thread(target=_read_stdin, args=(state, stop, log, clock), daemon=True).start()
         else:
@@ -197,6 +214,7 @@ def main(argv=None):
         lines = path.read_text(encoding="utf-8").splitlines()
         state.source = "recording"
         state.simulated = False
+        state.note_link(transport="recording", connected=True, last_error=None)
         player = RecordingPlayer(state, log, clock, lines, speed=args.speed, path=path)
         threading.Thread(target=player.play, daemon=True, name="recording-player").start()
     else:

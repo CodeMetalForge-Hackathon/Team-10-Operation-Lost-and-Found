@@ -79,7 +79,61 @@
 
   function confText(value) {
     if (value === null || value === undefined || value === "") return "Not reported";
-    return String(value) + " (unsigned integer, scale unknown, not a probability)";
+    return String(value) + " (unsigned integer, scale unknown, not a calibrated probability)";
+  }
+
+  function countMeaning(kind, value) {
+    if (value === null || value === undefined || value === "") return "Not reported";
+    if (kind === "TAP_PATTERN") return "Reported count " + value + " (pattern edges, not a person count)";
+    if (kind === "VIBRATION") return "Reported count " + value + " (SW-420 edges, not an accelerometer)";
+    if (kind === "VOICE_LIKE") return "Reported count " + value + " (duration in 100 ms steps, not a person count)";
+    if (kind === "LOUD") return "Reported count " + value + " (detector count, not a person count)";
+    return "Reported count " + value + " (kind unclassified or unknown scale, not a person count)";
+  }
+
+  function measurementText(value, status, suffix, unimplemented) {
+    if (status === "unimplemented") return unimplemented || "Not measured";
+    if (status === "unavailable") return "Unavailable";
+    if (status === "absent" || value === null || value === undefined || value === "") return "Not reported";
+    return suffix ? String(value) + suffix : String(value);
+  }
+
+  function peakText(row) {
+    if (!row) return "Not reported";
+    if (row.peakDbStatus === "unavailable" || row.peakDb === -128) return "Unavailable";
+    if (row.kind === "VIBRATION" || row.kindStatus === "unclassified") {
+      return shown(row.peakDb, " dB") + " (reported integer, not a confirmed heard peak)";
+    }
+    return shown(row.peakDb, " dBFS");
+  }
+
+  function voiceText(row) {
+    if (!row) return "Not reported";
+    if (row.voiceDbStatus === "unavailable" || row.voiceDb === -128) return "Unavailable";
+    if (row.kind === "VOICE_LIKE") {
+      return shown(row.voiceDb, " dBFS") + " (average level, not a voice-band energy, not confirmed speech)";
+    }
+    return shown(row.voiceDb, " dBFS");
+  }
+
+  function kindNote(kind) {
+    if (kind === "LOUD") return "Loud sound. Not a person.";
+    if (kind === "VOICE_LIKE") return "Sustained sound. Not confirmed speech.";
+    if (kind === "VIBRATION") return "SW-420 vibration. Not an accelerometer.";
+    if (kind === "TAP_PATTERN") return "Tap pattern. Not a person count.";
+    return "Unclassified event. Original kind kept. Not a confirmed detection.";
+  }
+
+  function reusePlan(previousKeys, nextKeys) {
+    var prev = {};
+    (previousKeys || []).forEach(function (key) { prev[key] = true; });
+    var kept = [];
+    var inserted = [];
+    (nextKeys || []).forEach(function (key) {
+      if (prev[key]) kept.push(key);
+      else inserted.push(key);
+    });
+    return { kept: kept, inserted: inserted, replaced: 0 };
   }
 
   function collectObservations(msg) {
@@ -101,7 +155,17 @@
           count: evidence.count,
           conf: evidence.conf,
           peakDb: evidence.peak_db,
-          voiceDb: evidence.voice_db
+          peakDbStatus: evidence.peak_db_status,
+          voiceDb: evidence.voice_db,
+          voiceDbStatus: evidence.voice_db_status,
+          kindStatus: evidence.kind_status || "known",
+          tRecordedS: evidence.t_recorded_s,
+          tIngestMs: evidence.t_ingest_ms,
+          seq: evidence.seq,
+          hops: evidence.hops,
+          rssi: evidence.rssi_last,
+          storeId: evidence.store_id,
+          historical: false
         });
       });
     });
@@ -269,6 +333,13 @@
     var mode = provenanceMode(msg);
     if (!mode) return { text: "Unknown", mode: "unknown" };
     var text = mode === "recording" ? "RECORDING" : mode === "simulation" ? "SIMULATION" : "LIVE";
+    var link = msg && msg.link;
+    if (mode === "live" && link) {
+      if (link.transport === "serial") text = link.connected === false ? "LIVE · serial closed" : "LIVE · USB serial";
+      else if (link.transport === "tcp") text = link.connected === false ? "LIVE · TCP closed" : "LIVE · TCP";
+      else if (link.transport) text = "LIVE · " + link.transport;
+    }
+    if (link && link.connected === false && link.last_error) text += " · link down";
     if (socketState !== "connected") text += " · last snapshot";
     return { text: text, mode: mode };
   }
@@ -327,6 +398,10 @@
       socketState: "connecting",
       selectedKey: null,
       userChose: false,
+      pinned: {},
+      holdRender: false,
+      pendingSnapshot: null,
+      lastMessageAt: 0,
       filter: "all",
       windowMode: "recent",
       windowPinned: false,
@@ -357,6 +432,12 @@
       window.addEventListener("resize", function () {
         if (state.chart) state.chart.resize();
       });
+      state.staleTimer = window.setInterval(function () {
+        if (state.socketState === "connected" && state.lastMessageAt && Date.now() - state.lastMessageAt > 2500) {
+          setSocket(doc, state, "stale");
+          if (state.latest) render(doc, state);
+        }
+      }, 500);
     }
     return state;
   }
@@ -383,11 +464,30 @@
     });
     var replay = doc.getElementById("replay");
     if (replay) replay.addEventListener("click", function () { replayDemo(doc, state); });
+    function hold(event) {
+      var target = event.target && event.target.closest ? event.target.closest("#queue, #roster, #marks, #detail, #diagnostics") : null;
+      if (!target) return;
+      state.holdRender = true;
+    }
+    function release() {
+      if (!state.holdRender) return;
+      state.holdRender = false;
+      if (state.pendingSnapshot) {
+        var msg = state.pendingSnapshot;
+        state.pendingSnapshot = null;
+        onSnapshot(doc, state, msg);
+      }
+    }
+    doc.addEventListener("pointerdown", hold, true);
+    doc.addEventListener("mousedown", hold, true);
+    doc.addEventListener("pointerup", release, true);
+    doc.addEventListener("pointercancel", release, true);
+    doc.addEventListener("mouseup", release, true);
   }
 
   function setSocket(doc, state, next) {
     state.socketState = next;
-    var labels = { connecting: "Connecting", connected: "Connected", reconnecting: "Reconnecting", disconnected: "Disconnected" };
+    var labels = { connecting: "Connecting", connected: "Connected", reconnecting: "Reconnecting", disconnected: "Disconnected", stale: "Stale" };
     var node = doc.getElementById("conn");
     if (!node) return;
     node.textContent = labels[next] || "Unknown";
@@ -423,7 +523,13 @@
   }
 
   function onSnapshot(doc, state, msg) {
+    if (state.holdRender) {
+      state.pendingSnapshot = msg;
+      return;
+    }
     var observations = collectObservations(msg);
+    state.pinned = state.pinned || {};
+    observations.forEach(function (row) { state.pinned[row.key] = row; });
     if (state.replayWatch && resetLanded(state.replayWatch, msg, observations)) {
       state.replayWatch = null;
       state.cleared = observations.length === 0;
@@ -472,6 +578,8 @@
       ? counts.nodes_active + " of " + counts.nodes_seen
       : "Unknown";
     doc.getElementById("event-count").textContent = Number.isFinite(counts.acoustic_events) ? String(counts.acoustic_events) : "Unknown";
+    var stored = doc.getElementById("stored-count");
+    if (stored) stored.textContent = Number.isFinite(counts.stored_observations) ? String(counts.stored_observations) + " historical" : "Not writing";
     var times = (msg.nodes || []).map(function (node) { return node.last_t_host; }).filter(function (value) { return Number.isFinite(value); });
     doc.getElementById("latest-age").textContent = times.length ? ageLabel(msg.t_host - Math.max.apply(null, times), state.socketState) : "Unknown";
   }
@@ -480,36 +588,64 @@
     return state.observations.filter(function (row) { return passesFilter(row, state.filter); });
   }
 
-  function rowButton(doc, state, row) {
-    var button = doc.createElement("button");
-    button.type = "button";
+  function syncList(container, rows, paint, emptyText) {
+    var doc = container.ownerDocument;
+    var existing = {};
+    Array.prototype.forEach.call(container.children, function (child) {
+      if (child.dataset && child.dataset.key) existing[child.dataset.key] = child;
+    });
+    var wanted = {};
+    rows.forEach(function (row) { wanted[row.key] = true; });
+    Object.keys(existing).forEach(function (key) {
+      if (!wanted[key]) existing[key].remove();
+    });
+    var empty = null;
+    Array.prototype.forEach.call(container.children, function (child) {
+      if (child.classList && child.classList.contains("empty")) empty = child;
+    });
+    if (!rows.length) {
+      if (!empty) container.append(el(doc, "p", "empty", emptyText));
+      else empty.textContent = emptyText;
+      return;
+    }
+    if (empty) empty.remove();
+    rows.forEach(function (row, index) {
+      var node = existing[row.key];
+      if (!node) {
+        node = paint(row, null);
+        node.dataset.key = row.key;
+      } else {
+        paint(row, node);
+      }
+      var current = container.children[index];
+      if (current !== node) container.insertBefore(node, current || null);
+    });
+  }
+
+  function rowButton(doc, state, row, button) {
+    if (!button) {
+      button = doc.createElement("button");
+      button.type = "button";
+      button.dataset.key = row.key;
+      button.addEventListener("click", function () { select(doc, state, button.dataset.key, true); });
+    }
     button.className = "list-group-item list-group-item-action evidence-row" + (state.selectedKey === row.key ? " is-selected" : "");
-    button.dataset.key = row.key;
     button.setAttribute("aria-pressed", String(state.selectedKey === row.key));
     var sensor = sensorWords(row.sensorStatus, state.socketState);
     var evidenceAge = ageLabel(evidenceAgeMs(row, state.latest.t_host), state.socketState);
-    var historical = row.sensorStatus === "inactive" ? "historical, sensor stale" : "sensor " + sensor.label.toLowerCase();
-    button.append(icon(doc, row.family === "radio" ? "antenna" : row.family === "acoustic" ? "ear" : "point"));
-    var copy = el(doc, "span", "row-copy");
-    var title = el(doc, "span", "row-title", row.label);
-    var meta = el(doc, "span", "row-meta", "Node " + shown(row.sensorId) + " · evidence " + evidenceAge + " · " + historical + " · " + row.shape);
-    copy.append(title, meta);
-    if (state.selectedKey === row.key) copy.append(el(doc, "span", "flag selected", "Selected"));
-    button.append(copy);
-    button.addEventListener("click", function () { select(doc, state, row.key, true); });
+    var historical = row.historical ? "stored history, not a new live detection" : row.sensorStatus === "inactive" ? "historical, sensor stale" : "sensor " + sensor.label.toLowerCase();
+    var note = kindNote(row.kind);
+    button.replaceChildren(
+      icon(doc, row.family === "radio" ? "antenna" : row.family === "acoustic" ? "ear" : "point"),
+      (function () {
+        var copy = el(doc, "span", "row-copy");
+        copy.append(el(doc, "span", "row-title", row.label));
+        copy.append(el(doc, "span", "row-meta", "Node " + shown(row.sensorId) + " · evidence " + evidenceAge + " · " + historical + " · " + note));
+        if (state.selectedKey === row.key) copy.append(el(doc, "span", "flag selected", "Selected"));
+        return copy;
+      })()
+    );
     return button;
-  }
-
-  function replaceChildren(container, children, emptyText) {
-    var active = container.ownerDocument.activeElement;
-    var activeKey = active && active.dataset ? active.dataset.key : null;
-    var focusedInside = Boolean(active && container.contains(active));
-    container.replaceChildren.apply(container, children);
-    if (!children.length) container.append(el(container.ownerDocument, "p", "empty", emptyText));
-    if (focusedInside && activeKey) {
-      var next = container.querySelector("[data-key=\"" + CSS.escape(activeKey) + "\"]");
-      if (next) next.focus();
-    }
   }
 
   function paintQueue(doc, state, msg) {
@@ -522,39 +658,47 @@
       return (b.tHost || 0) - (a.tHost || 0);
     });
     var waiting = !(msg.nodes || []).length && !(msg.devices || []).length;
-    replaceChildren(
+    syncList(
       doc.getElementById("queue"),
-      rows.map(function (row) { return rowButton(doc, state, row); }),
+      rows,
+      function (row, existing) { return rowButton(doc, state, row, existing); },
       waiting ? "Waiting for a gateway line. No sensors have reported to this host." : "Nothing matches this filter."
     );
   }
 
   function paintRoster(doc, state, msg) {
-    var cards = [];
-    (msg.nodes || []).forEach(function (node) {
-      if (state.filter === "cues" && node.search_priority !== "elevated") return;
-      if (state.filter === "stale" && node.status !== "inactive") return;
-      if (state.filter === "devices" && !state.observations.some(function (row) { return row.family === "radio" && row.sensorId === node.id; })) return;
-      var key = nodeKey(node.id);
+    var cards = (msg.nodes || []).filter(function (node) {
+      if (state.filter === "cues" && node.search_priority !== "elevated") return false;
+      if (state.filter === "stale" && node.status !== "inactive") return false;
+      if (state.filter === "devices" && !state.observations.some(function (row) { return row.family === "radio" && row.sensorId === node.id; })) return false;
+      return true;
+    }).map(function (node) {
+      return { key: nodeKey(node.id), node: node };
+    });
+    syncList(doc.getElementById("roster"), cards, function (item, existing) {
+      var node = item.node;
+      var key = item.key;
+      var button = existing;
+      if (!button) {
+        button = doc.createElement("button");
+        button.type = "button";
+        button.dataset.key = key;
+        button.addEventListener("click", function () { select(doc, state, button.dataset.key, true); });
+      }
       var related = state.observations.some(function (row) { return row.key === state.selectedKey && row.sensorId === node.id; });
-      var button = doc.createElement("button");
-      button.type = "button";
       button.className = "btn sensor-card" + (state.selectedKey === key ? " is-selected" : "");
-      button.dataset.key = key;
       button.setAttribute("aria-pressed", String(state.selectedKey === key));
       var report = sensorWords(node.status, state.socketState);
-      var cue = node.search_priority === "elevated" ? "Review cue" : "No acoustic cue";
+      var cue = node.search_priority === "elevated" ? "Fresh cue" : node.search_priority === "stale" ? "Cue is stale" : "No acoustic cue";
       var copy = el(doc, "span", "card-copy");
       copy.append(el(doc, "span", "card-title", "Node " + node.id));
       copy.append(el(doc, "span", "flag " + report.tone, report.label));
       copy.append(el(doc, "span", "card-meta", cue + " · last line " + ageLabel(Number.isFinite(node.last_t_host) ? msg.t_host - node.last_t_host : null, state.socketState)));
       if (state.selectedKey === key) copy.append(el(doc, "span", "flag selected", "Selected"));
-      else if (related) copy.append(el(doc, "span", "flag selected", "Reporting sensor"));
-      button.append(icon(doc, "radio"), copy);
-      button.addEventListener("click", function () { select(doc, state, key, true); });
-      cards.push(button);
-    });
-    replaceChildren(doc.getElementById("roster"), cards, (msg.nodes || []).length ? "No sensors match this filter." : "No sensors observed yet.");
+      else if (related) copy.append(el(doc, "span", "flag selected", "Selected cue's sensor"));
+      button.replaceChildren(icon(doc, "radio"), copy);
+      return button;
+    }, (msg.nodes || []).length ? "No sensors match this filter." : "No sensors observed yet.");
   }
 
   function fact(doc, list, name, value) {
@@ -599,11 +743,16 @@
       return;
     }
     var row = null;
+    var fromLive = false;
     state.observations.forEach(function (item) { if (item.key === key) row = item; });
+    if (row) fromLive = true;
+    if (!row && state.pinned && state.pinned[key]) {
+      row = state.pinned[key];
+    }
     if (!row) {
       empty.hidden = false;
       empty.textContent = state.userChose
-        ? "That evidence is no longer in the retained snapshot. Replay clears demo retention. Viewing it was not an acknowledgment."
+        ? "That evidence is not in the live list. Stored history can still be opened from Diagnostics. Viewing it was not an acknowledgment."
         : "Waiting for a retained observation.";
       body.hidden = true;
       return;
@@ -615,27 +764,32 @@
     var sensor = sensorWords(row.sensorStatus, state.socketState);
     doc.getElementById("detail-kicker").textContent = row.family === "radio" ? "Radio evidence" : row.family === "acoustic" ? "Acoustic evidence" : "Stored event";
     doc.getElementById("detail-name").textContent = row.label;
-    fact(doc, facts, "Raw event", row.kind || "Not reported");
+    fact(doc, facts, "Raw event", (row.kind || "Not reported") + (row.kindStatus === "unclassified" ? " (unclassified)" : ""));
     fact(doc, facts, "Sensor", "Node " + shown(row.sensorId));
-    fact(doc, facts, "Sensor reporting", sensor.label);
+    fact(doc, facts, "Sensor reporting", sensor.label + " (reporting is not a detection)");
     fact(doc, facts, "Sensor last line", ageLabel(sensorAgeMs(row, msg.t_host), state.socketState));
     fact(doc, facts, "Evidence age", ageLabel(evidenceAgeMs(row, msg.t_host), state.socketState));
-    fact(doc, facts, "Time basis", "Host-receipt time. Node clock t_ms " + shown(row.tMs) + " is not synchronized across sensors.");
-    fact(doc, facts, "Reported count", countText(row.count));
+    fact(doc, facts, "Time basis", timeBasis(row, msg));
+    fact(doc, facts, "Reported count", countMeaning(row.kind, row.count));
     if (row.family !== "radio") fact(doc, facts, "Detector score", confText(row.conf));
+    if (row.seq != null) fact(doc, facts, "Sequence", shown(row.seq));
+    if (row.hops != null) fact(doc, facts, "Hops", row.hops === 0 ? "0 (received directly, not a relay test)" : shown(row.hops));
     if (row.family === "radio") {
       fact(doc, facts, "Hash", shown(row.hash));
       fact(doc, facts, "RSSI", shown(row.rssi, " dBm"));
     } else {
-      fact(doc, facts, "Peak", shown(row.peakDb, " dB"));
+      fact(doc, facts, "Peak", peakText(row));
+      fact(doc, facts, "Voice level", voiceText(row));
     }
     fact(doc, facts, "Position", "Not reported");
     doc.getElementById("detail-observed").textContent = row.family === "radio"
       ? "Radio evidence of a hashed advertisement heard by Node " + shown(row.sensorId) + ". Not a person, a name, or a location."
-      : "Node " + shown(row.sensorId) + " reported this detector event. It is not a person and not a dig location. The reported count is not interpreted as a number of taps.";
-    doc.getElementById("detail-limit").textContent = row.sensorStatus === "inactive"
-      ? "The sensor is stale and the evidence is still retained. Inactive does not mean cleared or safe. A score is not a probability."
-      : "A score is an unsigned integer with an unknown scale. It is not a probability. This page does not acknowledge or resolve evidence.";
+      : kindNote(row.kind) + " Node " + shown(row.sensorId) + " reported this detector event. It is not a person and not a dig location.";
+    doc.getElementById("detail-limit").textContent = !fromLive
+      ? "This row is no longer in the live list. It stays inspectable. It is not a new live detection. A score is not a calibrated probability."
+      : row.sensorStatus === "inactive"
+      ? "The sensor is stale and the evidence is still on screen. Inactive does not mean cleared or safe. A score is not a calibrated probability."
+      : "A score is an unsigned integer with an unknown scale. It is not a calibrated probability. This page does not acknowledge or resolve evidence.";
     doc.getElementById("detail-raw").textContent = JSON.stringify(clean(row), null, 2);
   }
 
@@ -649,10 +803,10 @@
     doc.getElementById("detail-name").textContent = "Node " + node.id;
     fact(doc, facts, "Reporting", report.label);
     fact(doc, facts, "Last line", ageLabel(Number.isFinite(node.last_t_host) ? msg.t_host - node.last_t_host : null, state.socketState));
-    fact(doc, facts, "Acoustic cue", node.search_priority === "elevated" ? "Review" : node.search_priority === "quiet" ? "No acoustic cue" : shown(node.search_priority));
+    fact(doc, facts, "Acoustic cue", node.search_priority === "elevated" ? "Fresh cue" : node.search_priority === "stale" ? "Stale cue" : "No acoustic cue");
     fact(doc, facts, "Position", node.position == null ? "Not reported" : "Reported " + JSON.stringify(node.position) + ". Not a measured dig point.");
-    fact(doc, facts, "Battery", shown(node.batt_mv, " mV"));
-    fact(doc, facts, "Floor", shown(node.floor_db, " dB"));
+    fact(doc, facts, "Battery", measurementText(node.batt_mv, node.batt_mv_status, " mV", "Not measured"));
+    fact(doc, facts, "Floor", measurementText(node.floor_db, node.floor_db_status, " dBFS", "Not measured (pre-warmup or not implemented)"));
     var evidence = state.observations.filter(function (row) { return row.sensorId === node.id; });
     doc.getElementById("detail-observed").textContent = evidence.length
       ? "Retained for this sensor: " + evidence.map(function (row) { return row.label; }).join(", ") + ". Open a queue row for one event. This card is not a location."
@@ -661,6 +815,18 @@
       ? "Stale means this sensor stopped reporting. It does not mean the evidence was cleared or that the area is safe."
       : "Reporting means a line arrived inside the stale window. It does not refresh another sensor's evidence.";
     doc.getElementById("detail-raw").textContent = JSON.stringify(clean(node), null, 2);
+  }
+
+  function timeBasis(row, msg) {
+    var device = "Node clock t_ms " + shown(row.tMs) + " is not synchronized across sensors.";
+    var ingest = "Host ingestion " + formatClock(row.tIngestMs || row.tHost) + ".";
+    if (Number.isFinite(row.tRecordedS)) {
+      return "Original recording " + formatClock(row.tRecordedS * 1000) + ". " + ingest + " Ingestion time is not the capture time. " + device;
+    }
+    if (msg && msg.source === "recording") {
+      return ingest + " Playback time is not the original capture time. " + device;
+    }
+    return ingest + " " + device;
   }
 
   function paintTimeline(doc, state, msg) {
@@ -774,7 +940,7 @@
         series("radio", "triangle"),
         series("other", "rect")
       ]
-    }, true);
+    }, false);
     model.points.slice().sort(function (a, b) { return b.tHost - a.tHost; }).forEach(function (row) {
       var button = doc.createElement("button");
       button.type = "button";
@@ -797,13 +963,34 @@
     doc.getElementById("diag-mode").textContent = msg.localization_mode || "Unknown";
     doc.getElementById("diag-banner").textContent = msg.banner && msg.banner.text ? msg.banner.text : "Unknown";
     doc.getElementById("diag-ignored").textContent = state.ignoredVersion ? String(state.ignoredVersion) : "None";
-    var gw = doc.getElementById("diag-gw");
-    if (gw) {
-      gw.textContent = msg.gateway && Number.isFinite(msg.gateway.rx_dropped)
-        ? String(msg.gateway.rx_dropped) + " dropped, gateway " + shown(msg.gateway.id)
-        : "Not reported";
+    var linkNode = doc.getElementById("diag-link");
+    if (linkNode) {
+      var link = msg.link || {};
+      var parts = [];
+      if (link.transport) parts.push(String(link.transport));
+      if (link.connected === false) parts.push("down");
+      else if (link.connected === true) parts.push("up");
+      if (link.last_error) parts.push(String(link.last_error));
+      if (msg.gateway && Number.isFinite(msg.gateway.rx_dropped)) parts.push(msg.gateway.rx_dropped + " dropped, gateway " + shown(msg.gateway.id));
+      linkNode.textContent = parts.length ? parts.join(" · ") : "Not reported";
     }
-    doc.getElementById("diag-raw").textContent = JSON.stringify(msg, null, 2);
+    var storeNode = doc.getElementById("diag-store");
+    if (storeNode) {
+      var diag = msg.diagnostics || {};
+      storeNode.textContent = diag.store_errors ? String(diag.store_errors) + " (" + (diag.last_store_error || "write failed") + ")" : "None";
+    }
+    var drawer = doc.getElementById("diagnostics");
+    var raw = doc.getElementById("diag-raw");
+    if (raw && drawer && drawer.open) {
+      var packed = JSON.stringify(msg);
+      if (state.diagPacked !== packed) {
+        state.diagPacked = packed;
+        raw.textContent = JSON.stringify(msg, null, 2);
+      }
+    } else if (raw && raw.textContent === "No message yet") {
+      raw.textContent = "Open this drawer to load the latest socket message.";
+    }
+    if (!(drawer && drawer.open)) return;
     var links = doc.getElementById("diag-links");
     links.replaceChildren();
     if (!(msg.links || []).length) links.append(el(doc, "p", "empty", "Not reported"));
@@ -924,6 +1111,8 @@
         if (ignored) ignored.textContent = String(state.ignoredVersion);
         return;
       }
+      state.lastMessageAt = Date.now();
+      if (state.socketState === "stale") setSocket(doc, state, "connected");
       onSnapshot(doc, state, msg);
     });
     state.socket.addEventListener("close", function () {
@@ -942,7 +1131,12 @@
     RECENT_WINDOW_MS: RECENT_WINDOW_MS,
     readableKind: readableKind,
     countText: countText,
+    countMeaning: countMeaning,
     confText: confText,
+    measurementText: measurementText,
+    reusePlan: reusePlan,
+    peakText: peakText,
+    voiceText: voiceText,
     collectObservations: collectObservations,
     replaceHistory: replaceHistory,
     chooseSelection: chooseSelection,

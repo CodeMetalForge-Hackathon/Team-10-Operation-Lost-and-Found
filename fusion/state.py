@@ -4,6 +4,10 @@ import threading
 
 
 STALE_AFTER_MS = 6000
+CUE_FRESH_MS = 30_000
+DEVICE_RETAIN_MS = 180_000
+DEVICE_CAP = 64
+PACKET_WINDOW_MS = 60_000
 ACOUSTIC_KINDS = {"LOUD", "TAP_PATTERN", "VOICE_LIKE", "VIBRATION"}
 
 
@@ -48,13 +52,27 @@ class FusionState:
         self._gateway = None
         self._logs = []
         self._host_cmds = []
+        self._link = {
+            "transport": None,
+            "connected": None,
+            "last_error": None,
+            "last_line_ms": None,
+        }
+        self._store_errors = 0
+        self._last_store_error = None
+        self._rejected = 0
+        self._unclassified = {}
+        self._packet_total = 0
 
     def accept(self, observation):
         with self._lock:
-            if self.store is not None:
-                self.store.append(observation, source=self._provenance())
+            store_id = self._persist(observation)
             kind = observation.get("type")
             t_host = observation.get("t_host")
+            if t_host is not None:
+                self._link["last_line_ms"] = t_host
+            if kind == "log" and observation.get("kind_status") == "unclassified":
+                self._count_unclassified(observation.get("kind"))
             if kind == "gw":
                 self._gateway = {
                     "id": observation.get("id"),
@@ -72,6 +90,7 @@ class FusionState:
                 return
             encoded = _nbytes(observation)
             self._packets.append((t_host, encoded))
+            self._packet_total += 1
             if kind == "range":
                 node = self._touch(observation["src"], t_host)
                 if "hops" in observation:
@@ -107,19 +126,27 @@ class FusionState:
             elif kind == "event":
                 evidence = {
                     "kind": observation.get("kind"),
+                    "kind_status": observation.get("kind_status") or "known",
                     "t_ms": observation.get("t_ms"),
+                    "t_device_ms": observation.get("t_device_ms", observation.get("t_ms")),
                     "t_host": t_host,
+                    "t_ingest_ms": observation.get("t_ingest_ms", t_host),
+                    "t_recorded_s": observation.get("t_recorded_s"),
+                    "seq": observation.get("seq"),
+                    "hops": observation.get("hops"),
+                    "rssi_last": observation.get("rssi_last"),
                     "peak_db": observation.get("peak_db"),
                     "peak_db_status": db_status(observation.get("peak_db")),
                     "voice_db": observation.get("voice_db"),
                     "voice_db_status": db_status(observation.get("voice_db")),
                     "count": observation.get("count"),
                     "conf": observation.get("conf"),
+                    "store_id": store_id,
                 }
+                if evidence["kind_status"] == "unclassified":
+                    self._count_unclassified(evidence["kind"])
                 node["evidence"].append(evidence)
                 node["evidence"] = node["evidence"][-8:]
-                if evidence["kind"] in ACOUSTIC_KINDS:
-                    node["search_priority"] = "elevated"
             elif kind == "device_seen":
                 for digest, dev_kind, rssi, count in observation.get("devs") or []:
                     key = (digest.lower(), src)
@@ -143,6 +170,7 @@ class FusionState:
             self._gateway = None
             self._logs.clear()
             self._host_cmds.clear()
+            self._packet_total = 0
 
     def snapshot(self, now_ms):
         with self._lock:
@@ -151,6 +179,7 @@ class FusionState:
                 node = self._nodes[node_id]
                 age = now_ms - node["last_t_host"]
                 status = "active" if age <= self.stale_after_ms else "inactive"
+                priority = _cue_priority(node, now_ms)
                 nodes.append(
                     {
                         "id": node_id,
@@ -167,17 +196,20 @@ class FusionState:
                         "nbrs": node["nbrs"],
                         "latest_feat": node["latest_feat"],
                         "evidence": list(node["evidence"]),
-                        "search_priority": node["search_priority"],
+                        "search_priority": priority,
                         "position": None,
                     }
                 )
+            self._packets = [item for item in self._packets if now_ms - item[0] <= PACKET_WINDOW_MS]
             recent = [item for item in self._packets if now_ms - item[0] <= 1000]
             acoustic = sum(1 for node in nodes if node["search_priority"] == "elevated")
-            devices = list(self._devices.values())
-            if not nodes:
+            devices = _live_devices(self._devices.values(), now_ms)
+            if not nodes and self._link.get("connected") is False:
+                banner = "Gateway link is down"
+            elif not nodes:
                 banner = "Waiting for a gateway line"
             elif acoustic == 0:
-                banner = "0 possible survivors"
+                banner = "No fresh acoustic cue"
             else:
                 noun = "cue" if acoustic == 1 else "cues"
                 banner = (
@@ -195,7 +227,12 @@ class FusionState:
                 "diagnostics": {
                     "logs": list(self._logs),
                     "host_cmds": list(self._host_cmds),
+                    "store_errors": self._store_errors,
+                    "last_store_error": self._last_store_error,
+                    "rejected": self._rejected,
+                    "unclassified_kinds": dict(self._unclassified),
                 },
+                "link": dict(self._link),
                 "t_host": now_ms,
                 "localization_mode": "UNLOCALIZED",
                 "stale_after_ms": self.stale_after_ms,
@@ -215,8 +252,9 @@ class FusionState:
                     "nodes_seen": len(nodes),
                     "nodes_active": sum(1 for node in nodes if node["status"] == "active"),
                     "acoustic_events": sum(len(node["evidence"]) for node in nodes),
+                    "stored_observations": self.store.count() if self.store is not None and hasattr(self.store, "count") else None,
                     "devices": len(devices),
-                    "packets": len(self._packets),
+                    "packets": self._packet_total,
                     "packets_per_s": len(recent),
                     "bytes_per_s": sum(item[1] for item in recent),
                 },
@@ -243,6 +281,40 @@ class FusionState:
             node["last_t_host"] = t_host
         return node
 
+    def note_link(self, transport=None, connected=None, last_error=None, last_line_ms=None):
+        with self._lock:
+            if transport is not None:
+                self._link["transport"] = transport
+            if connected is not None:
+                self._link["connected"] = connected
+            if last_error is not None or connected is True:
+                self._link["last_error"] = last_error
+            if last_line_ms is not None:
+                self._link["last_line_ms"] = last_line_ms
+
+    def note_reject(self, _reason):
+        with self._lock:
+            self._rejected += 1
+
+    def note_store_error(self, reason):
+        with self._lock:
+            self._store_errors += 1
+            self._last_store_error = str(reason)
+
+    def _persist(self, observation):
+        if self.store is None:
+            return None
+        try:
+            return self.store.append(observation, source=self._provenance())
+        except Exception as exc:
+            self._store_errors += 1
+            self._last_store_error = f"{type(exc).__name__}: {exc}"
+            return None
+
+    def _count_unclassified(self, kind):
+        key = kind or "UNKNOWN"
+        self._unclassified[key] = self._unclassified.get(key, 0) + 1
+
     def _provenance(self):
         if self.simulated and self.source == "live":
             return "simulation"
@@ -257,6 +329,33 @@ class FusionState:
             }
         )
         del bucket[:-20]
+
+
+def _cue_priority(node, now_ms):
+    saw_acoustic = False
+    for evidence in node["evidence"]:
+        if evidence.get("kind") not in ACOUSTIC_KINDS:
+            continue
+        if evidence.get("kind_status") == "unclassified":
+            continue
+        saw_acoustic = True
+        ingest = evidence.get("t_ingest_ms", evidence.get("t_host"))
+        if ingest is None:
+            continue
+        age = now_ms - ingest
+        if 0 <= age <= CUE_FRESH_MS:
+            return "elevated"
+    return "stale" if saw_acoustic else "quiet"
+
+
+def _live_devices(devices, now_ms):
+    fresh = [
+        device
+        for device in devices
+        if device.get("t_host") is not None and now_ms - device["t_host"] <= DEVICE_RETAIN_MS
+    ]
+    fresh.sort(key=lambda device: device.get("t_host") or 0, reverse=True)
+    return fresh[:DEVICE_CAP]
 
 
 def _feat(observation, t_host):

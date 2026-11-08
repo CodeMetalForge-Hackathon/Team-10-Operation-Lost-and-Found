@@ -30,8 +30,11 @@ def run_tcp(bind, port, sink, log, now_ms, stop, ready=None):
                 if stop():
                     return bound
                 log(f"tcp accept failed: {exc}")
+                _note_link(sink, transport="tcp", connected=False, last_error=str(exc))
                 continue
+            _note_link(sink, transport="tcp", connected=True, last_error=None)
             _read_connection(conn, sink, log, now_ms, stop)
+            _note_link(sink, transport="tcp", connected=False, last_error="tcp client closed")
         return bound
     finally:
         server.close()
@@ -59,3 +62,9 @@ def _read_connection(conn, sink, log, now_ms, stop):
             conn.close()
         except OSError:
             pass
+
+
+def _note_link(sink, **fields):
+    method = getattr(sink, "note_link", None)
+    if method is not None:
+        method(**fields)

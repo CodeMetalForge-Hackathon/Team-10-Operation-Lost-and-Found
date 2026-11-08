@@ -46,6 +46,12 @@ assert.strictEqual(Review.countText(3), "Reported count 3");
 assert.strictEqual(Review.countText(3).includes("tap"), false);
 assert.strictEqual(Review.confText(80).includes("%"), false);
 assert.strictEqual(Review.confText(80).includes("probability"), true);
+assert.strictEqual(Review.measurementText(0, "unimplemented", " mV", "Not measured"), "Not measured");
+assert.strictEqual(Review.measurementText(-22, "reported", " dBFS", "Not measured"), "-22 dBFS");
+assert.strictEqual(Review.peakText({ peakDb: -128, peakDbStatus: "unavailable" }), "Unavailable");
+assert.strictEqual(Review.countMeaning("VOICE_LIKE", 12).includes("person"), true);
+assert.strictEqual(Review.reusePlan(["a", "b"], ["b", "c"]).replaced, 0);
+assert.strictEqual(Review.reusePlan(["a", "b"], ["b", "c"]).kept.join(","), "b");
 
 const node3 = observations.find((row) => row.kind === "TAP_PATTERN");
 assert.strictEqual(Review.evidenceAgeMs(node3, snapshot.t_host), 60000);

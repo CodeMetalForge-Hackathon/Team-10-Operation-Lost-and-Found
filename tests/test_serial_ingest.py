@@ -39,6 +39,7 @@ class AcceptBeaconTest(unittest.TestCase):
                     "floor_db": -62,
                     "nbrs": [[1, -55], [2, -71]],
                     "t_host": 1_700_000_000_000,
+                    "t_ingest_ms": 1_700_000_000_000,
                 }
             ],
         )

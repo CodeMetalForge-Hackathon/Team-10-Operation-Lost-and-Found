@@ -5,6 +5,9 @@ This is the ingest boundary. It is not fusion state and not the /ws payload.
 
 import json
 import os
+import re
+
+from fusion.time_contract import ingest_milliseconds, recorded_seconds
 
 
 class ListSink:
@@ -15,18 +18,20 @@ class ListSink:
         self.items.append(observation)
 
 
-def run_port(open_port, sink, log, now_ms, sleep, stop):
+def run_port(open_port, sink, log, now_ms, sleep, stop, on_link=None):
     delay = 1.0
     while not stop():
         try:
             port = open_port()
         except OSError as exc:
             log(f"open failed: {exc}")
+            _link(sink, on_link, transport="serial", connected=False, last_error=str(exc))
             sleep(delay)
             delay = min(delay * 2, 5.0)
             continue
         delay = 1.0
         pending = b""
+        _link(sink, on_link, transport="serial", connected=True, last_error=None)
         try:
             while not stop():
                 raw = port.readline()
@@ -38,6 +43,7 @@ def run_port(open_port, sink, log, now_ms, sleep, stop):
                     read_lines([line], sink, log, now_ms)
         except OSError as exc:
             log(f"disconnected: {exc}")
+            _link(sink, on_link, transport="serial", connected=False, last_error=str(exc))
             _close(port)
             if stop():
                 return
@@ -45,6 +51,16 @@ def run_port(open_port, sink, log, now_ms, sleep, stop):
             delay = min(delay * 2, 5.0)
         else:
             _close(port)
+            _link(sink, on_link, transport="serial", connected=False, last_error="serial closed")
+
+
+def _link(sink, on_link, **fields):
+    if on_link is not None:
+        on_link(**fields)
+        return
+    method = getattr(sink, "note_link", None)
+    if method is not None:
+        method(**fields)
 
 
 def _close(port):
@@ -74,6 +90,10 @@ def read_lines(lines, sink, log, now_ms):
             accepted += accept_line(text, sink, log, clock())
         except (json.JSONDecodeError, ValueError) as exc:
             log(f"{exc}: {text}")
+            _notify(sink, "note_reject", str(exc))
+        except Exception as exc:
+            log(f"ingest continued after sink error: {exc}")
+            _notify(sink, "note_store_error", str(exc))
     return accepted
 
 
@@ -88,10 +108,31 @@ EVENT_KINDS = {
 }
 DEVICE_KINDS = {"BLE_OTHER", "BLE_APPLE", "BLE_FINDMY", "BLE_GOOGLE", "WIFI_PROBE"}
 CONTRACT_BAUD = 921600
+_KIND_TOKEN = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,31}$")
+
+
+def classify_event_kind(kind):
+    """Known kinds stay known. Any other short token is unclassified evidence.
+
+    The old gateway printed SW-420 bursts as ``UNKNOWN``. Rejecting that
+    token dropped the felt taps. A later firmware kind must not disappear
+    the same way. Empty, numeric, and huge values are still rejected.
+    """
+    if not isinstance(kind, str) or _KIND_TOKEN.match(kind) is None:
+        raise ValueError("event kind must be a short token")
+    if kind in EVENT_KINDS:
+        return "known"
+    return "unclassified"
 
 
 def accept_line(line, sink, log, now_ms):
-    message = json.loads(line)
+    text = line.decode("utf-8", errors="replace") if isinstance(line, bytes) else line
+    text = text.strip()
+    if text.startswith("#"):
+        diagnostic = "command_echo" if "CMD" in text or "HAIL" in text else "gateway_text"
+        sink.accept(_stamp({"type": "log", "text": text, "diagnostic": diagnostic}, now_ms))
+        return 1
+    message = json.loads(text)
     if not isinstance(message, dict):
         raise ValueError("gateway line must be a JSON object")
     kind = message.get("type")
@@ -114,8 +155,9 @@ def accept_line(line, sink, log, now_ms):
         _require_int(message, "voice_db", -128, 127)
         _require_int(message, "count", 0, 255)
         _require_int(message, "conf", 0, 255)
-        if message.get("kind") not in EVENT_KINDS:
-            raise ValueError("unknown event kind")
+        status = classify_event_kind(message.get("kind"))
+        message = dict(message)
+        message["kind_status"] = status
     elif kind == "range":
         _require_int(message, "src", 0, 255)
         _require_int(message, "chirper", 0, 255)
@@ -142,29 +184,35 @@ def accept_line(line, sink, log, now_ms):
 
 
 def _stamp(message, now_ms):
-    """Keep a recorder timestamp, then stamp the host ingestion clock.
+    """Separate the recorder clock from the host ingestion clock.
 
-    tools/record_gateway.py stores t_host as unix seconds. Freshness uses
-    unix milliseconds. The two must not be mixed.
+    Recorder files store Unix seconds in ``t_host``. Freshness uses integer
+    milliseconds. Both names are written so a later reader does not have to
+    guess which unit ``t_host`` had on the wire.
     """
     observation = dict(message)
     recorded = observation.get("t_host")
     if recorded is not None:
         observation["t_recorded"] = recorded
-        seconds = _recorded_seconds(recorded)
+        seconds = recorded_seconds(recorded)
         if seconds is not None:
             observation["t_recorded_s"] = seconds
-    observation["t_host"] = int(now_ms)
+    stamped = ingest_milliseconds(now_ms)
+    observation["t_host"] = stamped
+    observation["t_ingest_ms"] = stamped
+    if "t_ms" in observation:
+        observation["t_device_ms"] = observation["t_ms"]
     return observation
 
 
-def _recorded_seconds(value):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    # Unix milliseconds are ~1e12. Recorder files are unix seconds, often fractional.
-    if isinstance(value, float) or value < 100_000_000_000:
-        return float(value)
-    return None
+def _notify(sink, name, message):
+    method = getattr(sink, name, None)
+    if method is None:
+        return
+    try:
+        method(message)
+    except Exception:
+        return
 
 
 def recorded_seconds_of(line):
@@ -175,7 +223,7 @@ def recorded_seconds_of(line):
         return None
     if not isinstance(message, dict):
         return None
-    return _recorded_seconds(message.get("t_host"))
+    return recorded_seconds(message.get("t_host"))
 
 
 def _radio(message):
