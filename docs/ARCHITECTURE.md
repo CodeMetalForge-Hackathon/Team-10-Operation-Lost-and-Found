@@ -27,15 +27,21 @@
   - The transmit power is adjustable by command, so we can force multi-hop on a small floor.
 - **Audio:**
   - Grove Sound Sensor (analog) on the ADC at 16 kHz (ADC continuous driver). Fallback: Grove Loudness Sensor (loudness level only). Taps are also caught by a Grove Vibration SW-420 contact switch (digital interrupt, timestamps only).
+  - **Measured limits (N2 bench test):** the sensor output is clipped at both ends (bottom half of the wave lost, top flat at ~1.5 V), because its LM386 runs below spec at 3V3. We accept this and design around it:
+    - Sample at **16 kHz**. Count samples at ≤ 8 or ≥ 1850 counts per frame as `clip`; a frame that is mostly clipped means "very loud, level unknown (at least this loud)".
+    - Measure level as the mean absolute deviation from the slow average (robust to the missing bottom half) and convert to dB. Levels compress for close, loud sources, so keep demo sources ≥ 1 m from nodes.
+    - **Band energies are unreliable** (clipping creates false harmonics). Send them, but fusion must not depend on them; `VOICE_LIKE` falls back to "sustained energy above floor for > 400 ms without tap-like onsets".
+    - **Blank all detection (mic onsets and SW-420) while this node's own buzzer is on, plus 50 ms after.**
   - Every 50 ms frame, compute RMS in dB and three band energies: low 60–300 Hz, voice 300–3000 Hz, high 3000–8000 Hz. Use cheap IIR band-pass filters or a 256-point FFT.
   - Track the noise floor as an exponential moving average of quiet frames.
   - **Onset detection:** the frame is more than `floor + 12 dB` and rising fast. Record a microsecond timestamp for each onset.
   - **Tap pattern:** 2–5 onsets with 150–700 ms spacing inside a 3 s window gives a `TAP_PATTERN` event.
+  - **SW-420 tap detection (primary in noisy rooms):** a tap = the first edge after ≥ 300 ms of no edges (the switch rings for up to ~1.5 s after a hard tap, so also end a tap only after 300 ms of silence). Light taps give 2–6 edges, hard ones ~100. Taps spaced closer than the ring time merge into one, so the pattern detector should accept 400–1500 ms spacing for SW-420 taps. A mic onset within ±50 ms of an SW-420 tap raises `conf`.
   - **Voice-like:** voice-band energy stays above the floor for more than 400 ms and dominates the other bands.
 - **Buzzer:**
   - Grove Buzzer driven by `ledc` at its resonance (about 2.3 kHz).
   - Used for the HAIL prompt and for ranging chirps.
-- **LED:** blinks its ID code (Manchester-style, about 5 Hz) on the `BLINK_ID` command, so the overhead camera can identify it.
+- **LED:** no external LED on the demo nodes (we only found one). The XIAO's on-board user LED (`LED_BUILTIN`) shows status and blinks its ID code (Manchester-style, about 5 Hz) on `BLINK_ID`. It is too dim for the overhead camera, so camera LED-ID is cut for the demo: anchors are hand-measured.
 - **Phone/device detection (passive RF; receive only, never transmit):**
   - **BLE scan** (the BLE library in core 3.x, or NimBLE-Arduino):
     - Passive scan **2 s out of every 10 s** (adjustable with `SET_SCAN`), so ESP-NOW keeps most of the shared radio time.

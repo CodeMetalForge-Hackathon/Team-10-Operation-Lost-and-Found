@@ -21,7 +21,7 @@ Shared context for every teammate's Claude Code session. Read this first, then t
 - We trade precision for portability and cost: the goal is metre-level "dig here" guidance, not centimetre accuracy.
 
 ## Architecture in 30 seconds
-- **Node** (ESP32-S3 or ESP32-C5, plus Grove sound sensor (analog mic), Grove SW-420 vibration (tap) switch, Grove buzzer and LED, about $15):
+- **Node** (ESP32-S3 or ESP32-C5, plus Grove sound sensor (analog mic), Grove SW-420 vibration (tap) switch and Grove buzzer, about $15):
   - runs on-board signal processing (noise floor, band energies, tap-pattern detection) and sends **small feature packets, never a raw audio stream**;
   - **also passively scans for phones and wearables** (BLE advertisements and Wi-Fi probe requests, receive only, hashed IDs) and reports them as `DEVICE_SEEN`.
 - **Mesh:** ESP-NOW broadcast with flooding (rebroadcast with a hop limit, de-duplicated). No router, no infrastructure.
